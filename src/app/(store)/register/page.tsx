@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import RegisterClient from "./RegisterClient";
 
 export const metadata: Metadata = {
-  title: "Create Account - ShopNow",
-  description: "Create your ShopNow account. Get access to exclusive offers and fast checkout.",
+  title: "Create Account - Motoego+",
+  description: "Create your Motoego+ account. Get access to exclusive offers and fast checkout.",
 };
 
 export default function RegisterPage() {

@@ -8,7 +8,7 @@
 export const theme = {
   // ── Brand ──────────────────────────────────────────────────────────────────
   brand: {
-    name: "ShopNow",
+    name: "Motoego+",
     tagline: "Your One-Stop Online Store",
     description:
       "Discover amazing products at the best prices. Free shipping on orders above ₹999. Shop now for quality products with secure checkout.",
@@ -22,20 +22,20 @@ export const theme = {
   // These map directly to CSS custom properties (--background, --primary, etc.)
   // and are available as Tailwind utilities (bg-primary, text-muted, etc.)
   colors: {
-    background: "#1a1a1a",
-    foreground: "#F5F5F0",
-    primary: "#e52d22",
-    primaryDark: "#c41f15",
-    primaryLight: "#2a2220",
-    accent: "#ffff00",
-    accentLight: "#2a2818",
-    muted: "#9CA3AF",
-    border: "#333333",
-    card: "#222222",
-    cardHover: "#2a2a2a",
-    danger: "#e52d22",
-    warning: "#ffff00",
-    success: "#4ade80",
+    background: "#ffffff",
+    foreground: "#111827",
+    primary: "#111827",
+    primaryDark: "#000000",
+    primaryLight: "#F3F4F6",
+    accent: "#4B5563",
+    accentLight: "#F9FAFB",
+    muted: "#6B7280",
+    border: "#E5E7EB",
+    card: "#FFFFFF",
+    cardHover: "#F9FAFB",
+    danger: "#1F2937",
+    warning: "#6B7280",
+    success: "#374151",
   },
 
   // ── Fonts ──────────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import ProductsClient from "./ProductsClient";
 
 export const metadata: Metadata = {
-  title: "All Products - ShopNow",
+  title: "All Products - Motoego+",
   description: "Browse our complete collection of products. Filter by category, price, and more.",
 };
 

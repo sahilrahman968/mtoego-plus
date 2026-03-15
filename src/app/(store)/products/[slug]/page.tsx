@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (json.success && json.data) {
       const product = json.data;
       return {
-        title: `${product.title} - ShopNow`,
+        title: `${product.title} - Motoego+`,
         description: product.description?.slice(0, 160),
         openGraph: {
           title: product.title,
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // fallback
   }
   return {
-    title: "Product - ShopNow",
+    title: "Product - Motoego+",
   };
 }
 

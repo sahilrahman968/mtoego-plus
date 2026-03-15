@@ -62,7 +62,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background border-b border-border">
+      <header className="sticky top-0 z-50 bg-white border-b border-border">
         {/* Top bar */}
         {theme.announcement.enabled && (
           <div
@@ -130,7 +130,7 @@ export default function Header() {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-card border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
             </form>
@@ -180,7 +180,7 @@ export default function Header() {
                     <ChevronDown size={14} className="hidden sm:block" />
                   </button>
                   {userMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-card rounded-xl shadow-lg border border-border py-2 animate-slide-down z-50">
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-border py-2 animate-slide-down z-50">
                       <div className="px-4 py-2 border-b border-border">
                         <p className="text-sm font-medium text-foreground truncate">
                           {user?.name}
@@ -190,7 +190,7 @@ export default function Header() {
                       <Link
                         href="/account/orders"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-card-hover transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
                       >
                         <Package size={16} />
                         My Orders
@@ -198,7 +198,7 @@ export default function Header() {
                       <Link
                         href="/wishlist"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-card-hover transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
                       >
                         <Heart size={16} />
                         Wishlist
@@ -206,7 +206,7 @@ export default function Header() {
                       <hr className="my-1 border-border" />
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-card-hover w-full transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-gray-50 w-full transition-colors"
                       >
                         <LogOut size={16} />
                         Logout
@@ -250,7 +250,7 @@ export default function Header() {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </form>
           </div>
@@ -258,26 +258,26 @@ export default function Header() {
 
         {/* Mobile navigation */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-border bg-background animate-slide-down">
+          <div className="lg:hidden border-t border-border bg-white animate-slide-down">
             <nav className="px-4 py-4 space-y-1">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-card-hover rounded-lg transition-colors"
+                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Home
               </Link>
               <Link
                 href="/products"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-card-hover rounded-lg transition-colors"
+                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Products
               </Link>
               <Link
                 href="/categories"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-card-hover rounded-lg transition-colors"
+                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Categories
               </Link>

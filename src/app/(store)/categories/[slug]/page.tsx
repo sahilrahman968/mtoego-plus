@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
   return {
-    title: `${formatted} - ShopNow`,
+    title: `${formatted} - Motoego+`,
     description: `Browse our collection of ${formatted.toLowerCase()} products.`,
   };
 }

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import OrderSuccessClient from "./OrderSuccessClient";
 
 export const metadata: Metadata = {
-  title: "Order Confirmed - ShopNow",
+  title: "Order Confirmed - Motoego+",
   description: "Your order has been placed successfully!",
 };
 

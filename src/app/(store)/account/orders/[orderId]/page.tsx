@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import OrderDetailClient from "./OrderDetailClient";
 
 export const metadata: Metadata = {
-  title: "Order Details - ShopNow",
+  title: "Order Details - Motoego+",
   description: "View your order details and tracking information.",
 };
 

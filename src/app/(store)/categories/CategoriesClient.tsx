@@ -20,10 +20,10 @@ export default function CategoriesClient() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="h-8 bg-card-hover rounded w-48 animate-pulse-slow mb-8" />
+        <div className="h-8 bg-gray-100 rounded w-48 animate-pulse-slow mb-8" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-40 bg-card-hover rounded-xl animate-pulse-slow" />
+            <div key={i} className="h-40 bg-gray-100 rounded-xl animate-pulse-slow" />
           ))}
         </div>
       </div>
@@ -47,9 +47,9 @@ export default function CategoriesClient() {
             <Link
               key={cat._id}
               href={`/categories/${cat.slug}`}
-              className="group text-center hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden bg-card border border-border"
+              className="group text-center hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden bg-white border border-border"
             >
-              <div className="relative aspect-square bg-card-hover overflow-hidden">
+              <div className="relative aspect-square bg-gray-50 overflow-hidden">
                 {cat.image?.url ? (
                   <Image
                     src={cat.image.url}
@@ -59,7 +59,7 @@ export default function CategoriesClient() {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-card to-card-hover">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
                     <span className="text-5xl font-bold text-primary/30">
                       {cat.name.charAt(0)}
                     </span>
@@ -84,7 +84,7 @@ export default function CategoriesClient() {
         </div>
       ) : (
         <div className="text-center py-20">
-          <Grid3x3 size={40} className="mx-auto text-muted mb-3" />
+          <Grid3x3 size={40} className="mx-auto text-gray-300 mb-3" />
           <h2 className="text-lg font-semibold text-foreground">No categories yet</h2>
           <p className="text-sm text-muted mt-1">Check back soon for new categories</p>
         </div>

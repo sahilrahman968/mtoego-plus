@@ -79,7 +79,7 @@ export default function RegisterClient() {
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
           <p className="text-sm text-muted mt-1">
-            Join ShopNow for exclusive deals and easy checkout
+            Join Motoego+ for exclusive deals and easy checkout
           </p>
         </div>
 

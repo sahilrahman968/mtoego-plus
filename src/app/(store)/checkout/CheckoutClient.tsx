@@ -145,7 +145,7 @@ export default function CheckoutClient() {
         key,
         amount,
         currency,
-        name: "ShopNow",
+        name: "Motoego+",
         description: `Order ${orderNumber}`,
         order_id: razorpayOrderId,
         prefill: {

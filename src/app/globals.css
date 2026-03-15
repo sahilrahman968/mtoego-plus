@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/*
+ * Color values are injected at runtime via inline styles on <body>
+ * from src/config/theme.ts — edit that file to change colors globally.
+ *
+ * The fallback values below ensure Tailwind can still generate classes
+ * during build (they are overridden by the inline styles at runtime).
+ */
 :root {
   --background: #ffffff;
   --foreground: #111827;
@@ -44,8 +51,8 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: var(--heading-letter-spacing, 0.04em);
+  text-transform: var(--heading-text-transform, uppercase);
 }
 
 /* Form field styling */

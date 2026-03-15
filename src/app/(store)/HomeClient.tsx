@@ -62,7 +62,7 @@ export default function HomeClient() {
 
   const bannerContent = heroBanner && (
     <section className="w-full">
-      <div className="relative w-full aspect-[3/1] sm:aspect-[3.5/1] lg:aspect-[4/1] overflow-hidden bg-card">
+      <div className="relative w-full aspect-[3/1] sm:aspect-[3.5/1] lg:aspect-[4/1] overflow-hidden bg-gray-100">
         {heroBanner.type === "video" ? (
           <video
             src={heroBanner.url}
@@ -97,7 +97,7 @@ export default function HomeClient() {
             {heroBanner.ctaText && heroBanner.ctaLink && (
               <Link
                 href={heroBanner.ctaLink}
-                className="mt-4 sm:mt-6 inline-flex items-center gap-2 px-6 py-3 bg-accent text-background font-medium rounded-full hover:bg-accent/90 transition-colors"
+                className="mt-4 sm:mt-6 inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 font-medium rounded-full hover:bg-gray-100 transition-colors"
               >
                 {heroBanner.ctaText}
                 <ArrowRight size={18} />
@@ -111,17 +111,18 @@ export default function HomeClient() {
       </div>
     </section>
   );
+  console.log('heroImage',heroImage)
   return (
     <div>
       {/* Full-width Hero Banner */}
       {bannerContent}
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-card via-background to-card overflow-hidden">
+      <section className="relative bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-28">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="animate-slide-up">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-card rounded-full text-xs font-medium text-primary border border-primary/20 mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 rounded-full text-xs font-medium text-primary border border-primary/10 mb-6">
                 <Sparkles size={14} />
                 New Collection Available
               </div>
@@ -143,7 +144,7 @@ export default function HomeClient() {
                 </Link>
                 <Link
                   href="/categories"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-card hover:bg-card-hover text-foreground font-medium rounded-full border border-border transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-foreground font-medium rounded-full border border-border transition-colors"
                 >
                   Browse Categories
                 </Link>
@@ -162,7 +163,7 @@ export default function HomeClient() {
                   />
                 </div>
               ) : (
-                <div className="w-full aspect-square max-w-lg mx-auto bg-gradient-to-br from-card to-card-hover rounded-3xl flex items-center justify-center">
+                <div className="w-full aspect-square max-w-lg mx-auto bg-gradient-to-br from-gray-900/10 to-gray-200/30 rounded-3xl flex items-center justify-center">
                   <div className="text-center p-12">
                     <div className="w-32 h-32 mx-auto bg-primary/20 rounded-2xl flex items-center justify-center mb-4">
                       <Sparkles size={48} className="text-primary" />
@@ -202,9 +203,9 @@ export default function HomeClient() {
                 <Link
                   key={cat._id}
                   href={`/categories/${cat.slug}`}
-                  className="group rounded-xl overflow-hidden bg-card border border-border text-center hover:shadow-md transition-all duration-300"
+                  className="group rounded-xl overflow-hidden bg-white border border-border text-center hover:shadow-md transition-all duration-300"
                 >
-                  <div className="relative aspect-square bg-card-hover overflow-hidden">
+                  <div className="relative aspect-square bg-gray-50 overflow-hidden">
                     {cat.image?.url ? (
                       <Image
                         src={cat.image.url}
@@ -214,7 +215,7 @@ export default function HomeClient() {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-card to-card-hover">
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
                         <span className="text-4xl font-bold text-primary/30">
                           {cat.name.charAt(0)}
                         </span>
@@ -234,7 +235,7 @@ export default function HomeClient() {
       )}
 
       {/* Featured Products */}
-      <section className="py-12 sm:py-16 bg-card/50">
+      <section className="py-12 sm:py-16 bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -256,13 +257,13 @@ export default function HomeClient() {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-card rounded-xl border border-border overflow-hidden"
+                  className="bg-white rounded-xl border border-border overflow-hidden"
                 >
-                  <div className="aspect-square bg-card-hover animate-pulse-slow" />
+                  <div className="aspect-square bg-gray-100 animate-pulse-slow" />
                   <div className="p-4 space-y-2">
-                    <div className="h-3 bg-card-hover rounded animate-pulse-slow w-1/3" />
-                    <div className="h-4 bg-card-hover rounded animate-pulse-slow" />
-                    <div className="h-4 bg-card-hover rounded animate-pulse-slow w-1/2" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse-slow w-1/3" />
+                    <div className="h-4 bg-gray-100 rounded animate-pulse-slow" />
+                    <div className="h-4 bg-gray-100 rounded animate-pulse-slow w-1/2" />
                   </div>
                 </div>
               ))}
@@ -283,16 +284,16 @@ export default function HomeClient() {
       {!isAuthenticated && (
         <section className="py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-primary to-primary-dark rounded-2xl p-8 sm:p-12 text-white text-center">
+            <div className="bg-gradient-to-r from-gray-900 to-black rounded-2xl p-8 sm:p-12 text-white text-center">
               <h2 className="text-2xl sm:text-3xl font-bold">
                 Get 10% Off Your First Order
               </h2>
               <p className="mt-2 text-white/80 text-sm sm:text-base max-w-md mx-auto">
-                Sign up now and use code <span className="font-bold text-accent">WELCOME10</span> at checkout
+                Sign up now and use code <span className="font-bold text-white">WELCOME10</span> at checkout
               </p>
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-accent text-background font-bold rounded-full hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-white text-primary font-medium rounded-full hover:bg-gray-50 transition-colors"
               >
                 Create Account
                 <ArrowRight size={18} />
@@ -304,7 +305,7 @@ export default function HomeClient() {
 
       {/* New Arrivals */}
       {newProducts.length > 0 && (
-        <section className="py-12 sm:py-16 bg-card/50">
+        <section className="py-12 sm:py-16 bg-gray-50/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -336,8 +337,8 @@ export default function HomeClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="w-14 h-14 mx-auto bg-card rounded-xl flex items-center justify-center mb-3">
-                <Truck size={24} className="text-primary" />
+              <div className="w-14 h-14 mx-auto bg-gray-50 rounded-xl flex items-center justify-center mb-3">
+                <Truck size={24} className="text-gray-700" />
               </div>
               <h3 className="font-semibold text-foreground">Free Delivery</h3>
               <p className="text-sm text-muted mt-1">
@@ -345,8 +346,8 @@ export default function HomeClient() {
               </p>
             </div>
             <div>
-              <div className="w-14 h-14 mx-auto bg-card rounded-xl flex items-center justify-center mb-3">
-                <Shield size={24} className="text-primary" />
+              <div className="w-14 h-14 mx-auto bg-gray-50 rounded-xl flex items-center justify-center mb-3">
+                <Shield size={24} className="text-gray-600" />
               </div>
               <h3 className="font-semibold text-foreground">Secure Payment</h3>
               <p className="text-sm text-muted mt-1">
@@ -354,8 +355,8 @@ export default function HomeClient() {
               </p>
             </div>
             <div>
-              <div className="w-14 h-14 mx-auto bg-card rounded-xl flex items-center justify-center mb-3">
-                <RotateCcw size={24} className="text-primary" />
+              <div className="w-14 h-14 mx-auto bg-gray-50 rounded-xl flex items-center justify-center mb-3">
+                <RotateCcw size={24} className="text-gray-600" />
               </div>
               <h3 className="font-semibold text-foreground">Easy Returns</h3>
               <p className="text-sm text-muted mt-1">

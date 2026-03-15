@@ -1,27 +1,47 @@
 import type { Metadata } from "next";
 import { Barlow, Bebas_Neue } from "next/font/google";
+import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { getThemeCSSVariables } from "@/config/theme";
-import "./globals.css";
+import { ToastProvider } from "@/components/store/Toast";
+import { theme, getThemeCSSVariables } from "@/config/theme";
+
+// ── Font imports ─────────────────────────────────────────────────────────────
+// To change fonts: swap the imports below AND update fonts.sans / fonts.display
+// in src/config/theme.ts so the variable names stay in sync.
 
 const barlow = Barlow({
   variable: "--font-barlow",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const bebas = Bebas_Neue({
+const bebasNeue = Bebas_Neue({
   variable: "--font-bebas",
   subsets: ["latin"],
   weight: "400",
 });
 
+// ── Metadata (reads from theme config) ───────────────────────────────────────
+
 export const metadata: Metadata = {
-  title: "ShopNow - Your One-Stop Online Store",
-  description:
-    "Discover amazing products at the best prices. Free shipping on orders above ₹999. Shop now for quality products with secure checkout.",
+  title: {
+    default: `${theme.brand.name} - ${theme.brand.tagline}`,
+    template: `%s | ${theme.brand.name}`,
+  },
+  description: theme.brand.description,
+  keywords: theme.brand.keywords,
 };
+
+// ── Theme CSS variables ──────────────────────────────────────────────────────
+
+const themeVars: Record<string, string> = {
+  ...getThemeCSSVariables(),
+  "--heading-letter-spacing": theme.headings.letterSpacing,
+  "--heading-text-transform": theme.headings.textTransform,
+};
+
+// ── Root Layout ──────────────────────────────────────────────────────────────
 
 export default function RootLayout({
   children,
@@ -31,11 +51,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${barlow.variable} ${bebas.variable} antialiased`}
-        style={getThemeCSSVariables()}
+        className={`${barlow.variable} ${bebasNeue.variable} antialiased`}
+        style={themeVars as React.CSSProperties}
       >
         <AuthProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

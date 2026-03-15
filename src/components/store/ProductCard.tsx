@@ -30,7 +30,7 @@ export default function ProductCard({
     new Set(activeVariants.map((v) => v.price)).size > 1;
 
   return (
-    <div className="group relative bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300">
+    <div className="group relative bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300">
       {/* Wishlist button */}
       {onWishlistToggle && (
         <button
@@ -38,15 +38,15 @@ export default function ProductCard({
             e.preventDefault();
             onWishlistToggle(product._id);
           }}
-          className="absolute top-3 right-3 z-10 w-8 h-8 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
+          className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
             size={16}
             className={
               isWishlisted
-                ? "fill-primary text-primary"
-                : "text-muted group-hover:text-foreground"
+                ? "fill-gray-900 text-gray-900"
+                : "text-gray-400 group-hover:text-gray-600"
             }
           />
         </button>
@@ -61,7 +61,7 @@ export default function ProductCard({
 
       {/* Image */}
       <Link href={`/products/${product.slug}`}>
-        <div className="relative aspect-square bg-card-hover overflow-hidden">
+        <div className="relative aspect-square bg-gray-50 overflow-hidden">
           <Image
             src={getProductImage(product.images)}
             alt={product.images?.[0]?.alt || product.title}

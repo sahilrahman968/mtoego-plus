@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import CheckoutClient from "./CheckoutClient";
 
 export const metadata: Metadata = {
-  title: "Checkout - ShopNow",
+  title: "Checkout - Motoego+",
   description: "Complete your order securely with Razorpay payment.",
 };
 
