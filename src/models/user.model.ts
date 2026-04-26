@@ -5,11 +5,17 @@ import { USER_ROLES, UserRole } from "@/types";
 // ─── Document Interface ─────────────────────────────────────────────────────
 export interface IUserDocument extends Document {
   name: string;
-  email: string;
-  password: string;
+  email?: string | null;
+  password?: string | null;
+  phone?: string | null;
+  isPhoneVerified: boolean;
   role: UserRole;
   isActive: boolean;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
   googleId?: string | null;
+  picture?: string | null;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -28,8 +34,8 @@ const userSchema = new Schema<IUserDocument>(
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true,
       match: [
@@ -39,9 +45,20 @@ const userSchema = new Schema<IUserDocument>(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: [8, "Password must be at least 8 characters"],
-      select: false, // never returned by default in queries
+      select: false,
+      default: null,
+    },
+    phone: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+      match: [/^\+\d{10,15}$/, "Please provide a valid phone number"],
+    },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
     },
     role: {
       type: String,
@@ -55,10 +72,28 @@ const userSchema = new Schema<IUserDocument>(
       type: Boolean,
       default: true,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
     googleId: {
       type: String,
       default: null,
       sparse: true,
+    },
+    picture: {
+      type: String,
+      default: null,
     },
   },
   {
@@ -74,12 +109,12 @@ const userSchema = new Schema<IUserDocument>(
 );
 
 // ─── Indexes ────────────────────────────────────────────────────────────────
-// Note: email index is already created by `unique: true` on the field.
 userSchema.index({ role: 1 });
+userSchema.index({ phone: 1 }, { sparse: true });
 
 // ─── Pre‑save Hook — Hash Password ─────────────────────────────────────────
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
 
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);

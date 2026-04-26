@@ -222,12 +222,44 @@ export async function getGoogleClientId() {
   return apiFetch<{ clientId: string }>("/api/auth/google-client-id");
 }
 
+export async function verifyEmail(token: string) {
+  return apiFetch<null>(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+}
+
+export async function resendVerification(email: string) {
+  return apiFetch<null>("/api/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function sendOtp(phone: string) {
+  return apiFetch<{ phone: string; isExistingUser: boolean }>(
+    "/api/auth/send-otp",
+    {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    }
+  );
+}
+
+export async function verifyOtp(phone: string, otp: string, name?: string) {
+  return apiFetch<
+    { user: UserData; needsName?: never } | { needsName: true; phone: string; user?: never }
+  >("/api/auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ phone, otp, name }),
+  });
+}
+
 // ── Shared Types ─────────────────────────────────────────────────────────
 
 export interface UserData {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
+  picture?: string | null;
   role: string;
 }
 

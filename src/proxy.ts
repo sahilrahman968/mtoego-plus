@@ -41,8 +41,12 @@ const publicPaths = [
   "/api/auth/register",
   "/api/auth/login",
   "/api/auth/logout",
-  "/api/webhooks/", // Webhook endpoints use their own signature verification
-  "/admin/login", // Admin login page is public
+  "/api/auth/verify-email",
+  "/api/auth/resend-verification",
+  "/api/auth/send-otp",
+  "/api/auth/verify-otp",
+  "/api/webhooks/",
+  "/admin/login",
 ];
 
 // ─── Proxy (was Middleware — renamed in Next.js 16) ─────────────────────────

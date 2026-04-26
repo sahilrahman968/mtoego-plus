@@ -35,7 +35,7 @@ export function requireAuth(
   const email = request.headers.get("x-user-email");
   const role = request.headers.get("x-user-role") as UserRole | null;
 
-  if (!userId || !email || !role) {
+  if (!userId || !role) {
     return { error: errorResponse("Authentication required", 401) };
   }
 
@@ -43,5 +43,5 @@ export function requireAuth(
     return { error: errorResponse("Insufficient permissions", 403) };
   }
 
-  return { error: null, userId, email, role };
+  return { error: null, userId, email: email || "", role };
 }

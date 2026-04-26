@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   ShoppingCart,
   Heart,
@@ -22,6 +23,7 @@ export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,6 +60,16 @@ export default function Header() {
     await logout();
     setUserMenuOpen(false);
     router.push("/");
+  };
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const getInitials = (name?: string) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   return (
@@ -97,19 +109,19 @@ export default function Header() {
             <nav className="hidden lg:flex items-center gap-8 ml-10">
               <Link
                 href="/"
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className={`nav-link text-sm font-medium transition-colors ${isActive("/") ? "nav-active" : "text-foreground hover:text-primary"}`}
               >
                 Home
               </Link>
               <Link
                 href="/products"
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className={`nav-link text-sm font-medium transition-colors ${isActive("/products") ? "nav-active" : "text-foreground hover:text-primary"}`}
               >
                 Products
               </Link>
               <Link
                 href="/categories"
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className={`nav-link text-sm font-medium transition-colors ${isActive("/categories") ? "nav-active" : "text-foreground hover:text-primary"}`}
               >
                 Categories
               </Link>
@@ -149,7 +161,7 @@ export default function Header() {
               {/* Wishlist */}
               <Link
                 href="/wishlist"
-                className="p-2 text-foreground hover:text-primary transition-colors"
+                className={`icon-hover-fill p-2 transition-colors ${isActive("/wishlist") ? "text-primary icon-active" : "text-foreground hover:text-primary"}`}
                 aria-label="Wishlist"
               >
                 <Heart size={20} />
@@ -158,7 +170,7 @@ export default function Header() {
               {/* Cart */}
               <Link
                 href="/cart"
-                className="p-2 text-foreground hover:text-primary transition-colors relative"
+                className={`icon-hover-fill p-2 transition-colors relative ${isActive("/cart") ? "text-primary icon-active" : "text-foreground hover:text-primary"}`}
                 aria-label="Cart"
               >
                 <ShoppingCart size={20} />
@@ -174,18 +186,47 @@ export default function Header() {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-1 p-2 text-foreground hover:text-primary transition-colors"
+                    className="avatar-btn flex items-center gap-1.5 p-1 rounded-full"
                   >
-                    <User size={20} />
-                    <ChevronDown size={14} className="hidden sm:block" />
+                    {user?.picture ? (
+                      <Image
+                        src={user.picture}
+                        alt={user.name || "User"}
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span className="w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center">
+                        {getInitials(user?.name)}
+                      </span>
+                    )}
+                    <ChevronDown size={14} className="hidden sm:block text-foreground" />
                   </button>
                   {userMenuOpen && (
                     <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-border py-2 animate-slide-down z-50">
-                      <div className="px-4 py-2 border-b border-border">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {user?.name}
-                        </p>
-                        <p className="text-xs text-muted truncate">{user?.email}</p>
+                      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border">
+                        {user?.picture ? (
+                          <Image
+                            src={user.picture}
+                            alt={user.name || "User"}
+                            width={36}
+                            height={36}
+                            className="w-9 h-9 rounded-full object-cover shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <span className="w-9 h-9 rounded-full bg-primary text-white text-sm font-semibold flex items-center justify-center shrink-0">
+                            {getInitials(user?.name)}
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {user?.name}
+                          </p>
+                          <p className="text-xs text-muted truncate">{user?.email}</p>
+                        </div>
                       </div>
                       <Link
                         href="/account/orders"
@@ -217,7 +258,7 @@ export default function Header() {
               ) : (
                 <Link
                   href="/login"
-                  className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors"
+                  className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-full transition-all duration-300 hover:bg-primary-dark hover:shadow-lg hover:shadow-primary/25 hover:scale-105 active:scale-95"
                 >
                   <User size={16} />
                   Login
@@ -263,21 +304,21 @@ export default function Header() {
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 rounded-lg transition-colors"
+                className={`block px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${isActive("/") ? "text-primary bg-primary-light" : "text-foreground hover:bg-gray-50"}`}
               >
                 Home
               </Link>
               <Link
                 href="/products"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 rounded-lg transition-colors"
+                className={`block px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${isActive("/products") ? "text-primary bg-primary-light" : "text-foreground hover:bg-gray-50"}`}
               >
                 Products
               </Link>
               <Link
                 href="/categories"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 rounded-lg transition-colors"
+                className={`block px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${isActive("/categories") ? "text-primary bg-primary-light" : "text-foreground hover:bg-gray-50"}`}
               >
                 Categories
               </Link>

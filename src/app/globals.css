@@ -137,6 +137,57 @@ textarea::placeholder {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Avatar button glow on hover */
+.avatar-btn {
+  transition: box-shadow 0.3s ease;
+}
+
+.avatar-btn:hover {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+/* Nav link underline animation */
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link.nav-active {
+  color: var(--primary);
+}
+
+.nav-link.nav-active::after {
+  width: 100%;
+}
+
+/* Icon fill animation on hover */
+.icon-hover-fill svg {
+  fill: transparent;
+  transition: fill 0.3s ease;
+}
+
+.icon-hover-fill:hover svg {
+  fill: currentColor;
+}
+
+.icon-hover-fill.icon-active svg {
+  fill: currentColor;
+}
+
 /* Line clamp */
 .line-clamp-2 {
   display: -webkit-box;

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid Google token or unverified email", 400);
     }
 
-    const { email, name, sub: googleId } = payload;
+    const { email, name, sub: googleId, picture } = payload;
 
     await connectDB();
 
@@ -43,15 +43,26 @@ export async function POST(request: NextRequest) {
     let user = await User.findOne({ email: email.toLowerCase() });
 
     if (user) {
-      // Existing user — link Google account if not already linked
       if (!user.isActive) {
         return errorResponse("Account is deactivated. Contact support.", 403);
       }
 
+      let needsSave = false;
       if (!user.googleId) {
         user.googleId = googleId;
-        await user.save();
+        needsSave = true;
       }
+      if (picture && user.picture !== picture) {
+        user.picture = picture;
+        needsSave = true;
+      }
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+        user.emailVerificationToken = null;
+        user.emailVerificationExpires = null;
+        needsSave = true;
+      }
+      if (needsSave) await user.save();
     } else {
       // New user — create account with a random password
       const randomPassword =
@@ -64,13 +75,15 @@ export async function POST(request: NextRequest) {
         password: randomPassword,
         role: "customer",
         googleId,
+        picture: picture || null,
+        isEmailVerified: true,
       });
     }
 
     // Issue JWT
     const token = await signToken({
       userId: user._id.toString(),
-      email: user.email,
+      email: user.email || "",
       role: user.role,
     });
 
@@ -80,6 +93,7 @@ export async function POST(request: NextRequest) {
           id: user._id,
           name: user.name,
           email: user.email,
+          picture: user.picture || null,
           role: user.role,
         },
       },

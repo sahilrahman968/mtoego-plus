@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
       return errorResponse("Account is deactivated. Contact support.", 403);
     }
 
+    if (!user.isEmailVerified) {
+      return errorResponse(
+        "Please verify your email before signing in. Check your inbox for the verification link.",
+        403
+      );
+    }
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return errorResponse("Invalid credentials", 401);
@@ -46,7 +53,7 @@ export async function POST(request: NextRequest) {
     // ── Issue JWT ─────────────────────────────────────────────────────────
     const token = await signToken({
       userId: user._id.toString(),
-      email: user.email,
+      email: user.email || "",
       role: user.role,
     });
 
@@ -55,7 +62,9 @@ export async function POST(request: NextRequest) {
         user: {
           id: user._id,
           name: user.name,
-          email: user.email,
+          email: user.email || null,
+          phone: user.phone || null,
+          picture: user.picture || null,
           role: user.role,
         },
       },

@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { validateCartItem } from "@/lib/validators";
 import Cart from "@/models/cart.model";
 import Product from "@/models/product.model";
+import "@/models/coupon.model";
 
 // ─── GET /api/user/cart — Get the current user's cart ────────────────────────
 

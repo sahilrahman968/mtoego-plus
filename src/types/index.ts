@@ -10,8 +10,11 @@ export interface IUser {
   name: string;
   email: string;
   password: string;
+  phone?: string | null;
+  isPhoneVerified: boolean;
   role: UserRole;
   isActive: boolean;
+  isEmailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +44,16 @@ export interface RegisterBody {
 export interface LoginBody {
   email: string;
   password: string;
+}
+
+export interface SendOtpBody {
+  phone: string;
+}
+
+export interface VerifyOtpBody {
+  phone: string;
+  otp: string;
+  name?: string;
 }
 
 // ─── Category ───────────────────────────────────────────────────────────────

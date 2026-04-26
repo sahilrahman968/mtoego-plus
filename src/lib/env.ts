@@ -40,9 +40,48 @@ export const env = {
     return getEnvVar("CLOUDINARY_API_SECRET");
   },
 
+  // ─── SMTP (for transactional emails like verification) ─────────────────
+  get SMTP_HOST() {
+    return getEnvVar("SMTP_HOST");
+  },
+  get SMTP_PORT() {
+    return parseInt(process.env.SMTP_PORT ?? "587", 10);
+  },
+  get SMTP_USER() {
+    return getEnvVar("SMTP_USER");
+  },
+  get SMTP_PASS() {
+    return getEnvVar("SMTP_PASS");
+  },
+  get SMTP_FROM() {
+    return process.env.SMTP_FROM ?? `Motoego+ <${process.env.SMTP_USER}>`;
+  },
+  get APP_URL() {
+    return process.env.APP_URL ?? "http://localhost:3000";
+  },
+
   // ─── Google OAuth (optional — only needed if Google sign‑in is enabled) ──
   get GOOGLE_CLIENT_ID() {
     return process.env.GOOGLE_CLIENT_ID ?? "";
+  },
+
+  // ─── MSG91 SMS (for Indian OTP verification) ──────────────────────────────
+  get MSG91_AUTH_KEY() {
+    return process.env.MSG91_AUTH_KEY ?? "";
+  },
+  get MSG91_TEMPLATE_ID() {
+    return process.env.MSG91_TEMPLATE_ID ?? "";
+  },
+
+  // ─── Twilio SMS (for international OTP verification) ──────────────────────
+  get TWILIO_ACCOUNT_SID() {
+    return process.env.TWILIO_ACCOUNT_SID ?? "";
+  },
+  get TWILIO_AUTH_TOKEN() {
+    return process.env.TWILIO_AUTH_TOKEN ?? "";
+  },
+  get TWILIO_PHONE_NUMBER() {
+    return process.env.TWILIO_PHONE_NUMBER ?? "";
   },
 
   // ─── Razorpay ───────────────────────────────────────────────────────────
