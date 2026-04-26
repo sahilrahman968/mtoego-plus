@@ -1,15 +1,22 @@
 import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
 
-const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_PORT === 465,
-  auth: {
-    user: env.SMTP_USER,
-    pass: env.SMTP_PASS,
-  },
-});
+let _transporter: nodemailer.Transporter | null = null;
+
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_PORT === 465,
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
+      },
+    });
+  }
+  return _transporter;
+}
 
 export async function sendVerificationEmail(
   to: string,
@@ -18,7 +25,7 @@ export async function sendVerificationEmail(
 ) {
   const verifyUrl = `${env.APP_URL}/verify-email?token=${token}`;
 
-  await transporter.sendMail({
+  await getTransporter().sendMail({
     from: env.SMTP_FROM,
     to,
     subject: "Verify your email — Motoego+",

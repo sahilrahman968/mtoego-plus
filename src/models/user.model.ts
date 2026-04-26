@@ -53,7 +53,6 @@ const userSchema = new Schema<IUserDocument>(
       type: String,
       unique: true,
       sparse: true,
-      default: null,
       match: [/^\+\d{10,15}$/, "Please provide a valid phone number"],
     },
     isPhoneVerified: {
@@ -110,7 +109,6 @@ const userSchema = new Schema<IUserDocument>(
 
 // ─── Indexes ────────────────────────────────────────────────────────────────
 userSchema.index({ role: 1 });
-userSchema.index({ phone: 1 }, { sparse: true });
 
 // ─── Pre‑save Hook — Hash Password ─────────────────────────────────────────
 userSchema.pre("save", async function (next) {
