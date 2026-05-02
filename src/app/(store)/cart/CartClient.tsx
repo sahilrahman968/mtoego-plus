@@ -18,6 +18,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
 import { formatPrice, getProductImage, getVariantLabel } from "@/lib/utils";
 import { calculateDiscount } from "@/lib/pricing";
+import { CartItemSkeleton } from "@/components/store/skeletons";
 
 export default function CartClient() {
   const { isAuthenticated } = useAuth();
@@ -111,11 +112,23 @@ export default function CartClient() {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="h-8 bg-gray-100 rounded w-48 animate-pulse-slow mb-8" />
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse-slow" />
-          ))}
+        <div className="mb-8 h-8 w-48 animate-pulse-slow rounded bg-card-hover" />
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="space-y-4 lg:col-span-2">
+            {[1, 2, 3].map((i) => (
+              <CartItemSkeleton key={i} />
+            ))}
+          </div>
+          <div className="rounded-xl border border-border bg-card/85 p-6">
+            <div className="mb-4 h-5 w-36 animate-pulse-slow rounded bg-card-hover" />
+            <div className="space-y-3">
+              <div className="h-3 w-full animate-pulse-slow rounded bg-card-hover" />
+              <div className="h-3 w-11/12 animate-pulse-slow rounded bg-card-hover" />
+              <div className="h-3 w-10/12 animate-pulse-slow rounded bg-card-hover" />
+              <div className="h-px w-full animate-pulse-slow rounded bg-card-hover" />
+              <div className="h-10 w-full animate-pulse-slow rounded bg-card-hover" />
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import ProductCard from "@/components/store/ProductCard";
+import { ProductCardSkeleton } from "@/components/store/skeletons";
 import { fetchProducts, type ProductData } from "@/lib/store-api";
 
 export default function SearchClient() {
@@ -90,16 +91,7 @@ export default function SearchClient() {
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl border border-border overflow-hidden"
-            >
-              <div className="aspect-square bg-gray-100 animate-pulse-slow" />
-              <div className="p-4 space-y-2">
-                <div className="h-3 bg-gray-100 rounded animate-pulse-slow w-1/3" />
-                <div className="h-4 bg-gray-100 rounded animate-pulse-slow" />
-              </div>
-            </div>
+            <ProductCardSkeleton key={i} />
           ))}
         </div>
       ) : products.length > 0 ? (

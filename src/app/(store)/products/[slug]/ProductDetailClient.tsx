@@ -38,6 +38,7 @@ import {
   getDiscountPercent,
   getVariantLabel,
 } from "@/lib/utils";
+import { ProductDetailSkeleton, ReviewCardSkeleton } from "@/components/store/skeletons";
 
 export default function ProductDetailClient({ slug }: { slug: string }) {
   const router = useRouter();
@@ -246,15 +247,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <div className="mx-auto max-w-[92rem] px-3 py-8 sm:px-4 lg:px-6">
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <div className="aspect-square animate-pulse-slow bg-card-hover" />
-          <div className="space-y-4">
-            <div className="h-4 w-1/4 animate-pulse-slow bg-card-hover" />
-            <div className="h-12 w-3/4 animate-pulse-slow bg-card-hover" />
-            <div className="h-10 w-1/3 animate-pulse-slow bg-card-hover" />
-            <div className="h-24 animate-pulse-slow bg-card-hover" />
-          </div>
-        </div>
+        <ProductDetailSkeleton />
       </div>
     );
   }
@@ -687,7 +680,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               {reviewsLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((idx) => (
-                    <div key={idx} className="h-24 animate-pulse-slow border border-border bg-card-hover" />
+                    <ReviewCardSkeleton key={idx} />
                   ))}
                 </div>
               ) : reviews.length === 0 ? (

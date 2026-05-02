@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Grid3x3 } from "lucide-react";
 import { fetchCategories, type CategoryData } from "@/lib/store-api";
+import { CategoryCardSkeleton } from "@/components/store/skeletons";
 
 export default function CategoriesClient() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
@@ -20,10 +21,11 @@ export default function CategoriesClient() {
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-[92rem] px-3 py-8 sm:px-4 lg:px-6">
+        <div className="mb-2 h-3 w-32 animate-pulse-slow bg-card-hover" />
         <div className="mb-8 h-10 w-56 animate-pulse-slow bg-card-hover" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="aspect-[4/5] animate-pulse-slow bg-card-hover" />
+            <CategoryCardSkeleton key={i} />
           ))}
         </div>
       </div>

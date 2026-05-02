@@ -13,6 +13,7 @@ import {
   type WishlistItemData,
 } from "@/lib/store-api";
 import { formatPrice, getProductImage } from "@/lib/utils";
+import { WishlistCardSkeleton } from "@/components/store/skeletons";
 
 export default function WishlistClient() {
   const { isAuthenticated } = useAuth();
@@ -92,10 +93,10 @@ export default function WishlistClient() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="h-8 bg-gray-100 rounded w-48 animate-pulse-slow mb-8" />
+        <div className="mb-8 h-8 w-48 animate-pulse-slow rounded bg-card-hover" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse-slow" />
+            <WishlistCardSkeleton key={i} />
           ))}
         </div>
       </div>

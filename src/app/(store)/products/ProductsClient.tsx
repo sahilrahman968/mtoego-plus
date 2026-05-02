@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import ProductCard from "@/components/store/ProductCard";
+import { ProductCardSkeleton } from "@/components/store/skeletons";
 import {
   fetchProducts,
   fetchCategories,
@@ -250,17 +251,7 @@ export default function ProductsClient() {
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl border border-border overflow-hidden"
-                >
-                  <div className="aspect-square bg-gray-100 animate-pulse-slow" />
-                  <div className="p-4 space-y-2">
-                    <div className="h-3 bg-gray-100 rounded animate-pulse-slow w-1/3" />
-                    <div className="h-4 bg-gray-100 rounded animate-pulse-slow" />
-                    <div className="h-4 bg-gray-100 rounded animate-pulse-slow w-1/2" />
-                  </div>
-                </div>
+                <ProductCardSkeleton key={i} />
               ))}
             </div>
           ) : products.length > 0 ? (

@@ -6,6 +6,7 @@ import { Package, ChevronRight, Clock, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrders, type OrderListItem } from "@/lib/store-api";
 import { formatPrice } from "@/lib/utils";
+import { OrderListCardSkeleton } from "@/components/store/skeletons";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "border border-[#4A3B17] bg-[#251D0D] text-[#D4A64C]",
@@ -93,7 +94,7 @@ export default function OrdersClient() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 animate-pulse-slow border border-border bg-card-hover" />
+            <OrderListCardSkeleton key={i} />
           ))}
         </div>
       ) : orders.length > 0 ? (

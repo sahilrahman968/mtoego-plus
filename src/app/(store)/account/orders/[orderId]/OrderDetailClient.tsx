@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrder, type OrderDetail } from "@/lib/store-api";
 import { formatPrice, getProductImage } from "@/lib/utils";
+import { OrderDetailPageSkeleton } from "@/components/store/skeletons";
 
 const STATUS_ICONS: Record<string, typeof Package> = {
   pending: Clock,
@@ -68,11 +69,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-[92rem] px-3 py-8 sm:px-4 lg:px-6">
-        <div className="space-y-4">
-          <div className="h-8 w-64 animate-pulse-slow bg-card-hover" />
-          <div className="h-32 animate-pulse-slow border border-border bg-card-hover" />
-          <div className="h-48 animate-pulse-slow border border-border bg-card-hover" />
-        </div>
+        <OrderDetailPageSkeleton />
       </div>
     );
   }
