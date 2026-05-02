@@ -25,9 +25,6 @@ export default function ProductCard({
     ? Math.max(...activeVariants.map((v) => v.compareAtPrice || 0))
     : 0;
   const discount = getDiscountPercent(lowestPrice, highestCompare);
-  const hasMultiplePrices =
-    activeVariants.length > 1 &&
-    new Set(activeVariants.map((v) => v.price)).size > 1;
   const createdAtTs = Date.parse(product.createdAt);
   const isNewDrop =
     Number.isFinite(createdAtTs) &&
@@ -49,25 +46,25 @@ export default function ProductCard({
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
-          <div className="absolute left-2 top-2 z-10 flex items-center gap-1.5">
+          <div className="absolute inset-x-3 top-3 z-10 flex items-start justify-between gap-2 sm:inset-x-2 sm:top-2">
             {formattedTagText ? (
-              <span className="bg-primary px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-white">
+              <span className="max-w-[68%] truncate bg-primary px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
                 {formattedTagText}
               </span>
             ) : null}
+            {discount > 0 && (
+              <span className="border border-border bg-black/60 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                -{discount}%
+              </span>
+            )}
           </div>
-          {discount > 0 && (
-            <span className="absolute right-2 top-2 z-10 border border-border bg-black/60 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
-              -{discount}%
-            </span>
-          )}
           {onWishlistToggle && (
             <button
               onClick={(e) => {
                 e.preventDefault();
                 onWishlistToggle(product._id);
               }}
-              className="absolute bottom-2 right-2 z-10 flex h-7 w-7 items-center justify-center border border-border bg-black/60 transition-colors hover:border-primary"
+              className="absolute bottom-3 right-3 z-10 flex h-7 w-7 items-center justify-center border border-border bg-black/60 transition-colors hover:border-primary sm:bottom-2 sm:right-2"
               aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             >
               <Heart
@@ -83,33 +80,34 @@ export default function ProductCard({
         </div>
       </Link>
 
-      <div className="pt-3">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            {product.category && (
-              <Link
-                href={`/categories/${product.category.slug}`}
-                className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted hover:text-foreground"
-              >
-                {product.category.name}
-              </Link>
-            )}
-            <Link href={`/products/${product.slug}`}>
-              <h3 className="mt-1 line-clamp-1 text-base font-bold uppercase tracking-[0.03em] text-foreground transition-colors group-hover:text-primary">
-                {product.title}
-              </h3>
-            </Link>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-lg font-bold text-foreground">
-              {hasMultiplePrices ? "From " : ""}
-              {formatPrice(lowestPrice)}
-            </p>
-            {highestCompare > lowestPrice && (
-              <p className="text-[11px] text-muted line-through">
-                {formatPrice(highestCompare)}
+      <div className="pt-3 sm:pt-3">
+        <div className="min-w-0">
+          <Link href={`/products/${product.slug}`} className="block min-w-0">
+            <h3 className="line-clamp-2 text-[10px] font-black uppercase leading-tight tracking-[0.01em] text-white transition-colors sm:text-[11px] lg:text-xs">
+              {product.title}
+            </h3>
+          </Link>
+          <div className="mt-1.5 flex items-end justify-between gap-6 sm:gap-8">
+            <div className="min-w-0 flex-1">
+              {product.category && (
+                <Link
+                  href={`/categories/${product.category.slug}`}
+                  className="line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-muted hover:text-foreground"
+                >
+                  {product.category.name}
+                </Link>
+              )}
+            </div>
+            <div className="shrink-0 text-right leading-none">
+              <p className="text-xs font-bold text-foreground">
+                {formatPrice(lowestPrice)}
               </p>
-            )}
+              {highestCompare > lowestPrice && (
+                <p className="mt-1 text-[9px] text-muted line-through">
+                  {formatPrice(highestCompare)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

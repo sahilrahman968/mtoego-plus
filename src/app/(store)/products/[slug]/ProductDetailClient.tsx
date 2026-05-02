@@ -769,7 +769,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           <h2 className="mb-6 text-xl font-bold uppercase tracking-[0.08em] text-foreground sm:text-2xl">
             Related Products
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
             {relatedProducts.map((p) => (
               <ProductCard key={p._id} product={p} />
             ))}
