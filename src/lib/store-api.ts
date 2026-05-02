@@ -60,6 +60,100 @@ export async function fetchProduct(slug: string) {
   return apiFetch<ProductData>(`/api/products/${slug}`);
 }
 
+export async function fetchProductReviews(
+  slug: string,
+  params: { page?: number; limit?: number } = {}
+) {
+  const sp = new URLSearchParams();
+  if (params.page) sp.set("page", String(params.page));
+  if (params.limit) sp.set("limit", String(params.limit));
+  const query = sp.toString();
+  return apiFetch<ProductReviewsData>(
+    `/api/products/${slug}/reviews${query ? `?${query}` : ""}`
+  );
+}
+
+export async function submitProductReview(payload: {
+  productId: string;
+  rating: number;
+  comment: string;
+}) {
+  return apiFetch<ProductReviewData>("/api/user/reviews", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateProductReview(
+  reviewId: string,
+  payload: { rating: number; comment: string }
+) {
+  return apiFetch<ProductReviewData>(`/api/user/reviews/${reviewId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteProductReview(reviewId: string) {
+  return apiFetch<null>(`/api/user/reviews/${reviewId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getAdminReviews(params: {
+  page?: number;
+  limit?: number;
+  status?: "visible" | "hidden";
+  search?: string;
+} = {}) {
+  const sp = new URLSearchParams();
+  if (params.page) sp.set("page", String(params.page));
+  if (params.limit) sp.set("limit", String(params.limit));
+  if (params.status) sp.set("status", params.status);
+  if (params.search) sp.set("search", params.search);
+  return apiFetch<AdminReviewsData>(`/api/admin/reviews?${sp.toString()}`);
+}
+
+export async function moderateAdminReview(
+  reviewId: string,
+  payload: { isHidden: boolean; hiddenReason?: string }
+) {
+  return apiFetch(`/api/admin/reviews/${reviewId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminReview(reviewId: string) {
+  return apiFetch<null>(`/api/admin/reviews/${reviewId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getAdminCallbackRequests(params: {
+  page?: number;
+  limit?: number;
+  status?: "new" | "contacted" | "closed";
+  search?: string;
+} = {}) {
+  const sp = new URLSearchParams();
+  if (params.page) sp.set("page", String(params.page));
+  if (params.limit) sp.set("limit", String(params.limit));
+  if (params.status) sp.set("status", params.status);
+  if (params.search) sp.set("search", params.search);
+  return apiFetch<AdminCallbackRequestsData>(`/api/admin/callback-requests?${sp.toString()}`);
+}
+
+export async function updateAdminCallbackRequest(
+  requestId: string,
+  payload: { status: "new" | "contacted" | "closed"; adminNote?: string }
+) {
+  return apiFetch<AdminCallbackRequestData>(`/api/admin/callback-requests/${requestId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 // ── Categories ───────────────────────────────────────────────────────────
 
 export async function fetchCategories(parent?: string | null) {
@@ -304,6 +398,82 @@ export interface ProductData {
   priceRange?: { min: number; max: number } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProductReviewData {
+  _id: string;
+  rating: number;
+  comment: string;
+  isVerifiedPurchase: boolean;
+  isHidden?: boolean;
+  hiddenReason?: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface ProductReviewsData {
+  items: ProductReviewData[];
+  stats: {
+    averageRating: number;
+    totalReviews: number;
+    ratingBreakdown: Record<number, number>;
+  };
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface AdminReviewData {
+  _id: string;
+  product: { _id: string; title: string; slug: string } | null;
+  user: { _id: string; name: string; email?: string } | null;
+  rating: number;
+  comment: string;
+  isHidden: boolean;
+  hiddenReason?: string;
+  createdAt: string;
+}
+
+export interface AdminReviewsData {
+  items: AdminReviewData[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface AdminCallbackRequestData {
+  _id: string;
+  requirement: string;
+  phone: string;
+  contactHours: string;
+  sourceUrl?: string;
+  status: "new" | "contacted" | "closed";
+  adminNote?: string;
+  contactedAt?: string;
+  createdAt: string;
+  handledBy?: {
+    _id: string;
+    name: string;
+    email?: string;
+  };
+}
+
+export interface AdminCallbackRequestsData {
+  items: AdminCallbackRequestData[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 export interface CartItemData {

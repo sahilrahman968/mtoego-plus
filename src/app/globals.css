@@ -8,20 +8,20 @@
  * during build (they are overridden by the inline styles at runtime).
  */
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
-  --primary: #111827;
-  --primary-dark: #000000;
-  --primary-light: #F3F4F6;
-  --accent: #4B5563;
-  --accent-light: #F9FAFB;
-  --muted: #6B7280;
-  --border: #E5E7EB;
-  --card: #FFFFFF;
-  --card-hover: #F9FAFB;
-  --danger: #1F2937;
-  --warning: #6B7280;
-  --success: #374151;
+  --background: #07070a;
+  --foreground: #f3f3f5;
+  --primary: #e32d22;
+  --primary-dark: #8f0226;
+  --primary-light: #2a1018;
+  --accent: #e31245;
+  --accent-light: #241117;
+  --muted: #a8a0a6;
+  --border: #2b2428;
+  --card: #101014;
+  --card-hover: #18181e;
+  --danger: #e23a56;
+  --warning: #d49a2a;
+  --success: #57b97d;
 }
 
 @theme inline {
@@ -47,6 +47,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  background-image:
+    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 38%),
+    radial-gradient(circle at 84% 0%, color-mix(in srgb, #ffffff 6%, transparent), transparent 36%);
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -55,16 +59,70 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: var(--heading-text-transform, uppercase);
 }
 
+.hero-kicker {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.42em;
+}
+
+.hero-title {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 0.88;
+}
+
+.hero-title-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--primary) 92%, #ffffff 8%);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+@keyframes hero-slow-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+.animate-hero-slow-zoom {
+  animation: hero-slow-zoom 18s ease-in-out infinite alternate;
+}
+
+@keyframes ticker-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ticker-track {
+  display: inline-flex;
+  min-width: max-content;
+  animation: ticker-marquee 38s linear infinite;
+  will-change: transform;
+}
+
 /* Form field styling */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]),
 select,
 textarea {
-  color: #000000;
+  color: var(--foreground);
+  background-color: color-mix(in srgb, var(--card) 80%, black 20%);
+  border-color: var(--border);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #9ca3af !important;
+  color: color-mix(in srgb, var(--muted) 85%, white 15%) !important;
   opacity: 1;
 }
 
@@ -126,11 +184,11 @@ textarea::placeholder {
   background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: color-mix(in srgb, var(--muted) 65%, transparent);
   border-radius: 3px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: color-mix(in srgb, var(--primary) 40%, var(--muted));
 }
 
 /* Hide scrollbar */
@@ -201,4 +259,9 @@ textarea::placeholder {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 42%, transparent);
+  color: var(--foreground);
 }

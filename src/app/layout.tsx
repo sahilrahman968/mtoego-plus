@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Barlow, Bebas_Neue } from "next/font/google";
+import { Barlow_Condensed, Teko } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -10,16 +10,16 @@ import { theme, getThemeCSSVariables } from "@/config/theme";
 // To change fonts: swap the imports below AND update fonts.sans / fonts.display
 // in src/config/theme.ts so the variable names stay in sync.
 
-const barlow = Barlow({
+const barlow = Barlow_Condensed({
   variable: "--font-barlow",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const bebasNeue = Bebas_Neue({
+const bebasNeue = Teko({
   variable: "--font-bebas",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600", "700"],
 });
 
 // ── Metadata (reads from theme config) ───────────────────────────────────────

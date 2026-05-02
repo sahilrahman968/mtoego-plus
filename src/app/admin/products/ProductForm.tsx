@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
+import { useToast } from "@/components/store/Toast";
 
 interface Variant {
   _id?: string;
@@ -67,6 +68,7 @@ const emptyVariant: Variant = {
 
 export default function ProductForm({ productId }: ProductFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const isEdit = !!productId;
 
   const [loading, setLoading] = useState(false);
@@ -158,11 +160,18 @@ export default function ProductForm({ productId }: ProductFormProps) {
       const json = await res.json();
       if (json.success) {
         setImages((prev) => [...prev, ...(json.data.uploaded ?? json.data)]);
+        if (Array.isArray(json.data?.errors) && json.data.errors.length > 0) {
+          toast(json.data.errors[0], "error");
+        }
       } else {
-        setError(json.message || "Upload failed");
+        const message = json.error || json.message || "Upload failed";
+        setError(message);
+        toast(message, "error");
       }
     } catch {
-      setError("Image upload failed");
+      const message = "Image upload failed";
+      setError(message);
+      toast(message, "error");
     } finally {
       setUploading(false);
       e.target.value = "";

@@ -22,20 +22,20 @@ export const theme = {
   // These map directly to CSS custom properties (--background, --primary, etc.)
   // and are available as Tailwind utilities (bg-primary, text-muted, etc.)
   colors: {
-    background: "#ffffff",
-    foreground: "#111827",
-    primary: "#111827",
-    primaryDark: "#000000",
-    primaryLight: "#F3F4F6",
-    accent: "#4B5563",
-    accentLight: "#F9FAFB",
-    muted: "#6B7280",
-    border: "#E5E7EB",
-    card: "#FFFFFF",
-    cardHover: "#F9FAFB",
-    danger: "#1F2937",
-    warning: "#6B7280",
-    success: "#374151",
+    background: "#07070A",
+    foreground: "#F3F3F5",
+    primary: "#E32D22",
+    primaryDark: "#8F0226",
+    primaryLight: "#2A1018",
+    accent: "#E31245",
+    accentLight: "#241117",
+    muted: "#A8A0A6",
+    border: "#2B2428",
+    card: "#101014",
+    cardHover: "#18181E",
+    danger: "#E23A56",
+    warning: "#D49A2A",
+    success: "#57B97D",
   },
 
   // ── Fonts ──────────────────────────────────────────────────────────────────
@@ -49,14 +49,14 @@ export const theme = {
 
   // ── Headings ───────────────────────────────────────────────────────────────
   headings: {
-    letterSpacing: "0.04em",
+    letterSpacing: "0.03em",
     textTransform: "uppercase" as const,
   },
 
   // ── Announcement Bar ───────────────────────────────────────────────────────
   announcement: {
-    enabled: true,
-    text: 'Free shipping on orders above ₹999 | Use code <strong>WELCOME10</strong> for 10% off',
+    enabled: false,
+    text: 'Throttle into savings: free shipping above ₹999 | Use code <strong>WELCOME10</strong> for 10% off',
   },
 } as const;
 

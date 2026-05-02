@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Eye, EyeOff, Upload, Trash2, Save, ExternalLink, Loader2 } from "lucide-react";
+import { useToast } from "@/components/store/Toast";
 
 interface HeroBanner {
   type: "image" | "video";
@@ -45,6 +46,7 @@ const defaultHeroImage: HeroImage = {
 };
 
 export default function SiteSettingsPage() {
+  const { toast } = useToast();
   const [banner, setBanner] = useState<HeroBanner>(defaultBanner);
   const [heroImage, setHeroImage] = useState<HeroImage>(defaultHeroImage);
   const [loading, setLoading] = useState(true);
@@ -101,10 +103,14 @@ export default function SiteSettingsPage() {
         }));
         setMessage({ text: "File uploaded successfully", type: "success" });
       } else {
-        setMessage({ text: json.message || "Upload failed", type: "error" });
+        const message = json.error || json.message || "Upload failed";
+        setMessage({ text: message, type: "error" });
+        toast(message, "error");
       }
     } catch {
-      setMessage({ text: "Upload failed", type: "error" });
+      const message = "Upload failed";
+      setMessage({ text: message, type: "error" });
+      toast(message, "error");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -143,10 +149,14 @@ export default function SiteSettingsPage() {
         }));
         setMessage({ text: "Hero image uploaded successfully", type: "success" });
       } else {
-        setMessage({ text: json.message || "Upload failed", type: "error" });
+        const message = json.error || json.message || "Upload failed";
+        setMessage({ text: message, type: "error" });
+        toast(message, "error");
       }
     } catch {
-      setMessage({ text: "Upload failed", type: "error" });
+      const message = "Upload failed";
+      setMessage({ text: message, type: "error" });
+      toast(message, "error");
     } finally {
       setUploadingHeroImage(false);
       e.target.value = "";

@@ -48,6 +48,24 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    label: "Reviews",
+    href: "/admin/reviews",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.067 3.287a1 1 0 00.95.69h3.456c.969 0 1.371 1.24.588 1.81l-2.796 2.031a1 1 0 00-.364 1.118l1.068 3.287c.3.922-.755 1.688-1.54 1.118l-2.796-2.031a1 1 0 00-1.176 0l-2.796 2.03c-.784.57-1.838-.195-1.539-1.117l1.068-3.287a1 1 0 00-.364-1.118L2.98 8.714c-.783-.57-.38-1.81.588-1.81h3.456a1 1 0 00.95-.69l1.067-3.287z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Customisation Requests",
+    href: "/admin/callback-requests",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h8m-8 4h5m-5 8h8a2 2 0 002-2V8l-6-6H8a2 2 0 00-2 2v16a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
     label: "Coupons",
     href: "/admin/coupons",
     icon: (

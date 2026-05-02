@@ -56,6 +56,9 @@ export const env = {
   get SMTP_FROM() {
     return process.env.SMTP_FROM ?? `Motoego+ <${process.env.SMTP_USER}>`;
   },
+  get SUPER_ADMIN_EMAIL() {
+    return process.env.SUPER_ADMIN_EMAIL ?? "";
+  },
   get APP_URL() {
     return process.env.APP_URL ?? "http://localhost:3000";
   },

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useToast } from "@/components/store/Toast";
 
 interface Category {
   _id: string;
@@ -20,6 +21,7 @@ interface CategoryFormProps {
 
 export default function CategoryForm({ categoryId }: CategoryFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const isEdit = !!categoryId;
 
   const [loading, setLoading] = useState(false);
@@ -99,11 +101,18 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
         if (Array.isArray(uploaded) && uploaded.length > 0) {
           setImage({ url: uploaded[0].url, publicId: uploaded[0].publicId });
         }
+        if (Array.isArray(json.data?.errors) && json.data.errors.length > 0) {
+          toast(json.data.errors[0], "error");
+        }
       } else {
-        setError(json.message || "Upload failed");
+        const message = json.error || json.message || "Upload failed";
+        setError(message);
+        toast(message, "error");
       }
     } catch {
-      setError("Image upload failed");
+      const message = "Image upload failed";
+      setError(message);
+      toast(message, "error");
     } finally {
       setUploading(false);
       e.target.value = "";

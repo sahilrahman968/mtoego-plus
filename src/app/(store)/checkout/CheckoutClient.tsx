@@ -9,6 +9,8 @@ import {
   MapPin,
   CreditCard,
   Shield,
+  Truck,
+  RotateCcw,
   ChevronRight,
   Loader2,
   Lock,
@@ -153,7 +155,7 @@ export default function CheckoutClient() {
           email: user?.email || "",
           contact: address.phone,
         },
-        theme: { color: "#111827" },
+        theme: { color: "#e32d22" },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -197,13 +199,13 @@ export default function CheckoutClient() {
 
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <Lock size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Login Required</h1>
+      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <Lock size={48} className="mx-auto mb-4 text-muted/45" />
+        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">Login Required</h1>
         <p className="text-muted mt-2">Please login to proceed with checkout</p>
         <Link
           href="/login?redirect=/checkout"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -213,13 +215,13 @@ export default function CheckoutClient() {
 
   if (items.length === 0 && !authLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <CreditCard size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Nothing to checkout</h1>
+      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <CreditCard size={48} className="mx-auto mb-4 text-muted/45" />
+        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">Nothing to checkout</h1>
         <p className="text-muted mt-2">Your cart is empty</p>
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
         >
           Start Shopping
         </Link>
@@ -234,19 +236,19 @@ export default function CheckoutClient() {
         onLoad={() => setRazorpayLoaded(true)}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
         {/* Progress steps */}
-        <div className="flex items-center justify-center gap-3 mb-8">
+        <div className="mb-8 flex items-center justify-center gap-3 border-b border-border/60 pb-6">
           <div
-            className={`flex items-center gap-2 text-sm font-medium ${
+            className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] ${
               step === "address" ? "text-primary" : "text-muted"
             }`}
           >
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${
+              className={`flex h-6 w-6 items-center justify-center text-[10px] ${
                 step === "address"
                   ? "bg-primary text-white"
-                  : "bg-primary-light text-primary"
+                  : "border border-border bg-card text-muted"
               }`}
             >
               1
@@ -255,15 +257,15 @@ export default function CheckoutClient() {
           </div>
           <ChevronRight size={16} className="text-muted" />
           <div
-            className={`flex items-center gap-2 text-sm font-medium ${
+            className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] ${
               step === "review" ? "text-primary" : "text-muted"
             }`}
           >
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${
+              className={`flex h-6 w-6 items-center justify-center text-[10px] ${
                 step === "review"
                   ? "bg-primary text-white"
-                  : "bg-gray-100 text-muted"
+                  : "border border-border bg-card text-muted"
               }`}
             >
               2
@@ -272,33 +274,33 @@ export default function CheckoutClient() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2">
             {step === "address" ? (
-              <div className="bg-white rounded-xl border border-border p-6">
+              <div className="border border-border bg-card/80 p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <MapPin size={20} className="text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">
+                  <h2 className="text-lg font-bold uppercase tracking-[0.08em] text-foreground">
                     Shipping Address
                   </h2>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       Full Name *
                     </label>
                     <input
                       type="text"
                       value={address.name}
                       onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       Phone Number *
                     </label>
                     <input
@@ -308,12 +310,12 @@ export default function CheckoutClient() {
                         setAddress({ ...address, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
                       }
                       placeholder="10-digit mobile number"
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
                       required
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       Address Line 1 *
                     </label>
                     <input
@@ -321,12 +323,12 @@ export default function CheckoutClient() {
                       value={address.line1}
                       onChange={(e) => setAddress({ ...address, line1: e.target.value })}
                       placeholder="House no., Building, Street"
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
                       required
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       Address Line 2
                     </label>
                     <input
@@ -334,29 +336,29 @@ export default function CheckoutClient() {
                       value={address.line2}
                       onChange={(e) => setAddress({ ...address, line2: e.target.value })}
                       placeholder="Area, Landmark (optional)"
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       City *
                     </label>
                     <input
                       type="text"
                       value={address.city}
                       onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       State *
                     </label>
                     <select
                       value={address.state}
                       onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary"
                       required
                     >
                       <option value="">Select state</option>
@@ -368,7 +370,7 @@ export default function CheckoutClient() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                       Pincode *
                     </label>
                     <input
@@ -378,7 +380,7 @@ export default function CheckoutClient() {
                         setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
                       }
                       placeholder="6-digit pincode"
-                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
                       required
                     />
                   </div>
@@ -386,7 +388,7 @@ export default function CheckoutClient() {
 
                 <button
                   onClick={handleProceedToReview}
-                  className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-xl transition-colors"
+                  className="mt-6 flex w-full items-center justify-center gap-2 bg-primary px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
                 >
                   Continue to Review
                   <ChevronRight size={18} />
@@ -395,15 +397,15 @@ export default function CheckoutClient() {
             ) : (
               <div className="space-y-6">
                 {/* Shipping summary */}
-                <div className="bg-white rounded-xl border border-border p-6">
+                <div className="border border-border bg-card/80 p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-primary" />
-                      <h3 className="font-semibold text-foreground">Shipping To</h3>
+                      <h3 className="font-semibold uppercase tracking-[0.08em] text-foreground">Shipping To</h3>
                     </div>
                     <button
                       onClick={() => setStep("address")}
-                      className="text-sm text-primary hover:underline"
+                      className="text-xs font-semibold uppercase tracking-[0.12em] text-primary hover:underline"
                     >
                       Edit
                     </button>
@@ -420,8 +422,8 @@ export default function CheckoutClient() {
                 </div>
 
                 {/* Cart items */}
-                <div className="bg-white rounded-xl border border-border p-6">
-                  <h3 className="font-semibold text-foreground mb-4">
+                <div className="border border-border bg-card/80 p-6">
+                  <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">
                     Order Items ({items.length})
                   </h3>
                   <div className="space-y-3">
@@ -432,7 +434,7 @@ export default function CheckoutClient() {
                       const price = variant?.price || item.priceAtAdd;
                       return (
                         <div key={item._id} className="flex gap-3">
-                          <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-gray-50 shrink-0">
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border bg-black/45">
                             <Image
                               src={getProductImage(item.product.images)}
                               alt={item.product.title}
@@ -462,7 +464,7 @@ export default function CheckoutClient() {
                 <button
                   onClick={handlePayment}
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary hover:bg-primary-dark text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 size={20} className="animate-spin" />
@@ -476,7 +478,7 @@ export default function CheckoutClient() {
 
                 <button
                   onClick={() => setStep("address")}
-                  className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition-colors hover:text-foreground"
                 >
                   <ArrowLeft size={16} />
                   Back to Shipping
@@ -487,8 +489,8 @@ export default function CheckoutClient() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-28 bg-white rounded-xl border border-border p-6">
-              <h2 className="text-lg font-bold text-foreground mb-4">
+            <div className="sticky top-28 border border-border bg-card/90 p-6">
+              <h2 className="mb-4 text-lg font-bold uppercase tracking-[0.08em] text-foreground">
                 Order Summary
               </h2>
               <div className="space-y-3 text-sm">
@@ -521,14 +523,33 @@ export default function CheckoutClient() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                <Shield size={16} className="text-gray-700 shrink-0" />
-                <p className="text-xs text-gray-700">
+              <div className="mt-4 flex items-center gap-2 border border-border bg-black/45 p-3">
+                <Shield size={16} className="shrink-0 text-primary" />
+                <p className="text-xs text-muted">
                   Your payment is secured with Razorpay&apos;s 256-bit encryption
                 </p>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 grid grid-cols-2 gap-3 border-y border-border/70 py-4 sm:grid-cols-4">
+          {[
+            { icon: Truck, title: "Free Shipping", desc: "On orders above ₹999" },
+            { icon: Shield, title: "Secure Payment", desc: "100% secure checkout" },
+            { icon: RotateCcw, title: "Easy Returns", desc: "7-day return policy" },
+            { icon: CreditCard, title: "Multiple Payment", desc: "UPI, Cards, Net Banking" },
+          ].map((item) => (
+            <div key={item.title} className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center border border-primary/30 bg-primary/10">
+                <item.icon size={14} className="text-primary" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">{item.title}</p>
+                <p className="text-[10px] text-muted">{item.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </>

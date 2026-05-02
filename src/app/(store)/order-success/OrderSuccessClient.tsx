@@ -10,32 +10,34 @@ export default function OrderSuccessClient() {
   const orderNumber = searchParams.get("orderNumber");
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+    <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-24 lg:px-8">
       <div className="animate-slide-up">
-        <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle size={40} className="text-gray-700" />
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-primary/35 bg-primary/12">
+          <CheckCircle size={40} className="text-primary" />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
           Order Confirmed!
         </h1>
-        <p className="text-muted mt-2">
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted sm:text-base">
           Thank you for your purchase. Your order has been placed successfully.
         </p>
 
         {orderNumber && (
-          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg">
+          <div className="mt-6 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2">
             <Package size={18} className="text-primary" />
             <span className="text-sm text-muted">Order Number:</span>
             <span className="text-sm font-bold text-foreground">{orderNumber}</span>
           </div>
         )}
 
-        <div className="mt-8 bg-white rounded-xl border border-border p-6 text-left">
-          <h3 className="font-semibold text-foreground mb-3">What happens next?</h3>
+        <div className="mt-8 rounded-xl border border-border bg-card p-6 text-left sm:p-7">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+            What Happens Next?
+          </h3>
           <ol className="space-y-3">
             <li className="flex gap-3">
-              <div className="w-6 h-6 shrink-0 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                 1
               </div>
               <div>
@@ -48,7 +50,7 @@ export default function OrderSuccessClient() {
               </div>
             </li>
             <li className="flex gap-3">
-              <div className="w-6 h-6 shrink-0 bg-primary/20 text-primary rounded-full flex items-center justify-center text-xs font-bold">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/15 text-xs font-bold text-primary">
                 2
               </div>
               <div>
@@ -59,7 +61,7 @@ export default function OrderSuccessClient() {
               </div>
             </li>
             <li className="flex gap-3">
-              <div className="w-6 h-6 shrink-0 bg-primary/20 text-primary rounded-full flex items-center justify-center text-xs font-bold">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/15 text-xs font-bold text-primary">
                 3
               </div>
               <div>
@@ -72,11 +74,11 @@ export default function OrderSuccessClient() {
           </ol>
         </div>
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           {orderId && (
             <Link
               href={`/account/orders/${orderId}`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-full transition-colors"
+              className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary-dark"
             >
               <Package size={18} />
               View Order
@@ -84,7 +86,7 @@ export default function OrderSuccessClient() {
           )}
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-border text-foreground font-medium rounded-full hover:bg-gray-50 transition-colors"
+            className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-medium text-foreground transition-colors hover:bg-card-hover"
           >
             <ShoppingBag size={18} />
             Continue Shopping

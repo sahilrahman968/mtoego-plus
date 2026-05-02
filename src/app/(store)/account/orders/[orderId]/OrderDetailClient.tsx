@@ -28,13 +28,13 @@ const STATUS_ICONS: Record<string, typeof Package> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-800",
-  paid: "bg-gray-100 text-gray-800",
-  processing: "bg-gray-100 text-gray-800",
-  shipped: "bg-gray-100 text-gray-800",
-  delivered: "bg-gray-100 text-gray-800",
-  cancelled: "bg-gray-100 text-gray-800",
-  refunded: "bg-gray-100 text-gray-800",
+  pending: "border border-[#4A3B17] bg-[#251D0D] text-[#D4A64C]",
+  paid: "border border-primary/45 bg-primary/15 text-primary",
+  processing: "border border-[#3A2F52] bg-[#1B1627] text-[#A68CFF]",
+  shipped: "border border-[#264352] bg-[#111E26] text-[#6FBEE9]",
+  delivered: "border border-[#1E4C33] bg-[#10241A] text-[#6DD79C]",
+  cancelled: "border border-[#5A232F] bg-[#2A1218] text-[#F08095]",
+  refunded: "border border-[#4F355E] bg-[#24172C] text-[#D09EFF]",
 };
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
@@ -52,12 +52,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <Package size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Login Required</h1>
+      <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <Package size={48} className="mx-auto mb-4 text-muted/40" />
+        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">Login Required</h1>
         <Link
           href={`/login?redirect=/account/orders/${orderId}`}
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -67,11 +67,11 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto w-full max-w-[92rem] px-3 py-8 sm:px-4 lg:px-6">
         <div className="space-y-4">
-          <div className="h-8 bg-gray-100 rounded w-64 animate-pulse-slow" />
-          <div className="h-32 bg-gray-100 rounded-xl animate-pulse-slow" />
-          <div className="h-48 bg-gray-100 rounded-xl animate-pulse-slow" />
+          <div className="h-8 w-64 animate-pulse-slow bg-card-hover" />
+          <div className="h-32 animate-pulse-slow border border-border bg-card-hover" />
+          <div className="h-48 animate-pulse-slow border border-border bg-card-hover" />
         </div>
       </div>
     );
@@ -79,12 +79,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   if (!order) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <AlertCircle size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Order Not Found</h1>
+      <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <AlertCircle size={48} className="mx-auto mb-4 text-muted/40" />
+        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">Order Not Found</h1>
         <Link
           href="/account/orders"
-          className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-primary hover:underline"
+          className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary hover:underline"
         >
           <ArrowLeft size={16} /> Back to Orders
         </Link>
@@ -95,20 +95,20 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const StatusIcon = STATUS_ICONS[order.status] || Package;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
       {/* Back */}
       <Link
         href="/account/orders"
-        className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground mb-6 transition-colors"
+        className="mb-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition-colors hover:text-foreground"
       >
         <ArrowLeft size={16} />
         Back to Orders
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="mb-6 flex flex-col justify-between gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold uppercase tracking-[0.05em] text-foreground sm:text-4xl">
             {order.orderNumber}
           </h1>
           <p className="text-sm text-muted mt-1">
@@ -123,8 +123,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           </p>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full capitalize ${
-            STATUS_COLORS[order.status] || "bg-gray-100 text-gray-800"
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] capitalize ${
+            STATUS_COLORS[order.status] || "border border-border bg-card text-muted"
           }`}
         >
           <StatusIcon size={14} />
@@ -132,12 +132,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         </span>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Timeline */}
-          <div className="bg-white rounded-xl border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Order Timeline</h3>
+          <div className="border border-border bg-card/75 p-6">
+            <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">Order Timeline</h3>
             <div className="space-y-4">
               {order.statusHistory.map((entry, idx) => (
                 <div key={idx} className="flex gap-3">
@@ -146,11 +146,11 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                       className={`w-3 h-3 rounded-full mt-1 ${
                         idx === order.statusHistory.length - 1
                           ? "bg-primary"
-                          : "bg-gray-300"
+                          : "bg-muted/45"
                       }`}
                     />
                     {idx < order.statusHistory.length - 1 && (
-                      <div className="absolute left-1.5 top-4 w-px h-6 -translate-x-1/2 bg-gray-200" />
+                      <div className="absolute left-1.5 top-4 h-6 w-px -translate-x-1/2 bg-border" />
                     )}
                   </div>
                   <div>
@@ -176,14 +176,14 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           </div>
 
           {/* Items */}
-          <div className="bg-white rounded-xl border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">
+          <div className="border border-border bg-card/75 p-6">
+            <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">
               Items ({order.items.length})
             </h3>
             <div className="space-y-4">
               {order.items.map((item) => (
                 <div key={item._id} className="flex gap-4">
-                  <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-50 shrink-0">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-border bg-black/45">
                     <Image
                       src={getProductImage(item.product?.images)}
                       alt={item.title}
@@ -224,10 +224,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           </div>
 
           {/* Shipping Address */}
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="border border-border bg-card/75 p-6">
             <div className="flex items-center gap-2 mb-3">
               <MapPin size={18} className="text-primary" />
-              <h3 className="font-semibold text-foreground">Shipping Address</h3>
+              <h3 className="font-semibold uppercase tracking-[0.08em] text-foreground">Shipping Address</h3>
             </div>
             <div className="text-sm text-foreground">
               <p className="font-medium">{order.shippingAddress.name}</p>
@@ -246,8 +246,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
         {/* Pricing Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-28 bg-white rounded-xl border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Payment Details</h3>
+          <div className="sticky top-28 border border-border bg-card/85 p-6">
+            <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">Payment Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted">Subtotal</span>
@@ -301,7 +301,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
             {/* Payment info */}
             {order.payment.razorpayPaymentId && (
-              <div className="mt-4 pt-4 border-t border-border">
+              <div className="mt-4 border-t border-border pt-4">
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard size={16} className="text-primary" />
                   <span className="text-sm font-medium text-foreground">

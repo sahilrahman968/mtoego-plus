@@ -8,13 +8,13 @@ import { getOrders, type OrderListItem } from "@/lib/store-api";
 import { formatPrice } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-800",
-  paid: "bg-gray-100 text-gray-800",
-  processing: "bg-gray-100 text-gray-800",
-  shipped: "bg-gray-100 text-gray-800",
-  delivered: "bg-gray-100 text-gray-800",
-  cancelled: "bg-gray-100 text-gray-800",
-  refunded: "bg-gray-100 text-gray-800",
+  pending: "border border-[#4A3B17] bg-[#251D0D] text-[#D4A64C]",
+  paid: "border border-primary/45 bg-primary/15 text-primary",
+  processing: "border border-[#3A2F52] bg-[#1B1627] text-[#A68CFF]",
+  shipped: "border border-[#264352] bg-[#111E26] text-[#6FBEE9]",
+  delivered: "border border-[#1E4C33] bg-[#10241A] text-[#6DD79C]",
+  cancelled: "border border-[#5A232F] bg-[#2A1218] text-[#F08095]",
+  refunded: "border border-[#4F355E] bg-[#24172C] text-[#D09EFF]",
 };
 
 export default function OrdersClient() {
@@ -43,13 +43,13 @@ export default function OrdersClient() {
 
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <Package size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">My Orders</h1>
+      <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <Package size={48} className="mx-auto mb-4 text-muted/40" />
+        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">My Orders</h1>
         <p className="text-muted mt-2">Please login to view your orders</p>
         <Link
           href="/login?redirect=/account/orders"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -58,11 +58,16 @@ export default function OrdersClient() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+      <div className="mb-6 flex items-center justify-between border-b border-border/60 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Orders</h1>
-          <p className="text-sm text-muted mt-1">{total} order{total !== 1 ? "s" : ""}</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
+            03 / Account
+          </p>
+          <h1 className="text-4xl font-bold uppercase tracking-[0.05em] text-foreground sm:text-5xl">My Orders</h1>
+          <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-muted">
+            {total} order{total !== 1 ? "s" : ""}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-muted" />
@@ -72,7 +77,7 @@ export default function OrdersClient() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="text-sm border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="border border-border bg-black/45 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground outline-none transition-colors focus:border-primary"
           >
             <option value="">All Orders</option>
             <option value="pending">Pending</option>
@@ -88,7 +93,7 @@ export default function OrdersClient() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse-slow" />
+            <div key={i} className="h-28 animate-pulse-slow border border-border bg-card-hover" />
           ))}
         </div>
       ) : orders.length > 0 ? (
@@ -98,28 +103,28 @@ export default function OrdersClient() {
               <Link
                 key={order._id}
                 href={`/account/orders/${order._id}`}
-                className="block bg-white rounded-xl border border-border p-4 sm:p-5 hover:border-primary/30 hover:shadow-sm transition-all"
+                className="block border border-border bg-card/75 p-4 transition-all hover:border-primary/35 hover:bg-card sm:p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-sm font-bold text-foreground">
+                      <span className="text-base font-bold uppercase tracking-[0.04em] text-foreground">
                         {order.orderNumber}
                       </span>
                       <span
-                        className={`text-[11px] font-medium px-2 py-0.5 rounded-full capitalize ${
-                          STATUS_COLORS[order.status] || "bg-gray-100 text-gray-800"
+                        className={`px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] capitalize ${
+                          STATUS_COLORS[order.status] || "border border-border bg-card text-muted"
                         }`}
                       >
                         {order.status}
                       </span>
                     </div>
-                    <div className="mt-2 text-sm text-muted">
+                    <div className="mt-2 text-sm text-muted line-clamp-2">
                       {order.items
                         .map((item) => `${item.title} × ${item.quantity}`)
                         .join(", ")}
                     </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted">
+                    <div className="mt-2 flex items-center gap-3 text-[11px] uppercase tracking-[0.08em] text-muted">
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
                         {new Date(order.createdAt).toLocaleDateString("en-IN", {
@@ -131,7 +136,7 @@ export default function OrdersClient() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-base font-bold text-foreground">
+                    <span className="text-lg font-bold text-foreground">
                       {formatPrice(order.pricing.grandTotal)}
                     </span>
                     <ChevronRight size={16} className="text-muted" />
@@ -146,17 +151,17 @@ export default function OrdersClient() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="border border-border bg-black/45 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Previous
               </button>
-              <span className="text-sm text-muted px-4">
+              <span className="px-4 text-xs font-semibold uppercase tracking-[0.1em] text-muted">
                 Page {page} of {totalPages}
               </span>
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page >= totalPages}
-                className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="border border-border bg-black/45 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
@@ -165,14 +170,14 @@ export default function OrdersClient() {
         </>
       ) : (
         <div className="text-center py-20">
-          <Package size={48} className="mx-auto text-gray-300 mb-4" />
-          <h2 className="text-lg font-semibold text-foreground">No orders yet</h2>
+          <Package size={48} className="mx-auto mb-4 text-muted/40" />
+          <h2 className="text-lg font-semibold uppercase tracking-[0.08em] text-foreground">No orders yet</h2>
           <p className="text-sm text-muted mt-1">
             When you make a purchase, your orders will appear here
           </p>
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-primary hover:underline"
+            className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary hover:underline"
           >
             Start Shopping
           </Link>

@@ -24,7 +24,7 @@ export function getCloudinary() {
 export const UPLOAD_CONFIG = {
   folder: "ecom/products",
   allowedFormats: ["jpg", "jpeg", "png", "webp", "avif"],
-  maxFileSize: 5 * 1024 * 1024, // 5 MB
+  maxFileSize: 10 * 1024 * 1024, // 10 MB
   allowedMimeTypes: [
     "image/jpeg",
     "image/png",

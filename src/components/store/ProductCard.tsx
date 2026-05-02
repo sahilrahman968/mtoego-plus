@@ -28,89 +28,90 @@ export default function ProductCard({
   const hasMultiplePrices =
     activeVariants.length > 1 &&
     new Set(activeVariants.map((v) => v.price)).size > 1;
+  const createdAtTs = Date.parse(product.createdAt);
+  const isNewDrop =
+    Number.isFinite(createdAtTs) &&
+    Date.now() - createdAtTs < 1000 * 60 * 60 * 24 * 21;
+  const tagText =
+    product.tags.find((t) => /best|seller|new/i.test(t)) ||
+    (product.isFeatured ? "Best Seller" : isNewDrop ? "New" : "");
+  const formattedTagText = tagText ? tagText.toUpperCase() : "";
 
   return (
-    <div className="group relative bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300">
-      {/* Wishlist button */}
-      {onWishlistToggle && (
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            onWishlistToggle(product._id);
-          }}
-          className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all"
-          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-        >
-          <Heart
-            size={16}
-            className={
-              isWishlisted
-                ? "fill-gray-900 text-gray-900"
-                : "text-gray-400 group-hover:text-gray-600"
-            }
-          />
-        </button>
-      )}
-
-      {/* Discount badge */}
-      {discount > 0 && (
-        <div className="absolute top-3 left-3 z-10 bg-danger text-white text-xs font-bold px-2 py-1 rounded-md">
-          -{discount}%
-        </div>
-      )}
-
-      {/* Image */}
+    <div className="group relative overflow-hidden bg-transparent">
       <Link href={`/products/${product.slug}`}>
-        <div className="relative aspect-square bg-gray-50 overflow-hidden">
+        <div className="relative aspect-[1/1.02] overflow-hidden border border-border bg-black/65">
           <Image
             src={getProductImage(product.images)}
             alt={product.images?.[0]?.alt || product.title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
+          <div className="absolute left-2 top-2 z-10 flex items-center gap-1.5">
+            {formattedTagText ? (
+              <span className="bg-primary px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-white">
+                {formattedTagText}
+              </span>
+            ) : null}
+          </div>
+          {discount > 0 && (
+            <span className="absolute right-2 top-2 z-10 border border-border bg-black/60 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
+              -{discount}%
+            </span>
+          )}
+          {onWishlistToggle && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onWishlistToggle(product._id);
+              }}
+              className="absolute bottom-2 right-2 z-10 flex h-7 w-7 items-center justify-center border border-border bg-black/60 transition-colors hover:border-primary"
+              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart
+                size={14}
+                className={
+                  isWishlisted
+                    ? "fill-primary text-primary"
+                    : "text-foreground/80 group-hover:text-primary"
+                }
+              />
+            </button>
+          )}
         </div>
       </Link>
 
-      {/* Info */}
-      <div className="p-3 sm:p-4">
-        {product.category && (
-          <Link
-            href={`/categories/${product.category.slug}`}
-            className="text-[11px] font-medium text-primary uppercase tracking-wide hover:underline"
-          >
-            {product.category.name}
-          </Link>
-        )}
-
-        <Link href={`/products/${product.slug}`}>
-          <h3 className="text-sm font-semibold text-foreground mt-1 line-clamp-2 group-hover:text-primary transition-colors">
-            {product.title}
-          </h3>
-        </Link>
-
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-base font-bold text-foreground">
-            {hasMultiplePrices ? "From " : ""}
-            {formatPrice(lowestPrice)}
-          </span>
-          {highestCompare > lowestPrice && (
-            <span className="text-xs text-muted line-through">
-              {formatPrice(highestCompare)}
-            </span>
-          )}
-        </div>
-
-        {/* Stock indicator */}
-        {activeVariants.length > 0 && (
-          <div className="mt-2">
-            {activeVariants.every((v) => v.stock === 0) ? (
-              <span className="text-xs text-danger font-medium">Out of stock</span>
-            ) : activeVariants.some((v) => v.stock > 0 && v.stock <= 5) ? (
-              <span className="text-xs text-warning font-medium">Few left</span>
-            ) : null}
+      <div className="pt-3">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            {product.category && (
+              <Link
+                href={`/categories/${product.category.slug}`}
+                className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted hover:text-foreground"
+              >
+                {product.category.name}
+              </Link>
+            )}
+            <Link href={`/products/${product.slug}`}>
+              <h3 className="mt-1 line-clamp-1 text-base font-bold uppercase tracking-[0.03em] text-foreground transition-colors group-hover:text-primary">
+                {product.title}
+              </h3>
+            </Link>
           </div>
-        )}
+          <div className="shrink-0 text-right">
+            <p className="text-lg font-bold text-foreground">
+              {hasMultiplePrices ? "From " : ""}
+              {formatPrice(lowestPrice)}
+            </p>
+            {highestCompare > lowestPrice && (
+              <p className="text-[11px] text-muted line-through">
+                {formatPrice(highestCompare)}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
