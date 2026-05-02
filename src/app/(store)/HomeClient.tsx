@@ -302,7 +302,7 @@ export default function HomeClient() {
                 The Lineup
               </h2>
             </div>
-            <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-14 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-2 sm:gap-14 lg:grid-cols-4">
               {featuredProducts.slice(0, 4).map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}

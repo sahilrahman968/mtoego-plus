@@ -94,7 +94,7 @@ export default function WishlistClient() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 h-8 w-48 animate-pulse-slow rounded bg-card-hover" />
-        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
           {Array.from({ length: 4 }).map((_, i) => (
             <WishlistCardSkeleton key={i} />
           ))}
@@ -130,7 +130,7 @@ export default function WishlistClient() {
         My Wishlist ({items.length})
       </h1>
 
-      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
         {items.map((item) => {
           const product = item.product;
           if (!product) return null;
