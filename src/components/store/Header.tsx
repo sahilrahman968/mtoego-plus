@@ -46,13 +46,17 @@ export default function Header() {
       <div className="relative">
         <div className="mx-auto flex h-[4.5rem] max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6">
           <div className="flex items-center gap-2 lg:gap-3">
-            <Link href="/" className="shrink-0" aria-label="Motoego Home">
+            <Link
+              href="/"
+              className="relative block h-9 w-[10.25rem] shrink-0 overflow-hidden sm:h-10 sm:w-[11.25rem]"
+              aria-label="Motoego Home"
+            >
               <Image
                 src="/logo.svg"
                 alt="Motoego"
-                width={176}
-                height={40}
-                className="h-9 w-auto scale-[4.65] origin-left object-contain drop-shadow-[0_0_12px_rgba(179,3,47,0.3)] sm:h-10"
+                fill
+                sizes="(max-width: 640px) 164px, 180px"
+                className="scale-[4.65] origin-left object-contain object-left drop-shadow-[0_0_12px_rgba(179,3,47,0.3)]"
                 priority
               />
             </Link>

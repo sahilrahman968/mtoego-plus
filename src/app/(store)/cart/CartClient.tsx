@@ -95,13 +95,13 @@ export default function CartClient() {
 
   if (!isAuthenticated) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <ShoppingCart size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Your Cart</h1>
+      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <ShoppingCart size={48} className="mx-auto mb-4 text-muted/45" />
+        <h1 className="text-2xl font-bold uppercase tracking-[0.06em] text-foreground">Your Cart</h1>
         <p className="text-muted mt-2">Please login to view your cart</p>
         <Link
           href="/login?redirect=/cart"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -111,15 +111,15 @@ export default function CartClient() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-[92rem] px-3 py-8 sm:px-4 lg:px-6">
         <div className="mb-8 h-8 w-48 animate-pulse-slow rounded bg-card-hover" />
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-8 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
             {[1, 2, 3].map((i) => (
               <CartItemSkeleton key={i} />
             ))}
           </div>
-          <div className="rounded-xl border border-border bg-card/85 p-6">
+          <div className="border border-border bg-card/85 p-6">
             <div className="mb-4 h-5 w-36 animate-pulse-slow rounded bg-card-hover" />
             <div className="space-y-3">
               <div className="h-3 w-full animate-pulse-slow rounded bg-card-hover" />
@@ -136,15 +136,17 @@ export default function CartClient() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <ShoppingCart size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Your cart is empty</h1>
+      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
+        <ShoppingCart size={48} className="mx-auto mb-4 text-muted/45" />
+        <h1 className="text-2xl font-bold uppercase tracking-[0.06em] text-foreground">
+          Your cart is empty
+        </h1>
         <p className="text-muted mt-2">
           Looks like you haven&apos;t added any items to your cart yet.
         </p>
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
         >
           Start Shopping
           <ArrowRight size={18} />
@@ -154,25 +156,10 @@ export default function CartClient() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-          Shopping Cart ({items.length})
-        </h1>
-        <button
-          onClick={() => {
-            clear();
-            toast("Cart cleared", "success");
-          }}
-          className="text-sm text-danger hover:underline"
-        >
-          Clear All
-        </button>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
+    <div className="mx-auto max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-4 lg:col-span-2">
           {items.map((item) => {
             const variant = item.product.variants?.find(
               (v) => v._id === item.variant
@@ -183,14 +170,14 @@ export default function CartClient() {
             return (
               <div
                 key={item._id}
-                className={`flex gap-4 p-4 bg-white rounded-xl border border-border transition-opacity ${
+                className={`flex gap-4 border border-border bg-card/50 p-4 transition-opacity ${
                   isUpdating ? "opacity-60" : ""
                 }`}
               >
                 {/* Image */}
                 <Link
                   href={`/products/${item.product.slug}`}
-                  className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-lg overflow-hidden bg-gray-50"
+                  className="relative h-20 w-20 shrink-0 overflow-hidden border border-border bg-black/45 sm:h-24 sm:w-24"
                 >
                   <Image
                     src={getProductImage(item.product.images)}
@@ -205,22 +192,18 @@ export default function CartClient() {
                 <div className="flex-1 min-w-0">
                   <Link
                     href={`/products/${item.product.slug}`}
-                    className="text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-2"
+                    className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.04em] text-foreground transition-colors hover:text-primary"
                   >
                     {item.product.title}
                   </Link>
                   {variant && (
-                    <p className="text-xs text-muted mt-0.5">
+                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-muted">
                       {getVariantLabel(variant)}
                     </p>
                   )}
-                  <p className="text-base font-bold text-foreground mt-1">
-                    {formatPrice(price)}
-                  </p>
-
                   {/* Quantity + Remove */}
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="inline-flex items-center border border-border rounded-lg">
+                  <div className="mt-2 flex items-center gap-4">
+                    <div className="inline-flex items-center border border-border bg-black/35">
                       <button
                         onClick={() =>
                           item.quantity > 1
@@ -228,11 +211,11 @@ export default function CartClient() {
                             : handleRemoveItem(item._id)
                         }
                         disabled={isUpdating}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="w-8 text-center text-sm font-medium">
+                      <span className="w-8 text-center text-sm font-medium text-foreground">
                         {item.quantity}
                       </span>
                       <button
@@ -240,7 +223,7 @@ export default function CartClient() {
                           handleUpdateQuantity(item._id, item.quantity + 1)
                         }
                         disabled={isUpdating}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
                       >
                         <Plus size={14} />
                       </button>
@@ -248,15 +231,18 @@ export default function CartClient() {
                     <button
                       onClick={() => handleRemoveItem(item._id)}
                       disabled={isUpdating}
-                      className="text-muted hover:text-danger transition-colors"
+                      className="text-muted transition-colors hover:text-danger"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
+                  <p className="mt-2 text-sm font-bold text-foreground sm:hidden">
+                    {formatPrice(price * item.quantity)}
+                  </p>
                 </div>
 
                 {/* Line total */}
-                <div className="hidden sm:block text-right shrink-0">
+                <div className="hidden shrink-0 text-right sm:block">
                   <p className="text-base font-bold text-foreground">
                     {formatPrice(price * item.quantity)}
                   </p>
@@ -268,8 +254,8 @@ export default function CartClient() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="sticky top-28 bg-white rounded-xl border border-border p-6">
-            <h2 className="text-lg font-bold text-foreground mb-4">
+          <div className="sticky top-24 border border-border bg-card/85 p-5 sm:p-6">
+            <h2 className="mb-4 text-lg font-bold uppercase tracking-[0.06em] text-foreground">
               Order Summary
             </h2>
 
@@ -304,7 +290,7 @@ export default function CartClient() {
               </div>
 
               {shippingCost > 0 && (
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-xs text-gray-700">
+                <div className="flex items-center gap-2 border border-border bg-black/35 p-2 text-xs text-muted">
                   <Truck size={14} />
                   Add {formatPrice(999 - subtotal)} more for free shipping
                 </div>
@@ -330,12 +316,12 @@ export default function CartClient() {
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="Coupon code"
-                    className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="flex-1 border border-border bg-black/45 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   <button
                     onClick={handleApplyCoupon}
                     disabled={couponLoading || !couponCode.trim()}
-                    className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                    className="px-4 py-2 text-sm font-medium border border-border bg-black/50 text-foreground transition-colors hover:border-accent disabled:opacity-50"
                   >
                     {couponLoading ? "..." : "Apply"}
                   </button>
@@ -345,7 +331,7 @@ export default function CartClient() {
 
             <Link
               href="/checkout"
-              className="flex items-center justify-center gap-2 w-full mt-4 px-6 py-3.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-xl transition-colors"
+              className="mt-4 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
             >
               Proceed to Checkout
               <ArrowRight size={18} />
@@ -353,7 +339,7 @@ export default function CartClient() {
 
             <Link
               href="/products"
-              className="block text-center mt-3 text-sm text-primary hover:underline"
+              className="mt-3 block text-center text-xs font-semibold uppercase tracking-[0.12em] text-primary transition-colors hover:text-primary-dark"
             >
               Continue Shopping
             </Link>

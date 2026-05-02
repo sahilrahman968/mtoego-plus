@@ -16,9 +16,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import ProductCard from "@/components/store/ProductCard";
-import { fetchCategories, fetchProducts, type CategoryData, type ProductData } from "@/lib/store-api";
-import { useAuth } from "@/contexts/AuthContext";
+import { fetchCategories, type CategoryData } from "@/lib/store-api";
 
 interface HeroBannerData {
   type: "image" | "video";
@@ -37,9 +35,7 @@ interface HeroImageData {
 }
 
 export default function HomeClient() {
-  const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<ProductData[]>([]);
   const [heroBanner, setHeroBanner] = useState<HeroBannerData | null>(null);
   const [heroImage, setHeroImage] = useState<HeroImageData | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -57,13 +53,11 @@ export default function HomeClient() {
   useEffect(() => {
     async function load() {
       try {
-        const [catRes, featuredRes, settingsRes] = await Promise.all([
+        const [catRes, settingsRes] = await Promise.all([
           fetchCategories(null),
-          fetchProducts({ featured: true, limit: 4 }),
           fetch("/api/site-settings").then((r) => r.json()),
         ]);
         if (catRes.success && catRes.data) setCategories(catRes.data);
-        if (featuredRes.success && featuredRes.data) setFeaturedProducts(featuredRes.data.items);
         if (settingsRes.success && settingsRes.data?.heroBanner) {
           setHeroBanner(settingsRes.data.heroBanner);
         }
@@ -285,26 +279,6 @@ export default function HomeClient() {
                     </div>
                   </Link>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {featuredProducts.length > 0 && (
-        <section className="bg-black py-12 sm:py-16">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <div className="mb-7">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
-                02 / Drop
-              </p>
-              <h2 className="text-5xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-6xl">
-                The Lineup
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-2 sm:gap-14 lg:grid-cols-4">
-              {featuredProducts.slice(0, 4).map((product) => (
-                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           </div>
