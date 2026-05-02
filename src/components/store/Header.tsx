@@ -5,12 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, Package, Search, ShoppingCart, User } from "lucide-react";
+import { LogOut, Menu, Package, Search, ShoppingCart, User, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 
 export default function Header() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
   const router = useRouter();
   const pathname = usePathname();
@@ -46,14 +46,6 @@ export default function Header() {
       <div className="relative">
         <div className="mx-auto flex h-[4.5rem] max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6">
           <div className="flex items-center gap-2 lg:gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground lg:hidden"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? "Close" : "Menu"}
-            </button>
-
             <Link href="/" className="shrink-0" aria-label="Motoego Home">
               <Image
                 src="/logo.svg"
@@ -88,80 +80,91 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href="/search"
-              className="text-foreground/85 transition-colors hover:text-primary"
-              aria-label="Search"
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-foreground transition-colors hover:text-primary lg:hidden"
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
             >
-              <Search size={16} />
-            </Link>
-            <Link
-              href="/cart"
-              className={`relative text-foreground/85 transition-colors hover:text-primary ${isActive("/cart") ? "text-primary" : ""}`}
-              aria-label="Cart"
-            >
-              <ShoppingCart size={16} />
-              {itemCount > 0 && (
-                <span className="absolute -right-2.5 -top-2.5 text-[10px] font-semibold text-primary">
-                  {itemCount > 99 ? "99+" : itemCount}
-                </span>
-              )}
-            </Link>
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
 
-            {isAuthenticated ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+            <div className="hidden items-center gap-3 sm:gap-4 lg:flex">
+              <Link
+                href="/search"
+                className="text-foreground/85 transition-colors hover:text-primary"
+                aria-label="Search"
+              >
+                <Search size={16} />
+              </Link>
+              <Link
+                href="/cart"
+                className={`relative text-foreground/85 transition-colors hover:text-primary ${isActive("/cart") ? "text-primary" : ""}`}
+                aria-label="Cart"
+              >
+                <ShoppingCart size={16} />
+                {itemCount > 0 && (
+                  <span className="absolute -right-2.5 -top-2.5 text-[10px] font-semibold text-primary">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </Link>
+
+              {isAuthenticated ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="text-foreground/85 transition-colors hover:text-primary"
+                    aria-label="Account"
+                  >
+                    <User size={16} />
+                  </button>
+                  <AnimatePresence>
+                    {userMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-card/95 py-2 shadow-2xl shadow-black/30"
+                      >
+                        <Link
+                          href="/account/orders"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-card-hover"
+                        >
+                          <Package size={16} />
+                          My Orders
+                        </Link>
+                        <Link
+                          href="/wishlist"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-card-hover block"
+                        >
+                          Wishlist
+                        </Link>
+                        <hr className="my-1 border-border" />
+                        <button
+                          onClick={handleLogout}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-card-hover"
+                        >
+                          <LogOut size={16} />
+                          Logout
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
                   className="text-foreground/85 transition-colors hover:text-primary"
-                  aria-label="Account"
+                  aria-label="Login"
                 >
                   <User size={16} />
-                </button>
-                <AnimatePresence>
-                  {userMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-card/95 py-2 shadow-2xl shadow-black/30"
-                    >
-                      <Link
-                        href="/account/orders"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-card-hover"
-                      >
-                        <Package size={16} />
-                        My Orders
-                      </Link>
-                      <Link
-                        href="/wishlist"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-card-hover block"
-                      >
-                        Wishlist
-                      </Link>
-                      <hr className="my-1 border-border" />
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-card-hover"
-                      >
-                        <LogOut size={16} />
-                        Logout
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="text-foreground/85 transition-colors hover:text-primary"
-                aria-label="Login"
-              >
-                <User size={16} />
-              </Link>
-            )}
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
@@ -204,12 +207,28 @@ export default function Header() {
                   Wishlist
                 </Link>
                 <Link
+                  href="/search"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
+                >
+                  Search
+                </Link>
+                <Link
                   href="/cart"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
                 >
                   Cart{itemCount > 0 ? ` (${itemCount})` : ""}
                 </Link>
+                {isAuthenticated && (
+                  <Link
+                    href="/account/orders"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
+                  >
+                    Profile
+                  </Link>
+                )}
                 {!isAuthenticated && (
                   <>
                     <hr className="border-border" />

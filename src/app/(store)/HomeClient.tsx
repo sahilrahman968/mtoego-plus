@@ -180,7 +180,7 @@ export default function HomeClient() {
               <span className="hero-title-outline block">Street</span>
               <span className="block">Supremacy</span>
             </h1>
-            <p className="mt-5 max-w-xl text-sm leading-relaxed text-foreground/72 sm:text-[1.1rem]">
+            <p className="mt-5 hidden max-w-xl text-sm leading-relaxed text-foreground/72 sm:block sm:text-[1.1rem]">
               Race-bred gear and accessories built for speed, protection, and unmistakable street presence.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
