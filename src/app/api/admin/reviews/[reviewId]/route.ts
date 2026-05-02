@@ -4,6 +4,7 @@ import { errorResponse, successResponse } from "@/lib/api-response";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { isValidObjectId } from "@/lib/validators";
 import Review from "@/models/review.model";
+import { Types } from "mongoose";
 
 type RouteParams = { params: Promise<{ reviewId: string }> };
 
@@ -43,11 +44,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     review.isHidden = body.isHidden;
     review.hiddenReason = body.isHidden ? hiddenReason : undefined;
-    review.hiddenBy = body.isHidden ? review.hiddenBy ?? auth.userId : undefined;
+    review.hiddenBy = body.isHidden
+      ? review.hiddenBy ?? new Types.ObjectId(auth.userId)
+      : undefined;
     if (!body.isHidden) {
       review.hiddenBy = undefined;
     } else {
-      review.hiddenBy = auth.userId;
+      review.hiddenBy = new Types.ObjectId(auth.userId);
     }
 
     await review.save();

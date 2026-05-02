@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: `%s | ${theme.brand.name}`,
   },
   description: theme.brand.description,
-  keywords: theme.brand.keywords,
+  keywords: [...theme.brand.keywords],
 };
 
 // ── Theme CSS variables ──────────────────────────────────────────────────────

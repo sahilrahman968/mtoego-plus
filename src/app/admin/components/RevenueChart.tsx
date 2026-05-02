@@ -65,7 +65,12 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 boxShadow: "0 4px 6px -1px rgba(0,0,0,.1)",
                 fontSize: "0.875rem",
               }}
-              formatter={(value: number | undefined) => [`₹${(value ?? 0).toLocaleString("en-IN")}`, "Revenue"]}
+              formatter={(value) => {
+                const numericValue = Array.isArray(value)
+                  ? Number(value[0] ?? 0)
+                  : Number(value ?? 0);
+                return [`₹${numericValue.toLocaleString("en-IN")}`, "Revenue"];
+              }}
               labelStyle={{ color: "#4B5563", fontWeight: 600 }}
             />
             <Area

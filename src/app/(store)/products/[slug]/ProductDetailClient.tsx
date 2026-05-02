@@ -92,11 +92,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     setReviewsLoading(true);
     const res = await fetchProductReviews(slug, { page, limit: 5 });
     if (res.success && res.data) {
-      setReviews((prev) => (append ? [...prev, ...res.data.items] : res.data.items));
-      setReviewStats(res.data.stats);
-      setReviewsHasNextPage(res.data.hasNextPage);
-      setReviewsTotalPages(res.data.totalPages);
-      setReviewsPage(res.data.page);
+      const reviewData = res.data;
+      setReviews((prev) => (append ? [...prev, ...reviewData.items] : reviewData.items));
+      setReviewStats(reviewData.stats);
+      setReviewsHasNextPage(reviewData.hasNextPage);
+      setReviewsTotalPages(reviewData.totalPages);
+      setReviewsPage(reviewData.page);
     } else {
       setReviews([]);
       setReviewStats(null);

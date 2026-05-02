@@ -8,6 +8,7 @@ import {
   type CallbackRequestStatus,
 } from "@/models/callback-request.model";
 import CallbackRequest from "@/models/callback-request.model";
+import { Types } from "mongoose";
 
 type RouteParams = { params: Promise<{ requestId: string }> };
 
@@ -44,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     callbackRequest.status = status as CallbackRequestStatus;
     callbackRequest.adminNote = adminNote;
-    callbackRequest.handledBy = auth.userId;
+    callbackRequest.handledBy = new Types.ObjectId(auth.userId);
     if (status === "contacted" && !callbackRequest.contactedAt) {
       callbackRequest.contactedAt = new Date();
     }
