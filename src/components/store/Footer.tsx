@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { theme } from "@/config/theme";
 
 export default function Footer() {
@@ -7,15 +8,15 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/50 bg-primary/15">
-                <span className="text-sm font-bold text-primary">{theme.brand.name.charAt(0)}</span>
-              </div>
-              <span className="text-lg font-bold uppercase tracking-[0.1em] text-foreground">{theme.brand.name}</span>
+            <Link href="/" className="mb-4 inline-flex items-center" aria-label={`${theme.brand.name} Home`}>
+              <Image
+                src="/logo.svg"
+                alt={theme.brand.name}
+                width={176}
+                height={40}
+                className="h-32 w-auto object-contain"
+              />
             </Link>
-            <p className="text-sm leading-relaxed text-muted">
-              {theme.brand.tagline}. Shop with confidence.
-            </p>
           </div>
 
           <div>
