@@ -126,7 +126,7 @@ export default function GoogleSignInButton({
     });
 
     window.google.accounts.id.renderButton(buttonRef.current, {
-      theme: "outline",
+      theme: "filled_black",
       size: "large",
       text,
       shape: "rectangular",

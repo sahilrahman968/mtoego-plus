@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, Menu, Package, Search, ShoppingCart, User, X } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  Package,
+  Search,
+  ShoppingCart,
+  User,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 
@@ -27,6 +36,23 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
@@ -86,11 +112,11 @@ export default function Header() {
           <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-foreground transition-colors hover:text-primary lg:hidden"
+              className="grid size-10 place-items-center rounded-full border border-white/10 bg-black/25 text-foreground backdrop-blur-md transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary lg:hidden"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
             <div className="hidden items-center gap-3 sm:gap-4 lg:flex">
@@ -171,99 +197,137 @@ export default function Header() {
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Rendered on <body> so the header's backdrop-filter does not become the
+          containing block for these fixed-position elements. */}
+      {typeof document !== "undefined" && createPortal(
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden border-t border-border bg-card/95 lg:hidden"
-            >
-              <nav className="space-y-1 px-4 py-4">
-                <Link
-                  href="/"
+            <>
+              <motion.button
+                type="button"
+                aria-label="Close menu"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 z-[2147483646] cursor-default bg-black/30 lg:hidden"
+              />
+              <motion.aside
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", stiffness: 340, damping: 34 }}
+                className="fixed right-0 top-0 z-[2147483647] flex max-h-dvh w-[68vw] max-w-[17.5rem] flex-col overflow-y-auto border-b border-l border-white/10 bg-[#0d0d11]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.55)] lg:hidden"
+                aria-label="Mobile navigation"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_35%)]" />
+
+                <button
+                  type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-colors ${isActive("/") ? "bg-primary/15 text-primary" : "text-foreground hover:bg-card-hover"}`}
+                  className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
+                  aria-label="Close menu"
                 >
-                  Home
-                </Link>
-                <Link
-                  href="/products"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-colors ${isActive("/products") ? "bg-primary/15 text-primary" : "text-foreground hover:bg-card-hover"}`}
-                >
-                  Products
-                </Link>
-                <Link
-                  href="/categories"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-colors ${isActive("/categories") ? "bg-primary/15 text-primary" : "text-foreground hover:bg-card-hover"}`}
-                >
-                  Categories
-                </Link>
-                <Link
-                  href="/wishlist"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
-                >
-                  Wishlist
-                </Link>
-                <Link
-                  href="/search"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
-                >
-                  Search
-                </Link>
-                <Link
-                  href="/cart"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
-                >
-                  Cart{itemCount > 0 ? ` (${itemCount})` : ""}
-                </Link>
-                {isAuthenticated && (
-                  <Link
-                    href="/account/orders"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-card-hover"
-                  >
-                    Profile
-                  </Link>
-                )}
-                {!isAuthenticated && (
-                  <>
-                    <hr className="border-border" />
+                  <X size={18} />
+                </button>
+
+                <nav className="relative px-4 pb-3 pt-14">
+                  <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+                    Browse
+                  </p>
+                  {[
+                    { href: "/", label: "Home" },
+                    { href: "/products", label: "Products" },
+                    { href: "/categories", label: "Categories" },
+                    { href: "/wishlist", label: "Wishlist" },
+                    { href: "/search", label: "Search" },
+                    { href: "/cart", label: "Cart" },
+                  ].map(({ href, label }) => {
+                    const active = isActive(href);
+                    const count = href === "/cart" && itemCount > 0 ? itemCount : null;
+
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex min-h-10 items-center px-3.5 transition-colors ${
+                          active ? "text-primary" : "text-foreground/85 hover:text-foreground"
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-medium tracking-[0.03em] ${
+                            active ? "border-b border-primary pb-1" : ""
+                          }`}
+                        >
+                          {label}
+                        </span>
+                        {count && (
+                          <span className="ml-auto grid min-w-6 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+
+                  {isAuthenticated && (
+                    <div className="mt-3 border-t border-white/8 pt-3">
+                      <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+                        Account
+                      </p>
+                      <Link
+                        href="/account/orders"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex min-h-10 items-center px-3.5 transition-colors ${
+                          isActive("/account")
+                            ? "text-primary"
+                            : "text-foreground/85 hover:text-foreground"
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-medium tracking-[0.03em] ${
+                            isActive("/account") ? "border-b border-primary pb-1" : ""
+                          }`}
+                        >
+                          My account
+                        </span>
+                      </Link>
+                    </div>
+                  )}
+                </nav>
+
+                <div className="relative shrink-0 border-t border-white/8 bg-black/20 p-3">
+                  {!isAuthenticated ? (
                     <Link
                       href="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:bg-primary/15"
+                      className="flex h-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold tracking-[0.03em] text-white shadow-[0_8px_28px_color-mix(in_srgb,var(--primary)_25%,transparent)] transition-all hover:brightness-110"
                     >
-                      Login / Register
+                      Login / register
                     </Link>
-                  </>
-                )}
-                {isAuthenticated && (
-                  <>
-                    <hr className="border-border" />
+                  ) : (
                     <button
+                      type="button"
                       onClick={() => {
                         setMobileMenuOpen(false);
                         void handleLogout();
                       }}
-                      className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold uppercase tracking-[0.08em] text-danger transition-colors hover:bg-card-hover"
+                      className="flex h-10 w-full items-center justify-center border border-danger/25 bg-danger/8 text-sm font-semibold tracking-[0.03em] text-danger transition-colors hover:bg-danger/15"
                     >
                       Logout
                     </button>
-                  </>
-                )}
-              </nav>
-            </motion.div>
+                  )}
+                </div>
+              </motion.aside>
+            </>
           )}
-        </AnimatePresence>
-      </div>
+        </AnimatePresence>,
+        document.body,
+      )}
     </header>
   );
 }

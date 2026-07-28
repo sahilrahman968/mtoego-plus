@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Eye,
   EyeOff,
@@ -11,7 +13,6 @@ import {
   User,
   Loader2,
   CheckCircle2,
-  Phone,
   ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -181,19 +182,19 @@ export default function RegisterClient() {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="auth-form bg-white rounded-2xl border border-gray-200 p-8 sm:p-10 shadow-sm">
-            <CheckCircle2 size={48} className="mx-auto text-green-600 mb-4" />
-            <h1 className="text-xl font-bold text-gray-900">Check your email</h1>
-            <p className="text-sm text-gray-500 mt-2">
+          <div className="auth-form px-1 sm:px-6">
+            <CheckCircle2 size={48} className="mx-auto text-success mb-4" />
+            <h1 className="text-xl font-bold text-foreground">Check your email</h1>
+            <p className="text-sm text-muted mt-2">
               We&apos;ve sent a verification link to{" "}
-              <span className="font-medium text-gray-900">{pendingEmail}</span>.
+              <span className="font-medium text-foreground">{pendingEmail}</span>.
               Click the link to activate your account.
             </p>
             <div className="mt-6 space-y-3">
               <button
                 onClick={handleResend}
                 disabled={resending}
-                className="w-full px-4 py-2.5 border border-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="w-full px-4 py-2.5 border border-border bg-card text-foreground font-medium rounded-lg hover:bg-card-hover transition-colors disabled:opacity-50"
               >
                 {resending ? "Sending..." : "Resend verification email"}
               </button>
@@ -214,94 +215,109 @@ export default function RegisterClient() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
+        <div className="text-center mb-6">
+          <Link
+            href="/"
+            className="relative mx-auto mb-2 block h-10 w-[11.25rem] overflow-hidden"
+            aria-label="Motoego Home"
+          >
+            <Image
+              src="/logo.svg"
+              alt="Motoego"
+              fill
+              sizes="180px"
+              className="scale-[4.65] origin-left object-contain object-left"
+              priority
+            />
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-          <p className="text-sm text-muted mt-1">
+          <p className="text-sm text-muted">
             Join Motoego+ for exclusive deals and easy checkout
           </p>
         </div>
 
-        <div className="auth-form bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <div className="auth-form px-1 sm:px-6">
           <GoogleSignInButton
             onSuccess={handleGoogleSuccess}
             onError={(err) => setError(err)}
             text="signup_with"
           />
 
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-500">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-
           {/* Tabs */}
-          <div className="flex rounded-lg bg-gray-100 p-1 mb-5">
+          <div className="mt-3 flex border-b border-border mb-5">
             <button
               type="button"
               onClick={() => { setTab("phone"); setError(""); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`relative flex-1 py-2.5 text-sm font-medium transition-colors ${
                 tab === "phone"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-primary"
+                  : "text-muted hover:text-foreground"
               }`}
             >
-              <Phone size={14} />
               Phone
+              {tab === "phone" && (
+                <motion.span
+                  layoutId="register-auth-tab-indicator"
+                  className="absolute inset-x-0 -bottom-px h-0.5 bg-primary"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                />
+              )}
             </button>
             <button
               type="button"
               onClick={() => { setTab("email"); setError(""); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`relative flex-1 py-2.5 text-sm font-medium transition-colors ${
                 tab === "email"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-primary"
+                  : "text-muted hover:text-foreground"
               }`}
             >
-              <Mail size={14} />
               Email
+              {tab === "email" && (
+                <motion.span
+                  layoutId="register-auth-tab-indicator"
+                  className="absolute inset-x-0 -bottom-px h-0.5 bg-primary"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                />
+              )}
             </button>
           </div>
 
           {error && (
-            <div className="p-3 mb-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-danger animate-slide-up">
+            <div className="p-3 mb-4 bg-danger/10 border border-danger/25 rounded-lg text-sm text-danger animate-slide-up">
               {error}
             </div>
           )}
 
-          {/* Phone + OTP Registration */}
-          {tab === "phone" && (
-            <>
+          <AnimatePresence mode="wait" initial={false}>
+            {/* Phone + OTP Registration */}
+            {tab === "phone" && (
+              <motion.div
+                key="phone"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              >
               {phoneStep === "enter-details" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Full Name
-                    </label>
                     <div className="relative">
                       <User
                         size={16}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                       />
                       <input
                         type="text"
                         value={phoneName}
                         onChange={(e) => setPhoneName(e.target.value)}
                         placeholder="Your full name"
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Phone Number
-                    </label>
                     <PhoneInput
                       phone={phone}
                       onPhoneChange={setPhone}
@@ -335,15 +351,15 @@ export default function RegisterClient() {
                       setOtp("");
                       setError("");
                     }}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-1"
+                    className="flex items-center gap-1 text-sm text-muted hover:text-foreground mb-1"
                   >
                     <ArrowLeft size={14} />
                     Change details
                   </button>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted">
                     Enter the 6-digit OTP sent via WhatsApp to{" "}
-                    <span className="font-medium text-gray-900">{dialCode} {phone}</span>
+                    <span className="font-medium text-foreground">{dialCode} {phone}</span>
                   </p>
 
                   <OtpInput value={otp} onChange={setOtp} />
@@ -370,79 +386,77 @@ export default function RegisterClient() {
                   </button>
                 </form>
               )}
-            </>
-          )}
+              </motion.div>
+            )}
 
-          {/* Email Registration */}
-          {tab === "email" && (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            {/* Email Registration */}
+            {tab === "email" && (
+              <motion.div
+                key="email"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Full Name
-                </label>
                 <div className="relative">
                   <User
                     size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                   />
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your full name"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Email
-                </label>
                 <div className="relative">
                   <Mail
                     size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                   />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Password
-                </label>
                 <div className="relative">
                   <Lock
                     size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                   />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     required
                     minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Must include 1 uppercase, 1 lowercase, and 1 digit
                 </p>
               </div>
@@ -458,8 +472,10 @@ export default function RegisterClient() {
                   "Create Account"
                 )}
               </button>
-            </form>
-          )}
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <p className="text-sm text-center text-muted mt-6">

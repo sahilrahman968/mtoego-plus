@@ -126,18 +126,18 @@ textarea::placeholder {
   opacity: 1;
 }
 
-/* Light auth cards (login/register) — override dark-theme form defaults */
+/* Auth forms sit directly on the dark page background. */
 .auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]),
 .auth-form select,
 .auth-form textarea {
-  color: #111827;
-  background-color: #ffffff;
-  border-color: #e5e7eb !important;
+  color: var(--foreground);
+  background-color: color-mix(in srgb, var(--card) 88%, black 12%);
+  border-color: var(--border) !important;
 }
 
 .auth-form input::placeholder,
 .auth-form textarea::placeholder {
-  color: #9ca3af !important;
+  color: color-mix(in srgb, var(--muted) 78%, transparent) !important;
   opacity: 1;
 }
 
