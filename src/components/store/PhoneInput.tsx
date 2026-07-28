@@ -143,15 +143,15 @@ export default function PhoneInput({
           type="button"
           onClick={() => setOpen((p) => !p)}
           disabled={disabled}
-          className="flex items-center gap-1 px-3 py-2.5 text-sm border border-border border-r-0 rounded-l-lg bg-gray-50 hover:bg-gray-100 transition-colors shrink-0 disabled:opacity-50"
+          className="flex items-center gap-1 px-3 py-2.5 text-sm border border-gray-200 border-r-0 rounded-l-lg bg-gray-50 hover:bg-gray-100 transition-colors shrink-0 disabled:opacity-50"
         >
           <span className="text-base leading-none">
             {countryFlag(selectedCountry.code)}
           </span>
-          <span className="text-muted">{selectedCountry.dial}</span>
+          <span className="text-gray-600">{selectedCountry.dial}</span>
           <ChevronDown
             size={12}
-            className={`text-muted transition-transform ${open ? "rotate-180" : ""}`}
+            className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -166,17 +166,17 @@ export default function PhoneInput({
           placeholder="Phone number"
           disabled={disabled}
           maxLength={selectedCountry.maxDigits}
-          className="flex-1 min-w-0 px-3 py-2.5 text-sm border border-border rounded-r-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
+          className="flex-1 min-w-0 px-3 py-2.5 text-sm border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
         />
       </div>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-          <div className="p-2 border-b border-border">
+        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="p-2 border-b border-gray-200">
             <div className="relative">
               <Search
                 size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
               />
               <input
                 ref={searchRef}
@@ -184,14 +184,14 @@ export default function PhoneInput({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search country..."
-                className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
           </div>
 
           <div className="max-h-56 overflow-y-auto">
             {filtered.length === 0 && (
-              <p className="px-3 py-4 text-sm text-muted text-center">
+              <p className="px-3 py-4 text-sm text-gray-500 text-center">
                 No countries found
               </p>
             )}
@@ -203,14 +203,14 @@ export default function PhoneInput({
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
                   c.dial === dialCode && c.code === selectedCountry.code
                     ? "bg-primary/5 text-primary font-medium"
-                    : "text-foreground"
+                    : "text-gray-900"
                 }`}
               >
                 <span className="text-base leading-none">
                   {countryFlag(c.code)}
                 </span>
                 <span className="flex-1 text-left truncate">{c.name}</span>
-                <span className="text-muted text-xs shrink-0">{c.dial}</span>
+                <span className="text-gray-500 text-xs shrink-0">{c.dial}</span>
               </button>
             ))}
           </div>
