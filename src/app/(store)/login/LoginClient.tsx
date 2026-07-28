@@ -91,7 +91,7 @@ export default function LoginClient() {
       setNormalizedPhone(full);
       setPhoneStep("enter-otp");
       setCooldown(60);
-      toast("OTP sent!", "success");
+      toast("OTP sent via WhatsApp!", "success");
     } else {
       setError(res.message);
     }
@@ -250,7 +250,7 @@ export default function LoginClient() {
                   </button>
 
                   <p className="text-sm text-gray-500">
-                    Enter the 6-digit OTP sent to{" "}
+                    Enter the 6-digit OTP sent via WhatsApp to{" "}
                     <span className="font-medium text-gray-900">{dialCode} {phone}</span>
                   </p>
 

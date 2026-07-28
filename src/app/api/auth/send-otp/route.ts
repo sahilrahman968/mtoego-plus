@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import User from "@/models/user.model";
 import OtpVerification from "@/models/otp-verification.model";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { generateOtp, sendOtpSms, isIndianPhone } from "@/lib/sms";
+import { generateOtp, sendOtpWhatsApp, isIndianPhone } from "@/lib/whatsapp";
 import { SendOtpBody } from "@/types";
 
 const RESEND_COOLDOWN_MS = 60_000;
@@ -71,13 +71,19 @@ export async function POST(request: NextRequest) {
 
     const user = await User.findOne({ phone });
 
-    sendOtpSms(phone, otp).catch((err) =>
-      console.error("[Send OTP] SMS delivery failed:", err)
-    );
+    try {
+      await sendOtpWhatsApp(phone, otp);
+    } catch (err) {
+      console.error("[Send OTP] WhatsApp delivery failed:", err);
+      return errorResponse(
+        "Failed to send OTP via WhatsApp. Please try again.",
+        502
+      );
+    }
 
     return successResponse(
       { phone, isExistingUser: !!user },
-      "OTP sent successfully"
+      "OTP sent successfully via WhatsApp"
     );
   } catch (error) {
     console.error("[Send OTP]", error);

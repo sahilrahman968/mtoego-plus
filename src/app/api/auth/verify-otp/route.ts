@@ -6,7 +6,7 @@ import OtpVerification from "@/models/otp-verification.model";
 import { signToken } from "@/lib/auth/jwt";
 import { setTokenCookie } from "@/lib/auth/cookies";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { verifyOtpHash } from "@/lib/sms";
+import { verifyOtpHash } from "@/lib/whatsapp";
 import { VerifyOtpBody } from "@/types";
 import { sanitize } from "@/lib/validators";
 

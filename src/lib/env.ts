@@ -68,23 +68,18 @@ export const env = {
     return process.env.GOOGLE_CLIENT_ID ?? "";
   },
 
-  // ─── MSG91 SMS (for Indian OTP verification) ──────────────────────────────
-  get MSG91_AUTH_KEY() {
-    return process.env.MSG91_AUTH_KEY ?? "";
-  },
-  get MSG91_TEMPLATE_ID() {
-    return process.env.MSG91_TEMPLATE_ID ?? "";
-  },
-
-  // ─── Twilio SMS (for international OTP verification) ──────────────────────
+  // ─── Twilio WhatsApp (for OTP verification) ───────────────────────────────
   get TWILIO_ACCOUNT_SID() {
     return process.env.TWILIO_ACCOUNT_SID ?? "";
   },
   get TWILIO_AUTH_TOKEN() {
     return process.env.TWILIO_AUTH_TOKEN ?? "";
   },
-  get TWILIO_PHONE_NUMBER() {
-    return process.env.TWILIO_PHONE_NUMBER ?? "";
+  get TWILIO_WHATSAPP_FROM() {
+    return process.env.TWILIO_WHATSAPP_FROM ?? "";
+  },
+  get TWILIO_WHATSAPP_CONTENT_SID() {
+    return process.env.TWILIO_WHATSAPP_CONTENT_SID ?? "";
   },
 
   // ─── Razorpay ───────────────────────────────────────────────────────────
