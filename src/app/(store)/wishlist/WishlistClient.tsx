@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart, Trash2, ArrowRight } from "lucide-react";
@@ -23,19 +23,26 @@ export default function WishlistClient() {
   const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-  const loadWishlist = useCallback(async () => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    const res = await getWishlist();
-    if (res.success && res.data) {
-      setItems((res.data.items || []).filter((i: WishlistItemData) => i.product != null));
-    }
-    setLoading(false);
-  }, [isAuthenticated]);
-
   useEffect(() => {
-    loadWishlist();
-  }, [loadWishlist]);
+    if (!isAuthenticated) return;
+
+    let cancelled = false;
+    void getWishlist().then((res) => {
+      if (cancelled) return;
+      if (res.success && res.data) {
+        setItems(
+          (res.data.items || []).filter(
+            (item: WishlistItemData) => item.product != null
+          )
+        );
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   const handleRemove = async (itemId: string) => {
     setRemovingIds((prev) => new Set(prev).add(itemId));
@@ -92,9 +99,8 @@ export default function WishlistClient() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 h-8 w-48 animate-pulse-slow rounded bg-card-hover" />
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 justify-center gap-6 sm:grid-cols-[repeat(auto-fit,minmax(260px,290px))]">
           {Array.from({ length: 4 }).map((_, i) => (
             <WishlistCardSkeleton key={i} />
           ))}
@@ -125,65 +131,81 @@ export default function WishlistClient() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-6">
-        My Wishlist ({items.length})
-      </h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="grid grid-cols-1 justify-center gap-6 sm:grid-cols-[repeat(auto-fit,minmax(260px,290px))]">
         {items.map((item) => {
           const product = item.product;
           if (!product) return null;
           const lowestPrice = product.priceRange?.min || product.variants?.[0]?.price || 0;
           const isRemoving = removingIds.has(item._id);
+          const isOutOfStock = !product.variants?.some(
+            (variant) => variant.isActive !== false && variant.stock > 0
+          );
 
           return (
-            <div
+            <article
               key={item._id}
-              className={`group bg-white rounded-xl border border-border overflow-hidden transition-all ${
+              className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card/85 shadow-[0_18px_50px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-[0_22px_60px_rgba(0,0,0,0.4)] ${
                 isRemoving ? "opacity-50" : ""
               }`}
             >
               <Link
                 href={`/products/${product.slug}`}
-                className="relative aspect-square block bg-gray-50 overflow-hidden"
+                className="relative block aspect-square overflow-hidden bg-white"
               >
                 <Image
                   src={getProductImage(product.images)}
                   alt={product.title}
                   fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 100vw, 290px"
+                  className="object-contain p-3 transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                 />
+                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
               </Link>
-              <div className="p-3 sm:p-4">
-                <Link href={`/products/${product.slug}`}>
-                  <h3 className="text-sm font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+
+              <button
+                type="button"
+                onClick={() => handleRemove(item._id)}
+                disabled={isRemoving}
+                aria-label={`Remove ${product.title} from wishlist`}
+                className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/65 text-white/80 backdrop-blur-sm transition-colors hover:border-danger/60 hover:bg-danger hover:text-white disabled:cursor-not-allowed"
+              >
+                <Trash2 size={16} />
+              </button>
+
+              <div className="flex flex-1 flex-col p-4">
+                <Link href={`/products/${product.slug}`} className="block">
+                  <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
                     {product.title}
                   </h3>
                 </Link>
-                <p className="text-base font-bold text-foreground mt-1">
-                  {formatPrice(lowestPrice)}
-                </p>
-                <div className="flex gap-2 mt-3">
+
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-4">
+                  <p className="text-lg font-bold tracking-tight text-foreground">
+                    {formatPrice(lowestPrice)}
+                  </p>
+                  <span
+                    className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                      isOutOfStock ? "text-danger" : "text-success"
+                    }`}
+                  >
+                    {isOutOfStock ? "Out of stock" : "In stock"}
+                  </span>
+                </div>
+
+                <div className="mt-4">
                   <button
+                    type="button"
                     onClick={() => handleMoveToCart(item)}
-                    disabled={isRemoving}
-                    className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary-dark transition-colors"
+                    disabled={isRemoving || isOutOfStock}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(227,45,34,0.22)] transition-all hover:bg-primary-dark hover:shadow-[0_10px_28px_rgba(227,45,34,0.32)] disabled:cursor-not-allowed disabled:bg-card-hover disabled:text-muted disabled:shadow-none"
                   >
-                    <ShoppingCart size={14} />
-                    Add to Cart
-                  </button>
-                  <button
-                    onClick={() => handleRemove(item._id)}
-                    disabled={isRemoving}
-                    className="w-9 h-9 flex items-center justify-center border border-border rounded-lg hover:bg-gray-50 hover:text-danger transition-colors"
-                  >
-                    <Trash2 size={14} />
+                    <ShoppingCart size={17} />
+                    {isOutOfStock ? "Unavailable" : "Add to Cart"}
                   </button>
                 </div>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

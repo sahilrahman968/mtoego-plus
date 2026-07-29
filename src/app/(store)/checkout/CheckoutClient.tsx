@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import {
   MapPin,
   CreditCard,
@@ -44,11 +43,42 @@ const INDIAN_STATES = [
 
 declare global {
   interface Window {
-    Razorpay: new (options: Record<string, unknown>) => {
+    Razorpay?: new (options: Record<string, unknown>) => {
       open: () => void;
       on: (event: string, handler: () => void) => void;
     };
   }
+}
+
+const RAZORPAY_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+
+let razorpayLoader: Promise<void> | null = null;
+
+function loadRazorpay(): Promise<void> {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Razorpay can only load in the browser"));
+  }
+  if (window.Razorpay) return Promise.resolve();
+  if (razorpayLoader) return razorpayLoader;
+
+  razorpayLoader = new Promise<void>((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = RAZORPAY_SRC;
+    el.async = true;
+    el.onload = () =>
+      window.Razorpay
+        ? resolve()
+        : reject(new Error("Razorpay script loaded without an SDK"));
+    el.onerror = () => reject(new Error("Failed to load the Razorpay script"));
+    document.body.appendChild(el);
+  });
+
+  // Allow a later attempt to retry from scratch instead of reusing a failed load.
+  razorpayLoader.catch(() => {
+    razorpayLoader = null;
+  });
+
+  return razorpayLoader;
 }
 
 export default function CheckoutClient() {
@@ -59,7 +89,6 @@ export default function CheckoutClient() {
 
   const [step, setStep] = useState<"address" | "review">("address");
   const [loading, setLoading] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [address, setAddress] = useState<ShippingForm>({
     name: "",
     phone: "",
@@ -69,6 +98,10 @@ export default function CheckoutClient() {
     state: "",
     pincode: "",
   });
+
+  useEffect(() => {
+    loadRazorpay().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -114,12 +147,16 @@ export default function CheckoutClient() {
   };
 
   const handlePayment = async () => {
-    if (!razorpayLoaded) {
-      toast("Payment gateway is loading, please wait...", "info");
+    setLoading(true);
+
+    try {
+      await loadRazorpay();
+    } catch {
+      toast("Could not load the payment gateway. Check your connection and try again.", "error");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
     try {
       const idempotencyKey = generateIdempotencyKey();
       const res = await initiateCheckout({
@@ -189,7 +226,10 @@ export default function CheckoutClient() {
         },
       };
 
-      const rzp = new window.Razorpay(options);
+      const Razorpay = window.Razorpay;
+      if (!Razorpay) throw new Error("Razorpay SDK unavailable");
+
+      const rzp = new Razorpay(options);
       rzp.open();
     } catch {
       toast("Checkout failed. Please try again.", "error");
@@ -231,11 +271,6 @@ export default function CheckoutClient() {
 
   return (
     <>
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => setRazorpayLoaded(true)}
-      />
-
       <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
         {/* Progress steps */}
         <div className="mb-8 flex items-center justify-center gap-3 border-b border-border/60 pb-6">

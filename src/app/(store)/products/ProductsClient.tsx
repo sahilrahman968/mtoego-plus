@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
-import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { SlidersHorizontal, X } from "lucide-react";
 import ProductCard from "@/components/store/ProductCard";
 import { ProductCardSkeleton } from "@/components/store/skeletons";
 import {
@@ -13,13 +15,34 @@ import {
 } from "@/lib/store-api";
 
 const SORT_OPTIONS = [
-  { value: "createdAt:desc", label: "Newest First" },
-  { value: "createdAt:asc", label: "Oldest First" },
-  { value: "price:asc", label: "Price: Low to High" },
-  { value: "price:desc", label: "Price: High to Low" },
-  { value: "title:asc", label: "Name: A-Z" },
-  { value: "title:desc", label: "Name: Z-A" },
+  { value: "price:asc", label: "Low to High" },
+  { value: "price:desc", label: "High to Low" },
 ];
+
+function FilterOptionLabel({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <span className="relative inline-block pb-1">
+      {children}
+      {active && (
+        <span className="absolute inset-x-0 bottom-0 h-px bg-primary" />
+      )}
+      <motion.span
+        variants={{
+          rest: { scaleX: 0 },
+          hover: { scaleX: 1 },
+        }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="absolute inset-x-0 bottom-0 h-px origin-left bg-white"
+      />
+    </span>
+  );
+}
 
 export default function ProductsClient() {
   const searchParams = useSearchParams();
@@ -34,10 +57,14 @@ export default function ProductsClient() {
 
   const page = parseInt(searchParams.get("page") || "1");
   const category = searchParams.get("category") || "";
-  const featured = searchParams.get("featured") || "";
-  const sortParam = searchParams.get("sort") || "createdAt";
-  const orderParam = searchParams.get("order") || "desc";
+  const sortParam = searchParams.get("sort");
+  const orderParam = searchParams.get("order");
   const search = searchParams.get("search") || "";
+
+  const sortValue =
+    sortParam === "price" && (orderParam === "asc" || orderParam === "desc")
+      ? `price:${orderParam}`
+      : "";
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
@@ -61,14 +88,32 @@ export default function ProductsClient() {
   }, []);
 
   useEffect(() => {
+    if (!filterOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFilterOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [filterOpen]);
+
+  useEffect(() => {
     setLoading(true);
     fetchProducts({
       page,
       limit: 20,
-      sort: sortParam,
-      order: orderParam as "asc" | "desc",
+      sort: sortValue ? "price" : undefined,
+      order: sortValue
+        ? (orderParam as "asc" | "desc")
+        : undefined,
       category: category || undefined,
-      featured: featured === "true" || undefined,
       search: search || undefined,
     }).then((res) => {
       if (res.success && res.data) {
@@ -78,14 +123,156 @@ export default function ProductsClient() {
       }
       setLoading(false);
     });
-  }, [page, category, featured, sortParam, orderParam, search]);
+  }, [page, category, sortValue, search]);
 
-  const activeFilters = [
-    category && categories.find((c) => c._id === category)?.name,
-    featured === "true" && "Featured",
-  ].filter(Boolean);
+  const activeCategory = category
+    ? categories.find((c) => c._id === category)?.name
+    : null;
+
+  const renderFilters = (mobile = false) => (
+    <>
+      {mobile && (
+        <button
+          type="button"
+          onClick={() => setFilterOpen(false)}
+          className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
+          aria-label="Close filters"
+        >
+          <X size={18} />
+        </button>
+      )}
+
+      <div className={mobile ? "relative px-4 pb-6 pt-14" : ""}>
+        {mobile && (
+          <p className="mb-4 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+            Filters & Sort
+          </p>
+        )}
+
+        <div className={mobile ? "mb-7" : "mb-6"}>
+          <h4
+            className={
+              mobile
+                ? "mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70"
+                : "mb-3 text-sm font-semibold text-foreground"
+            }
+          >
+            Category
+          </h4>
+          <div className={mobile ? "" : "space-y-1"}>
+            <motion.button
+              initial="rest"
+              animate="rest"
+              whileHover="hover"
+              whileFocus="hover"
+              onClick={() => {
+                updateParams({ category: "", page: "1" });
+                setFilterOpen(false);
+              }}
+              className={`block w-full text-left transition-colors ${
+                mobile
+                  ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                      !category
+                        ? "text-primary"
+                        : "text-foreground/85 hover:text-foreground"
+                    }`
+                  : `rounded px-2 py-1.5 text-sm ${
+                      !category
+                        ? "font-medium text-primary"
+                        : "text-foreground"
+                    }`
+              }`}
+            >
+              <FilterOptionLabel active={!category}>
+                All Categories
+              </FilterOptionLabel>
+            </motion.button>
+            {categories.map((cat) => (
+              <motion.button
+                key={cat._id}
+                initial="rest"
+                animate="rest"
+                whileHover="hover"
+                whileFocus="hover"
+                onClick={() => {
+                  updateParams({ category: cat._id, page: "1" });
+                  setFilterOpen(false);
+                }}
+                className={`block w-full text-left transition-colors ${
+                  mobile
+                    ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                        category === cat._id
+                          ? "text-primary"
+                          : "text-foreground/85 hover:text-foreground"
+                      }`
+                    : `rounded px-2 py-1.5 text-sm ${
+                        category === cat._id
+                          ? "font-medium text-primary"
+                          : "text-foreground"
+                      }`
+                }`}
+              >
+                <FilterOptionLabel active={category === cat._id}>
+                  {cat.name}
+                </FilterOptionLabel>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        <div className={mobile ? "border-t border-white/8 pt-5" : "mb-6"}>
+          <h4
+            className={
+              mobile
+                ? "mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70"
+                : "mb-3 text-sm font-semibold text-foreground"
+            }
+          >
+            Sort by Price
+          </h4>
+          <div className={mobile ? "" : "space-y-1"}>
+            {SORT_OPTIONS.map((opt) => {
+              const active = sortValue === opt.value;
+              return (
+                <motion.button
+                  key={opt.value}
+                  initial="rest"
+                  animate="rest"
+                  whileHover="hover"
+                  whileFocus="hover"
+                  onClick={() => {
+                    const [sort, order] = opt.value.split(":");
+                    updateParams({ sort, order, page: "1" });
+                    setFilterOpen(false);
+                  }}
+                  className={`block w-full text-left transition-colors ${
+                    mobile
+                      ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                          active
+                            ? "text-primary"
+                            : "text-foreground/85 hover:text-foreground"
+                        }`
+                      : `rounded px-2 py-1.5 text-sm ${
+                          active
+                            ? "font-medium text-primary"
+                            : "text-foreground"
+                        }`
+                  }`}
+                >
+                  <FilterOptionLabel active={active}>
+                    {opt.label}
+                  </FilterOptionLabel>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
+    <>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Header */}
       <div className="mb-6">
@@ -98,24 +285,14 @@ export default function ProductsClient() {
       </div>
 
       {/* Active filters */}
-      {activeFilters.length > 0 && (
+      {activeCategory && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {activeFilters.map((f) => (
-            <span
-              key={String(f)}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-primary-light text-primary text-xs font-medium rounded-full"
-            >
-              {f}
-              <button
-                onClick={() => {
-                  if (f === "Featured") updateParams({ featured: "" });
-                  else updateParams({ category: "" });
-                }}
-              >
-                <X size={12} />
-              </button>
-            </span>
-          ))}
+          <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-light text-primary text-xs font-medium rounded-full">
+            {activeCategory}
+            <button onClick={() => updateParams({ category: "" })}>
+              <X size={12} />
+            </button>
+          </span>
           <button
             onClick={() => router.push("/products")}
             className="text-xs text-muted hover:text-foreground"
@@ -125,125 +302,21 @@ export default function ProductsClient() {
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-border">
+      {/* Toolbar — mobile only; desktop uses the sidebar */}
+      <div className="mb-6 flex items-center border-b border-border pb-4 lg:hidden">
         <button
           onClick={() => setFilterOpen(!filterOpen)}
-          className="lg:hidden inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-50"
         >
           <SlidersHorizontal size={16} />
-          Filters
+          Filters & Sort
         </button>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <label className="text-sm text-muted hidden sm:block">Sort by:</label>
-          <div className="relative">
-            <select
-              value={`${sortParam}:${orderParam}`}
-              onChange={(e) => {
-                const [sort, order] = e.target.value.split(":");
-                updateParams({ sort, order, page: "1" });
-              }}
-              className="appearance-none bg-white border border-border rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={14}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-            />
-          </div>
-        </div>
       </div>
 
       <div className="flex gap-8">
         {/* Sidebar filters */}
-        <aside
-          className={`${
-            filterOpen ? "fixed inset-0 z-50 bg-black/40" : "hidden"
-          } lg:block lg:relative lg:bg-transparent lg:z-auto`}
-        >
-          <div
-            className={`${
-              filterOpen
-                ? "fixed left-0 top-0 bottom-0 w-72 bg-white p-6 overflow-y-auto animate-slide-in-right z-50"
-                : ""
-            } lg:w-56 lg:shrink-0 lg:sticky lg:top-28`}
-          >
-            {filterOpen && (
-              <div className="flex items-center justify-between mb-4 lg:hidden">
-                <h3 className="font-semibold">Filters</h3>
-                <button onClick={() => setFilterOpen(false)}>
-                  <X size={20} />
-                </button>
-              </div>
-            )}
-
-            {/* Category filter */}
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-foreground mb-3">Category</h4>
-              <div className="space-y-1">
-                <button
-                  onClick={() => {
-                    updateParams({ category: "", page: "1" });
-                    setFilterOpen(false);
-                  }}
-                  className={`block w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-                    !category
-                      ? "bg-primary-light text-primary font-medium"
-                      : "text-foreground hover:bg-gray-50"
-                  }`}
-                >
-                  All Categories
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat._id}
-                    onClick={() => {
-                      updateParams({ category: cat._id, page: "1" });
-                      setFilterOpen(false);
-                    }}
-                    className={`block w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-                      category === cat._id
-                        ? "bg-primary-light text-primary font-medium"
-                        : "text-foreground hover:bg-gray-50"
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Featured filter */}
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-foreground mb-3">Quick Filters</h4>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={featured === "true"}
-                  onChange={(e) =>
-                    updateParams({
-                      featured: e.target.checked ? "true" : "",
-                      page: "1",
-                    })
-                  }
-                  className="rounded border-border text-primary focus:ring-primary/20"
-                />
-                <span className="text-sm text-foreground">Featured Only</span>
-              </label>
-            </div>
-          </div>
-          {filterOpen && (
-            <div
-              className="fixed inset-0 lg:hidden -z-10"
-              onClick={() => setFilterOpen(false)}
-            />
-          )}
+        <aside className="hidden w-56 shrink-0 lg:block">
+          <div className="sticky top-28">{renderFilters()}</div>
         </aside>
 
         {/* Product Grid */}
@@ -329,5 +402,38 @@ export default function ProductsClient() {
         </div>
       </div>
     </div>
+
+    {typeof document !== "undefined" &&
+      createPortal(
+        <AnimatePresence>
+          {filterOpen && (
+            <>
+              <motion.button
+                type="button"
+                aria-label="Close filters"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setFilterOpen(false)}
+                className="fixed inset-0 z-[2147483646] cursor-default bg-black/30 lg:hidden"
+              />
+              <motion.aside
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", stiffness: 340, damping: 34 }}
+                className="fixed right-0 top-0 z-[2147483647] min-h-dvh w-[68vw] max-w-[17.5rem] overflow-y-auto border-b border-l border-white/10 bg-[#0d0d11]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.55)] lg:hidden"
+                aria-label="Product filters and sort"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_35%)]" />
+                {renderFilters(true)}
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+    </>
   );
 }

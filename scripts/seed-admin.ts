@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema(
     password: String,
     role: { type: String, default: "customer" },
     isActive: { type: Boolean, default: true },
+    isEmailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -44,6 +45,14 @@ async function seed() {
 
   if (existing) {
     console.log(`Super admin already exists: ${email}`);
+
+    // Older seeds omitted these flags, which blocks sign-in on the login route.
+    if (!existing.isEmailVerified || !existing.isActive) {
+      existing.isEmailVerified = true;
+      existing.isActive = true;
+      await existing.save();
+      console.log("Repaired admin flags: isEmailVerified + isActive are now true");
+    }
   } else {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash("Admin@1234", salt);
@@ -54,6 +63,7 @@ async function seed() {
       password: hashedPassword,
       role: "super_admin",
       isActive: true,
+      isEmailVerified: true,
     });
 
     console.log(`Super admin created: ${email} / Admin@1234`);
