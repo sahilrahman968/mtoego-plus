@@ -38,7 +38,9 @@ export default function HomeClient() {
     async function load() {
       try {
         const catRes = await fetchCategories(null);
-        if (catRes.success && catRes.data) setCategories(catRes.data);
+        if (catRes.success && catRes.data) {
+          setCategories(catRes.data.filter((cat) => (cat.productCount ?? 0) > 0));
+        }
       } catch {
         // silently fail
       }
@@ -198,7 +200,7 @@ export default function HomeClient() {
               </Link>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {categories.slice(0, 4).map((cat, idx) => (
+              {categories.slice(0, 4).map((cat) => (
                 <div key={cat._id}>
                   <Link
                     href={`/categories/${cat.slug}`}
@@ -224,7 +226,7 @@ export default function HomeClient() {
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-4">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary/85">
-                        {String(12 + idx * 7)} Pieces
+                        {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
                       </p>
                       <h3 className="mt-1 text-3xl font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary">
                         {cat.name}

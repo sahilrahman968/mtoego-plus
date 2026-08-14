@@ -365,6 +365,7 @@ export interface CategoryData {
   image?: { url: string; publicId: string };
   parent?: { _id: string; name: string; slug: string } | null;
   isActive: boolean;
+  productCount?: number;
 }
 
 export interface ProductVariantData {
