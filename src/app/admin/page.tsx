@@ -26,8 +26,8 @@ export default async function AdminDashboard() {
   let totalCategories = 0;
   let totalCoupons = 0;
   let revenue = { totalRevenue: 0, totalSales: 0 };
-  let monthlyRevenue: { month: string; year: number; revenue: number; orders: number }[] = [];
-  let ordersByStatus: Record<string, number> = {};
+  const monthlyRevenue: { month: string; year: number; revenue: number; orders: number }[] = [];
+  const ordersByStatus: Record<string, number> = {};
   let serializedRecentOrders: {
     _id: string;
     orderNumber: string;

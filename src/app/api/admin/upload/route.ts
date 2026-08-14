@@ -1,10 +1,20 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { uploadImage, UPLOAD_CONFIG, CloudinaryUploadResult } from "@/lib/cloudinary";
+import {
+  uploadImage,
+  deleteImage,
+  renameImage,
+  resolveUploadFolder,
+  sanitizePublicId,
+  UPLOAD_CONFIG,
+  CloudinaryUploadResult,
+} from "@/lib/cloudinary";
 
 // ─── POST /api/admin/upload — Upload images to Cloudinary ───────────────────
-// Admin-only. Accepts multipart/form-data with one or more "files" fields.
+// Admin-only. Accepts multipart/form-data with one or more "files" fields,
+// plus optional folder/publicId fields. Product uploads also include productSlug
+// and startIndex so their names are stable across multiple upload batches.
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +32,46 @@ export async function POST(request: NextRequest) {
 
     if (files.length > 10) {
       return errorResponse("Maximum 10 files per upload", 400);
+    }
+
+    // ── Destination folder and naming ───────────────────────────────────
+    const folderField = formData.get("folder");
+    const folderKey = typeof folderField === "string" ? folderField : null;
+    const productSlugField = formData.get("productSlug");
+    const productSlug =
+      typeof productSlugField === "string"
+        ? sanitizePublicId(productSlugField)
+        : "";
+
+    if (folderKey === "products" && !productSlug) {
+      return errorResponse("A valid product slug is required", 400);
+    }
+
+    const folder = resolveUploadFolder(folderKey, productSlug);
+
+    const publicIdField = formData.get("publicId");
+    const basePublicId = folderKey === "products"
+      ? productSlug
+      : typeof publicIdField === "string"
+        ? sanitizePublicId(publicIdField)
+        : "";
+
+    if (typeof publicIdField === "string" && publicIdField && !basePublicId) {
+      return errorResponse("Invalid image name", 400);
+    }
+
+    const startIndexField = formData.get("startIndex");
+    const startIndex =
+      typeof startIndexField === "string" ? Number(startIndexField) : 1;
+    if (
+      folderKey === "products" &&
+      (
+        !Number.isInteger(startIndex) ||
+        startIndex < 1 ||
+        startIndex + files.length - 1 > 10
+      )
+    ) {
+      return errorResponse("Invalid product image start index", 400);
     }
 
     // ── Validate and upload each file ───────────────────────────────────
@@ -57,7 +107,18 @@ export async function POST(request: NextRequest) {
       try {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const result = await uploadImage(buffer);
+        const publicId = folderKey === "products"
+          ? `${basePublicId}-${startIndex + i}`
+          : basePublicId
+            ? files.length > 1
+              ? `${basePublicId}-${i + 1}`
+              : basePublicId
+            : undefined;
+        const result = await uploadImage(buffer, {
+          folder,
+          publicId,
+          overwrite: !!publicId,
+        });
         results.push(result);
       } catch (uploadErr) {
         const msg = uploadErr instanceof Error ? uploadErr.message : "Unknown upload error";
@@ -78,5 +139,75 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[Upload] Error:", err);
     return errorResponse("Upload failed", 500);
+  }
+}
+
+// ─── PATCH /api/admin/upload — Rename an image to match a new name ──────────
+// Admin-only. Body: { "publicId": "...", "folder": "categories", "name": "slug" }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = requireAuth(request, ["super_admin", "staff"]);
+    if (auth.error) return auth.error;
+
+    const body = await request.json().catch(() => null);
+    const publicId =
+      body && typeof body.publicId === "string" ? body.publicId.trim() : "";
+    const name = body && typeof body.name === "string" ? body.name : "";
+
+    if (!publicId || !name) {
+      return errorResponse("publicId and name are required", 400);
+    }
+
+    const sanitized = sanitizePublicId(name);
+    if (!sanitized) {
+      return errorResponse("Invalid image name", 400);
+    }
+
+    const folder = resolveUploadFolder(
+      body && typeof body.folder === "string" ? body.folder : null
+    );
+    const target = `${folder}/${sanitized}`;
+
+    if (target === publicId) {
+      return successResponse(
+        { publicId, renamed: false },
+        "Image name is already up to date"
+      );
+    }
+
+    const renamed = await renameImage(publicId, target);
+    return successResponse({ ...renamed, renamed: true }, "Image renamed successfully");
+  } catch (err) {
+    console.error("[Upload] Rename error:", err);
+    return errorResponse("Failed to rename image", 500);
+  }
+}
+
+// ─── DELETE /api/admin/upload — Remove an image from Cloudinary ─────────────
+// Admin-only. Body: { "publicId": "motoego-dev/categories/my-slug" }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = requireAuth(request, ["super_admin", "staff"]);
+    if (auth.error) return auth.error;
+
+    const body = await request.json().catch(() => null);
+    const publicId =
+      body && typeof body.publicId === "string" ? body.publicId.trim() : "";
+
+    if (!publicId) {
+      return errorResponse("publicId is required", 400);
+    }
+
+    const deleted = await deleteImage(publicId);
+    if (!deleted) {
+      return errorResponse("Image not found or already deleted", 404);
+    }
+
+    return successResponse({ publicId }, "Image deleted successfully");
+  } catch (err) {
+    console.error("[Upload] Delete error:", err);
+    return errorResponse("Failed to delete image", 500);
   }
 }

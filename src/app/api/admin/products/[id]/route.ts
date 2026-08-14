@@ -3,7 +3,11 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { connectDB } from "@/lib/db/mongoose";
 import { isValidObjectId, validateUpdateProduct } from "@/lib/validators";
-import { deleteImages } from "@/lib/cloudinary";
+import {
+  deleteImages,
+  deleteProductImageFolder,
+  resolveUploadFolder,
+} from "@/lib/cloudinary";
 import Product from "@/models/product.model";
 import Category from "@/models/category.model";
 import { IProductImage } from "@/models/product.model";
@@ -178,14 +182,24 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return errorResponse("Product not found", 404);
     }
 
-    // Delete all product images from Cloudinary
+    // Delete the slug folder to catch both persisted images and any orphaned
+    // uploads. Legacy images outside that folder are deleted by public ID.
     const publicIds = product.images.map((img: IProductImage) => img.publicId);
-    if (publicIds.length > 0) {
+    const productFolder = resolveUploadFolder("products", product.slug);
+    try {
+      await deleteProductImageFolder(product.slug);
+    } catch (delErr) {
+      console.error("[Products] Failed to delete Cloudinary folder:", delErr);
+    }
+
+    const legacyPublicIds = publicIds.filter(
+      (publicId: string) => !publicId.startsWith(`${productFolder}/`)
+    );
+    if (legacyPublicIds.length > 0) {
       try {
-        await deleteImages(publicIds);
+        await deleteImages(legacyPublicIds);
       } catch (delErr) {
-        console.error("[Products] Failed to delete images from Cloudinary:", delErr);
-        // Non-blocking — still delete the product from DB
+        console.error("[Products] Failed to delete legacy images:", delErr);
       }
     }
 

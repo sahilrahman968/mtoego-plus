@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
 import { useToast } from "@/components/store/Toast";
@@ -86,6 +86,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
   const [variants, setVariants] = useState<Variant[]>([{ ...emptyVariant }]);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [removingPublicId, setRemovingPublicId] = useState("");
+  const persistedPublicIds = useRef(new Set<string>());
+  const uploadedPublicIds = useRef(new Set<string>());
 
   // Fetch categories
   useEffect(() => {
@@ -124,7 +127,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
               isActive: v.isActive !== false,
             }))
           );
-          setImages(p.images || []);
+          const productImages: ProductImage[] = p.images || [];
+          setImages(productImages);
+          persistedPublicIds.current = new Set(
+            productImages.map((image) => image.publicId)
+          );
         }
       })
       .catch(console.error)
@@ -134,7 +141,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
   // Auto-generate slug from title
   const handleTitleChange = (value: string) => {
     setTitle(value);
-    if (!isEdit) {
+    if (!isEdit && images.length === 0) {
       setSlug(
         value
           .toLowerCase()
@@ -151,20 +158,86 @@ export default function ProductForm({ productId }: ProductFormProps) {
     const files = e.target.files;
     if (!files?.length) return;
 
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      Array.from(files).forEach((file) => formData.append("files", file));
+    const safeSlug = slug
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+    if (!safeSlug) {
+      const message = "Enter a valid product slug before uploading images";
+      setError(message);
+      toast(message, "error");
+      e.target.value = "";
+      return;
+    }
 
-      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (json.success) {
-        setImages((prev) => [...prev, ...(json.data.uploaded ?? json.data)]);
-        if (Array.isArray(json.data?.errors) && json.data.errors.length > 0) {
-          toast(json.data.errors[0], "error");
+    const remainingSlots = 10 - images.length;
+    if (remainingSlots <= 0) {
+      const message = "A product can have at most 10 images";
+      setError(message);
+      toast(message, "error");
+      e.target.value = "";
+      return;
+    }
+
+    const usedIndexes = new Set(
+      [...images.map((image) => image.publicId), ...persistedPublicIds.current]
+        .flatMap((publicId) => {
+          const match = publicId.match(
+            new RegExp(`/${safeSlug}/${safeSlug}-(\\d+)$`)
+          );
+          return match ? [Number(match[1])] : [];
+        })
+    );
+    const availableIndexes = Array.from(
+      { length: 10 },
+      (_, index) => index + 1
+    ).filter((index) => !usedIndexes.has(index));
+    const selectedFiles = Array.from(files).slice(
+      0,
+      Math.min(remainingSlots, availableIndexes.length)
+    );
+
+    if (selectedFiles.length === 0) {
+      const message = "Save the product before uploading a replacement image";
+      setError(message);
+      toast(message, "error");
+      e.target.value = "";
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+    try {
+      const uploaded: ProductImage[] = [];
+      const errors: string[] = [];
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const formData = new FormData();
+        formData.append("files", selectedFiles[i]);
+        formData.append("folder", "products");
+        formData.append("productSlug", safeSlug);
+        formData.append("startIndex", String(availableIndexes[i]));
+
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+        if (json.success) {
+          uploaded.push(...(json.data.uploaded ?? json.data));
+        } else {
+          errors.push(json.error || json.message || "Upload failed");
         }
-      } else {
-        const message = json.error || json.message || "Upload failed";
+      }
+
+      if (uploaded.length > 0) {
+        uploaded.forEach((image) => uploadedPublicIds.current.add(image.publicId));
+        setImages((prev) => [...prev, ...uploaded]);
+      }
+      if (errors.length > 0) {
+        const message = errors[0];
         setError(message);
         toast(message, "error");
       }
@@ -178,8 +251,55 @@ export default function ProductForm({ productId }: ProductFormProps) {
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = async (index: number) => {
+    const image = images[index];
+    if (!image || removingPublicId) return;
+
+    // Saved images are deleted by the product update endpoint. Newly uploaded
+    // images must be deleted now because they are not yet referenced in MongoDB.
+    if (uploadedPublicIds.current.has(image.publicId)) {
+      setRemovingPublicId(image.publicId);
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicId: image.publicId }),
+        });
+        const json = await res.json();
+        if (!json.success && res.status !== 404) {
+          const message = json.error || json.message || "Failed to remove image";
+          setError(message);
+          toast(message, "error");
+          return;
+        }
+      } catch {
+        const message = "Failed to remove image";
+        setError(message);
+        toast(message, "error");
+        return;
+      } finally {
+        setRemovingPublicId("");
+      }
+    }
+
+    uploadedPublicIds.current.delete(image.publicId);
+    setImages((prev) => prev.filter((item) => item.publicId !== image.publicId));
+  };
+
+  const handleCancel = async () => {
+    const unsavedImages = images.filter(
+      (image) => uploadedPublicIds.current.has(image.publicId)
+    );
+    await Promise.allSettled(
+      unsavedImages.map((image) =>
+        fetch("/api/admin/upload", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicId: image.publicId }),
+        })
+      )
+    );
+    router.push("/admin/products");
   };
 
   // Variant management
@@ -261,10 +381,14 @@ export default function ProductForm({ productId }: ProductFormProps) {
       if (json.success) {
         router.push("/admin/products");
       } else {
-        setError(json.error || json.message || "Failed to save product");
+        const message = json.error || json.message || "Failed to save product";
+        setError(message);
+        toast(message, "error");
       }
     } catch {
-      setError("Something went wrong");
+      const message = "Something went wrong";
+      setError(message);
+      toast(message, "error");
     } finally {
       setLoading(false);
     }
@@ -306,9 +430,15 @@ export default function ProductForm({ productId }: ProductFormProps) {
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              disabled={images.length > 0}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:bg-slate-50 disabled:text-slate-500"
               placeholder="product-slug"
             />
+            {images.length > 0 && (
+              <p className="mt-1 text-xs text-slate-500">
+                Remove all images before changing the slug.
+              </p>
+            )}
           </div>
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
@@ -380,8 +510,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
               />
               <button
                 type="button"
-                onClick={() => removeImage(index)}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-gray-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => void removeImage(index)}
+                disabled={!!removingPublicId}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-gray-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:opacity-50 transition-opacity"
               >
                 ×
               </button>
@@ -530,7 +661,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin/products")}
+          onClick={() => void handleCancel()}
           className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
           Cancel

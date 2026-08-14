@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,43 +25,52 @@ export default function AdminLoginPage() {
       if (json.success) {
         const user = json.data?.user ?? json.data;
         if (user.role === "super_admin" || user.role === "staff") {
-          router.push("/admin");
-        } else {
-          setError("You do not have admin access");
+          // Full page load: /admin/login shares the /admin layout, and a client-side
+          // push would reuse the cached sidebar-less version rendered for the login page.
+          window.location.replace("/admin");
+          return;
         }
+        setError("You do not have admin access");
       } else {
         setError(json.message || "Invalid credentials");
       }
     } catch {
       setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-900 text-white font-bold text-lg mb-4">
-            EC
+          <div className="relative mx-auto mb-4 h-10 w-[11.25rem] overflow-hidden">
+            <Image
+              src="/logo.svg"
+              alt="Motoego"
+              fill
+              sizes="180px"
+              className="object-contain object-left"
+              priority
+            />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Admin Panel</h1>
-          <p className="text-sm text-slate-500 mt-1">Sign in to manage your store</p>
+          <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
+          <p className="text-sm text-muted mt-1">Sign in to manage your store</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="auth-form bg-card rounded-xl border border-border p-6 shadow-lg shadow-black/40">
           {error && (
-            <div className="mb-4 p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="mb-4 p-3 text-sm text-danger bg-primary-light border border-danger/30 rounded-lg">
               {error}
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">
                 Email
               </label>
               <input
@@ -72,13 +80,13 @@ export default function AdminLoginPage() {
                 required
                 autoFocus
                 autoComplete="email"
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                 placeholder="admin@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">
                 Password
               </label>
               <input
@@ -87,7 +95,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                className="w-full px-3 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                 placeholder="Enter your password"
               />
             </div>
@@ -95,7 +103,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 transition-colors"
+              className="w-full py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -112,7 +120,7 @@ export default function AdminLoginPage() {
           </div>
         </form>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-muted">
           Only authorized admin and staff accounts can access this panel.
         </p>
       </div>

@@ -12,9 +12,9 @@ export default function Footer() {
               <Image
                 src="/logo.svg"
                 alt={theme.brand.name}
-                width={176}
+                width={188}
                 height={40}
-                className="h-32 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
             </Link>
           </div>

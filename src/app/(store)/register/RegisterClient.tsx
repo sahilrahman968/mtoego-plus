@@ -226,7 +226,7 @@ export default function RegisterClient() {
               alt="Motoego"
               fill
               sizes="180px"
-              className="scale-[4.65] origin-left object-contain object-left"
+              className="object-contain object-left"
               priority
             />
           </Link>

@@ -39,6 +39,10 @@ export const env = {
   get CLOUDINARY_API_SECRET() {
     return getEnvVar("CLOUDINARY_API_SECRET");
   },
+  /** Cloudinary root folder: motoego-prod in production, motoego-dev otherwise. */
+  get CLOUDINARY_ROOT_FOLDER() {
+    return this.NODE_ENV === "production" ? "motoego-prod" : "motoego-dev";
+  },
 
   // ─── SMTP (for transactional emails like verification) ─────────────────
   get SMTP_HOST() {

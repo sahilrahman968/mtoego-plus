@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import { isValidObjectId, validateUpdateCategory } from "@/lib/validators";
 import Category from "@/models/category.model";
 import Product from "@/models/product.model";
+import { deleteImage } from "@/lib/cloudinary";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -145,6 +146,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const category = await Category.findByIdAndDelete(id).lean();
     if (!category) {
       return errorResponse("Category not found", 404);
+    }
+
+    // Storage cleanup must not fail the delete — the category is already gone.
+    if (category.image?.publicId) {
+      try {
+        await deleteImage(category.image.publicId);
+      } catch (imageErr) {
+        console.error("[Categories] Failed to delete image:", imageErr);
+      }
     }
 
     return successResponse(null, "Category deleted successfully");

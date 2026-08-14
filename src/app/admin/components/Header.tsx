@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface HeaderProps {
@@ -10,7 +9,6 @@ interface HeaderProps {
 }
 
 export default function Header({ userName, userRole, onMenuToggle }: HeaderProps) {
-  const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -18,7 +16,10 @@ export default function Header({ userName, userRole, onMenuToggle }: HeaderProps
     setLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/admin/login");
+      // Full page load: a client-side push would keep this authenticated
+      // /admin layout wrapped around the login page, and would also serve the
+      // signed-in pages from the router cache after the cookie is gone.
+      window.location.replace("/admin/login");
     } catch {
       setLoggingOut(false);
     }

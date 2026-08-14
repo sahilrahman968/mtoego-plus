@@ -82,7 +82,7 @@ export default function Header() {
                 alt="Motoego"
                 fill
                 sizes="(max-width: 640px) 164px, 180px"
-                className="scale-[4.65] origin-left object-contain object-left drop-shadow-[0_0_12px_rgba(179,3,47,0.3)]"
+                className="object-contain object-left drop-shadow-[0_0_12px_rgba(179,3,47,0.3)]"
                 priority
               />
             </Link>

@@ -18,26 +18,10 @@ import {
 } from "lucide-react";
 import { fetchCategories, type CategoryData } from "@/lib/store-api";
 
-interface HeroBannerData {
-  type: "image" | "video";
-  url: string;
-  alt?: string;
-  link?: string;
-  headline?: string;
-  subheadline?: string;
-  ctaText?: string;
-  ctaLink?: string;
-}
-
-interface HeroImageData {
-  url: string;
-  alt?: string;
-}
+const HERO_BANNER_SRC = "/images/hero-banner.jpg";
 
 export default function HomeClient() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [heroBanner, setHeroBanner] = useState<HeroBannerData | null>(null);
-  const [heroImage, setHeroImage] = useState<HeroImageData | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isPopupMinimized, setIsPopupMinimized] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -53,17 +37,8 @@ export default function HomeClient() {
   useEffect(() => {
     async function load() {
       try {
-        const [catRes, settingsRes] = await Promise.all([
-          fetchCategories(null),
-          fetch("/api/site-settings").then((r) => r.json()),
-        ]);
+        const catRes = await fetchCategories(null);
         if (catRes.success && catRes.data) setCategories(catRes.data);
-        if (settingsRes.success && settingsRes.data?.heroBanner) {
-          setHeroBanner(settingsRes.data.heroBanner);
-        }
-        if (settingsRes.success && settingsRes.data?.heroImage) {
-          setHeroImage(settingsRes.data.heroImage);
-        }
       } catch {
         // silently fail
       }
@@ -79,10 +54,6 @@ export default function HomeClient() {
 
     return () => window.clearTimeout(popupTimer);
   }, []);
-
-  const heroMediaUrl = heroBanner?.url || heroImage?.url || null;
-  const heroMediaType = heroBanner?.type || "image";
-  const heroMediaAlt = heroBanner?.alt || heroImage?.alt || "Hero image";
 
   const handlePopupClose = () => {
     setIsPopupOpen(false);
@@ -137,29 +108,14 @@ export default function HomeClient() {
           transition={{ duration: 0.6 }}
           className="absolute inset-0"
         >
-          {heroMediaUrl ? (
-            heroMediaType === "video" ? (
-              <video
-                src={heroMediaUrl}
-                className="h-full w-full object-cover animate-hero-slow-zoom"
-                muted
-                autoPlay
-                loop
-                playsInline
-              />
-            ) : (
-              <Image
-                src={heroMediaUrl}
-                alt={heroMediaAlt}
-                fill
-                sizes="100vw"
-                className="object-cover animate-hero-slow-zoom"
-                priority
-              />
-            )
-          ) : (
-            <div className="h-full w-full bg-gradient-to-br from-black via-card to-card-hover" />
-          )}
+          <Image
+            src={HERO_BANNER_SRC}
+            alt="Motorcycle hero banner"
+            fill
+            sizes="100vw"
+            className="object-cover animate-hero-slow-zoom"
+            priority
+          />
         </motion.div>
 
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.82)_0%,rgba(0,0,0,0.46)_42%,rgba(0,0,0,0.28)_68%,rgba(0,0,0,0.75)_100%)]" />

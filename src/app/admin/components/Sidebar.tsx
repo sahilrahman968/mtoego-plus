@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 interface NavItem {
@@ -131,13 +132,19 @@ export default function Sidebar({ userRole, isOpen, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-700/50">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-900 font-bold text-sm">
-            EC
-          </div>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">E-Com</h1>
-            <p className="text-xs text-slate-400">Admin Panel</p>
-          </div>
+          <Link href="/admin" onClick={onClose} aria-label="Motoego Admin">
+            <span className="relative block h-9 w-[9.75rem] overflow-hidden">
+              <Image
+                src="/logo.svg"
+                alt="Motoego"
+                fill
+                sizes="156px"
+                className="object-contain object-left"
+                priority
+              />
+            </span>
+            <span className="block text-xs text-slate-400">Admin Panel</span>
+          </Link>
           <button
             onClick={onClose}
             className="ml-auto lg:hidden p-1 rounded hover:bg-slate-700"

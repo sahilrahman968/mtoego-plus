@@ -7,8 +7,8 @@ interface BrandLogoProps {
 }
 
 export default function BrandLogo({
-  width = 120,
-  height = 120,
+  width = 188,
+  height = 40,
   className,
 }: BrandLogoProps) {
   return (
@@ -17,7 +17,7 @@ export default function BrandLogo({
       xmlns="http://www.w3.org/2000/svg"
       width={width}
       height={height}
-      viewBox="0 0 1080 1080"
+      viewBox="42 435 999 212"
       className={className}
       aria-label="Brand logo"
       role="img"

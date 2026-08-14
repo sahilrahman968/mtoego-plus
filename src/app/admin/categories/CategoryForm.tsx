@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useToast } from "@/components/store/Toast";
@@ -36,6 +36,9 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
   const [isActive, setIsActive] = useState(true);
   const [image, setImage] = useState<CategoryImage | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Public ID currently referenced by the saved category; it may only be
+  // deleted from Cloudinary once the form has been submitted successfully.
+  const savedPublicId = useRef<string | null>(null);
 
   // Fetch parent categories
   useEffect(() => {
@@ -64,7 +67,10 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
           setDescription(c.description || "");
           setParent(c.parent?._id || c.parent || "");
           setIsActive(c.isActive);
-          if (c.image?.url) setImage(c.image);
+          if (c.image?.url) {
+            setImage(c.image);
+            savedPublicId.current = c.image.publicId ?? null;
+          }
         }
       })
       .catch(console.error)
@@ -85,21 +91,53 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
     }
   };
 
+  const deleteFromStorage = async (publicId: string) => {
+    try {
+      await fetch("/api/admin/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicId }),
+      });
+    } catch (err) {
+      console.error("Failed to delete image from storage:", err);
+    }
+  };
+
+  /** Drop an image that is not (yet) referenced by the saved category. */
+  const discardUnsavedImage = async (target: CategoryImage | null) => {
+    if (!target?.publicId || target.publicId === savedPublicId.current) return;
+    await deleteFromStorage(target.publicId);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
+
+    if (!slug.trim()) {
+      toast("Enter a category name or slug before uploading an image", "error");
+      e.target.value = "";
+      return;
+    }
+
+    const previous = image;
 
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("files", files[0]);
+      formData.append("folder", "categories");
+      formData.append("publicId", slug);
 
       const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
       const json = await res.json();
       if (json.success) {
         const uploaded = json.data.uploaded ?? json.data;
         if (Array.isArray(uploaded) && uploaded.length > 0) {
-          setImage({ url: uploaded[0].url, publicId: uploaded[0].publicId });
+          const next = { url: uploaded[0].url, publicId: uploaded[0].publicId };
+          setImage(next);
+          if (previous && previous.publicId !== next.publicId) {
+            await discardUnsavedImage(previous);
+          }
         }
         if (Array.isArray(json.data?.errors) && json.data.errors.length > 0) {
           toast(json.data.errors[0], "error");
@@ -119,21 +157,65 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
     }
   };
 
+  /** Keep the stored asset named after the slug when the slug changed post-upload. */
+  const syncImageName = async (current: CategoryImage): Promise<CategoryImage> => {
+    try {
+      const res = await fetch("/api/admin/upload", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          publicId: current.publicId,
+          folder: "categories",
+          name: slug,
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.data?.renamed) {
+        return { url: json.data.url, publicId: json.data.publicId };
+      }
+    } catch (err) {
+      console.error("Failed to rename image in storage:", err);
+    }
+    return current;
+  };
+
+  const handleRemoveImage = async () => {
+    const removed = image;
+    setImage(null);
+    await discardUnsavedImage(removed);
+  };
+
+  const handleCancel = async () => {
+    await discardUnsavedImage(image);
+    router.push("/admin/categories");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const body: Record<string, unknown> = {
-      name,
-      slug,
-      description: description || undefined,
-      parent: parent || undefined,
-      isActive,
-      image: image || undefined,
-    };
-
     try {
+      let finalImage = image;
+      if (image) {
+        finalImage = await syncImageName(image);
+        if (finalImage.publicId !== image.publicId) {
+          if (savedPublicId.current === image.publicId) {
+            savedPublicId.current = finalImage.publicId;
+          }
+          setImage(finalImage);
+        }
+      }
+
+      const body: Record<string, unknown> = {
+        name,
+        slug,
+        description: description || undefined,
+        parent: parent || undefined,
+        isActive,
+        image: finalImage, // explicit null so removing the image clears it on update
+      };
+
       const url = isEdit ? `/api/admin/categories/${categoryId}` : "/api/admin/categories";
       const method = isEdit ? "PUT" : "POST";
       const res = await fetch(url, {
@@ -143,6 +225,11 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
       });
       const json = await res.json();
       if (json.success) {
+        const replaced = savedPublicId.current;
+        if (replaced && replaced !== finalImage?.publicId) {
+          await deleteFromStorage(replaced);
+        }
+        savedPublicId.current = finalImage?.publicId ?? null;
         router.push("/admin/categories");
       } else {
         setError(json.message || "Failed to save category");
@@ -243,7 +330,7 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
               />
               <button
                 type="button"
-                onClick={() => setImage(null)}
+                onClick={handleRemoveImage}
                 className="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-slate-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,7 +373,7 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin/categories")}
+          onClick={handleCancel}
           className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
           Cancel

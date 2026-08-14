@@ -22,8 +22,8 @@ export function getCloudinary() {
 // ─── Upload Options ─────────────────────────────────────────────────────────
 
 export const UPLOAD_CONFIG = {
-  folder: "ecom/products",
   allowedFormats: ["jpg", "jpeg", "png", "webp", "avif"],
+  maxPublicIdLength: 100,
   maxFileSize: 10 * 1024 * 1024, // 10 MB
   allowedMimeTypes: [
     "image/jpeg",
@@ -35,6 +35,44 @@ export const UPLOAD_CONFIG = {
     { quality: "auto", fetch_format: "auto" }, // auto-optimize for web
   ],
 } as const;
+
+// ─── Upload Folders ─────────────────────────────────────────────────────────
+// Clients send a folder *key*, never a raw path, so uploads can't escape the
+// folders we manage. Resolved at call time so the root follows NODE_ENV.
+
+export type UploadFolderKey = "products" | "categories";
+
+export function resolveUploadFolder(
+  key?: string | null,
+  productSlug?: string | null
+): string {
+  switch (key) {
+    case "categories":
+      return `${env.CLOUDINARY_ROOT_FOLDER}/categories`;
+    case "products": {
+      const safeSlug = productSlug ? sanitizePublicId(productSlug) : "";
+      return safeSlug
+        ? `${env.CLOUDINARY_ROOT_FOLDER}/products/${safeSlug}`
+        : `${env.CLOUDINARY_ROOT_FOLDER}/products`;
+    }
+    default:
+      return `${env.CLOUDINARY_ROOT_FOLDER}/products`;
+  }
+}
+
+/**
+ * Turn arbitrary text (e.g. a category slug) into a safe Cloudinary public ID.
+ * Slashes are stripped so a caller can never place an asset outside its folder.
+ */
+export function sanitizePublicId(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, UPLOAD_CONFIG.maxPublicIdLength);
+}
 
 // ─── Upload Helper ──────────────────────────────────────────────────────────
 
@@ -52,18 +90,22 @@ export interface CloudinaryUploadResult {
  */
 export async function uploadImage(
   buffer: Buffer,
-  options?: { folder?: string; publicId?: string }
+  options?: { folder?: string; publicId?: string; overwrite?: boolean }
 ): Promise<CloudinaryUploadResult> {
   const cld = getCloudinary();
+  // Without overwrite, Cloudinary silently returns the *existing* asset when
+  // the public ID is taken — re-uploading a category image would be a no-op.
+  const overwrite = options?.overwrite ?? false;
 
   return new Promise((resolve, reject) => {
     const uploadStream = cld.uploader.upload_stream(
       {
-        folder: options?.folder ?? UPLOAD_CONFIG.folder,
+        folder: options?.folder ?? resolveUploadFolder("products"),
         public_id: options?.publicId,
         resource_type: "image",
         type: "upload",            // signed upload
-        overwrite: false,
+        overwrite,
+        invalidate: overwrite,     // purge the CDN copy of the replaced asset
         transformation: UPLOAD_CONFIG.transformation,
       },
       (error, result) => {
@@ -83,6 +125,24 @@ export async function uploadImage(
 
     uploadStream.end(buffer);
   });
+}
+
+// ─── Rename Helper ──────────────────────────────────────────────────────────
+
+/**
+ * Move an existing asset to a new public ID, e.g. after a category slug change.
+ */
+export async function renameImage(
+  fromPublicId: string,
+  toPublicId: string
+): Promise<{ url: string; publicId: string }> {
+  const cld = getCloudinary();
+  const result = await cld.uploader.rename(fromPublicId, toPublicId, {
+    resource_type: "image",
+    overwrite: true,
+    invalidate: true,
+  });
+  return { url: result.secure_url, publicId: result.public_id };
 }
 
 // ─── Delete Helper ──────────────────────────────────────────────────────────
@@ -107,4 +167,34 @@ export async function deleteImages(publicIds: string[]): Promise<void> {
   await cld.api.delete_resources(publicIds, {
     resource_type: "image",
   });
+}
+
+/**
+ * Delete every image in a product's slug folder, then remove the empty folder.
+ * Prefix deletion also catches assets that were uploaded but never persisted.
+ */
+export async function deleteProductImageFolder(productSlug: string): Promise<void> {
+  const safeSlug = sanitizePublicId(productSlug);
+  if (!safeSlug) {
+    throw new Error("Invalid product slug");
+  }
+
+  const cld = getCloudinary();
+  const folder = resolveUploadFolder("products", safeSlug);
+  let nextCursor: string | undefined;
+
+  do {
+    const result = await cld.api.delete_resources_by_prefix(`${folder}/`, {
+      resource_type: "image",
+      ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    });
+    nextCursor = result.next_cursor;
+  } while (nextCursor);
+
+  try {
+    await cld.api.delete_folder(folder);
+  } catch (error) {
+    const status = (error as { http_code?: number }).http_code;
+    if (status !== 404) throw error;
+  }
 }
