@@ -153,6 +153,8 @@ export interface ProductVariant {
   color?: string;
   sku: string;
   price: number;
+  /** GST percentage (0–100). Price is exclusive of GST. */
+  gst: number;
   compareAtPrice?: number;
   stock: number;
   isActive?: boolean;

@@ -11,6 +11,7 @@ interface Variant {
   color?: string;
   sku: string;
   price: number;
+  gst: number;
   compareAtPrice?: number;
   stock: number;
   isActive: boolean;
@@ -61,6 +62,7 @@ const emptyVariant: Variant = {
   color: "",
   sku: "",
   price: 0,
+  gst: 18,
   compareAtPrice: undefined,
   stock: 0,
   isActive: true,
@@ -122,6 +124,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
               color: v.color || "",
               sku: v.sku,
               price: v.price,
+              gst: typeof v.gst === "number" ? v.gst : 18,
               compareAtPrice: v.compareAtPrice,
               stock: v.stock,
               isActive: v.isActive !== false,
@@ -363,6 +366,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
       variants: variants.map((v) => ({
         ...v,
         price: Number(v.price),
+        gst: Number(v.gst),
         stock: Number(v.stock),
         compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : undefined,
       })),
@@ -565,7 +569,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                 <div>
                   <label className="block text-xs text-slate-500 mb-1">SKU *</label>
                   <input
@@ -577,13 +581,26 @@ export default function ProductForm({ productId }: ProductFormProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Price *</label>
+                  <label className="block text-xs text-slate-500 mb-1">Price (excl. GST) *</label>
                   <input
                     type="number"
                     value={variant.price}
                     onChange={(e) => updateVariant(index, "price", e.target.value)}
                     required
                     min={0}
+                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">GST % *</label>
+                  <input
+                    type="number"
+                    value={variant.gst}
+                    onChange={(e) => updateVariant(index, "gst", e.target.value)}
+                    required
+                    min={0}
+                    max={100}
+                    step={1}
                     className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
                   />
                 </div>
@@ -645,6 +662,17 @@ export default function ProductForm({ productId }: ProductFormProps) {
                   </div>
                 </div>
               </div>
+              {typeof variant.price === "number" && variant.price > 0 && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Price incl. GST ({variant.gst ?? 18}%): ₹
+                  {(
+                    Number(variant.price) *
+                    (1 + (Number(variant.gst ?? 18) / 100))
+                  ).toLocaleString("en-IN", {
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              )}
             </div>
           ))}
         </div>

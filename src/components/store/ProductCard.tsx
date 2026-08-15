@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { formatPrice, getProductImage, getDiscountPercent } from "@/lib/utils";
+import { priceInclGst } from "@/lib/pricing";
 import type { ProductData } from "@/lib/store-api";
 
 interface ProductCardProps {
@@ -18,13 +19,17 @@ export default function ProductCard({
   isWishlisted = false,
 }: ProductCardProps) {
   const activeVariants = product.variants.filter((v) => v.isActive !== false);
-  const lowestPrice = activeVariants.length
-    ? Math.min(...activeVariants.map((v) => v.price))
+  const lowestIncl = activeVariants.length
+    ? Math.min(...activeVariants.map((v) => priceInclGst(v.price, v.gst)))
     : 0;
-  const highestCompare = activeVariants.length
-    ? Math.max(...activeVariants.map((v) => v.compareAtPrice || 0))
+  const highestCompareIncl = activeVariants.length
+    ? Math.max(
+        ...activeVariants.map((v) =>
+          v.compareAtPrice ? priceInclGst(v.compareAtPrice, v.gst) : 0
+        )
+      )
     : 0;
-  const discount = getDiscountPercent(lowestPrice, highestCompare);
+  const discount = getDiscountPercent(lowestIncl, highestCompareIncl);
   const createdAtTs = Date.parse(product.createdAt);
   const isNewDrop =
     Number.isFinite(createdAtTs) &&
@@ -100,11 +105,11 @@ export default function ProductCard({
             </div>
             <div className="shrink-0 text-right leading-none">
               <p className="text-xs font-bold text-foreground">
-                {formatPrice(lowestPrice)}
+                {formatPrice(lowestIncl)}
               </p>
-              {highestCompare > lowestPrice && (
+              {highestCompareIncl > lowestIncl && (
                 <p className="mt-1 text-[9px] text-muted line-through">
-                  {formatPrice(highestCompare)}
+                  {formatPrice(highestCompareIncl)}
                 </p>
               )}
             </div>

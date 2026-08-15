@@ -13,6 +13,7 @@ import {
   type WishlistItemData,
 } from "@/lib/store-api";
 import { formatPrice, getProductImage } from "@/lib/utils";
+import { priceInclGst } from "@/lib/pricing";
 import { WishlistCardSkeleton } from "@/components/store/skeletons";
 
 export default function WishlistClient() {
@@ -136,7 +137,15 @@ export default function WishlistClient() {
         {items.map((item) => {
           const product = item.product;
           if (!product) return null;
-          const lowestPrice = product.priceRange?.min || product.variants?.[0]?.price || 0;
+          const lowestPrice = (() => {
+            const active = product.variants?.filter((v) => v.isActive !== false) ?? [];
+            if (active.length > 0) {
+              return Math.min(...active.map((v) => priceInclGst(v.price, v.gst)));
+            }
+            return product.priceRange?.min
+              ? priceInclGst(product.priceRange.min, 18)
+              : 0;
+          })();
           const isRemoving = removingIds.has(item._id);
           const isOutOfStock = !product.variants?.some(
             (variant) => variant.isActive !== false && variant.stock > 0

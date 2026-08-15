@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     const errors: string[] = [];
     const warnings: string[] = [];
-    const validLineItems: { price: number; quantity: number }[] = [];
+    const validLineItems: { price: number; quantity: number; gst: number }[] = [];
     const itemsToRemove: number[] = [];
 
     // ── Validate each item ───────────────────────────────────────────────
@@ -84,7 +84,11 @@ export async function POST(request: NextRequest) {
         cart.items[i].priceAtAdd = variant.price;
       }
 
-      validLineItems.push({ price: variant.price, quantity: item.quantity });
+      validLineItems.push({
+        price: variant.price,
+        quantity: item.quantity,
+        gst: typeof variant.gst === "number" ? variant.gst : 18,
+      });
     }
 
     // ── Clean up invalid items ───────────────────────────────────────────

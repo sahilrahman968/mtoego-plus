@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
 import { formatPrice, getProductImage, getVariantLabel } from "@/lib/utils";
-import { calculateDiscount } from "@/lib/pricing";
+import { buildCartSummary, priceInclGst } from "@/lib/pricing";
 import { CartItemSkeleton } from "@/components/store/skeletons";
 
 export default function CartClient() {
@@ -29,28 +29,30 @@ export default function CartClient() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => {
-      const variant = item.product.variants?.find(
-        (v) => v._id === item.variant
-      );
-      const price = variant?.price || item.priceAtAdd;
-      return sum + price * item.quantity;
-    }, 0);
-  }, [items]);
-
-  const discount = useMemo(() => {
-    if (!cart?.coupon) return 0;
-    return calculateDiscount(subtotal, {
-      type: cart.coupon.type,
-      value: cart.coupon.value,
-      maxDiscount: cart.coupon.maxDiscount ?? null,
+  const summary = useMemo(() => {
+    const lineItems = items.map((item) => {
+      const variant = item.product.variants?.find((v) => v._id === item.variant);
+      return {
+        price: variant?.price || item.priceAtAdd,
+        quantity: item.quantity,
+        gst: variant?.gst ?? 18,
+      };
     });
-  }, [subtotal, cart?.coupon]);
 
-  const subtotalAfterDiscount = subtotal - discount;
-  const shippingCost = subtotalAfterDiscount >= 999 ? 0 : 79;
-  const estimatedTotal = subtotalAfterDiscount + shippingCost;
+    return buildCartSummary(
+      lineItems,
+      cart?.coupon
+        ? {
+            type: cart.coupon.type,
+            value: cart.coupon.value,
+            maxDiscount: cart.coupon.maxDiscount ?? null,
+          }
+        : null
+    );
+  }, [items, cart?.coupon]);
+
+  const { subtotal, discount, shipping, gst, grandTotal: estimatedTotal } = summary;
+  const shippingCost = shipping.cost;
 
   const handleUpdateQuantity = async (itemId: string, qty: number) => {
     setUpdatingItems((prev) => new Set(prev).add(itemId));
@@ -165,6 +167,7 @@ export default function CartClient() {
               (v) => v._id === item.variant
             );
             const price = variant?.price || item.priceAtAdd;
+            const displayPrice = priceInclGst(price, variant?.gst);
             const isUpdating = updatingItems.has(item._id);
 
             return (
@@ -237,15 +240,16 @@ export default function CartClient() {
                     </button>
                   </div>
                   <p className="mt-2 text-sm font-bold text-foreground sm:hidden">
-                    {formatPrice(price * item.quantity)}
+                    {formatPrice(displayPrice * item.quantity)}
                   </p>
                 </div>
 
                 {/* Line total */}
                 <div className="hidden shrink-0 text-right sm:block">
                   <p className="text-base font-bold text-foreground">
-                    {formatPrice(price * item.quantity)}
+                    {formatPrice(displayPrice * item.quantity)}
                   </p>
+                  <p className="mt-0.5 text-[10px] text-muted">incl. GST</p>
                 </div>
               </div>
             );
@@ -261,7 +265,7 @@ export default function CartClient() {
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted">Subtotal</span>
+                <span className="text-muted">Subtotal (excl. GST)</span>
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
 
@@ -281,6 +285,11 @@ export default function CartClient() {
                   <span>-{formatPrice(discount)}</span>
                 </div>
               )}
+
+              <div className="flex justify-between">
+                <span className="text-muted">GST ({gst.gstLabel})</span>
+                <span className="font-medium">{formatPrice(gst.totalTax)}</span>
+              </div>
 
               <div className="flex justify-between">
                 <span className="text-muted">Shipping</span>
@@ -303,7 +312,7 @@ export default function CartClient() {
                 <span>{formatPrice(estimatedTotal)}</span>
               </div>
               <p className="text-[11px] text-muted">
-                GST will be calculated at checkout
+                Total includes GST
               </p>
             </div>
 

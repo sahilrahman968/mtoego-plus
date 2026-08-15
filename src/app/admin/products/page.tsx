@@ -15,7 +15,7 @@ interface Product {
   slug: string;
   category?: { _id: string; name: string };
   images: { url: string; alt?: string }[];
-  variants: { price: number; stock: number; isActive: boolean }[];
+  variants: { price: number; gst?: number; stock: number; isActive: boolean }[];
   isActive: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -73,10 +73,14 @@ export default function ProductsPage() {
   };
 
   const getPriceRange = (variants: Product["variants"]) => {
-    const activePrices = variants.filter((v) => v.isActive !== false).map((v) => v.price);
-    if (activePrices.length === 0) return "N/A";
-    const min = Math.min(...activePrices);
-    const max = Math.max(...activePrices);
+    const active = variants.filter((v) => v.isActive !== false);
+    if (active.length === 0) return "N/A";
+    const inclPrices = active.map((v) => {
+      const gst = typeof v.gst === "number" ? v.gst : 18;
+      return Math.round(v.price * (1 + gst / 100) * 100) / 100;
+    });
+    const min = Math.min(...inclPrices);
+    const max = Math.max(...inclPrices);
     if (min === max) return `₹${min.toLocaleString("en-IN")}`;
     return `₹${min.toLocaleString("en-IN")} – ₹${max.toLocaleString("en-IN")}`;
   };

@@ -210,6 +210,83 @@ textarea::placeholder {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Page scrollbar is replaced by the cafe racer overlay (ScrollbarOverlay.tsx) */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+.cr-rail {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 72px;
+  height: 100vh;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 280ms ease;
+  display: none;
+}
+@media (min-width: 768px) and (pointer: fine) {
+  .cr-rail { display: block; }
+}
+
+.cr-puff-layer {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.cr-puff {
+  position: absolute;
+  /* The gradient's own falloff replaces a blur filter: many blurred layers
+     force re-rasterisation while scrolling, which showed up as jank. */
+  background: radial-gradient(
+    circle at 36% 32%,
+    rgba(248, 250, 253, 0.4),
+    rgba(206, 212, 222, 0.22) 32%,
+    rgba(170, 177, 189, 0.1) 56%,
+    rgba(158, 165, 177, 0.03) 74%,
+    transparent 88%
+  );
+  will-change: transform, opacity;
+  animation-name: cr-smoke;
+  animation-timing-function: cubic-bezier(0.12, 0.62, 0.28, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes cr-smoke {
+  0% { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 0; }
+  18% { opacity: var(--o, 0.45); }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(var(--s)) rotate(var(--r));
+    opacity: 0;
+  }
+}
+
+/* Headlight is always on, with a slow breathing halo */
+.cr-lamp {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cr-lamp-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes cr-lamp-pulse {
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+.cr-taillight {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cr-tail-pulse 3.4s ease-in-out infinite;
+}
+
+@keyframes cr-tail-pulse {
+  0%, 100% { opacity: 0.75; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
 /* Avatar button glow on hover */
 .avatar-btn {
   transition: box-shadow 0.3s ease;

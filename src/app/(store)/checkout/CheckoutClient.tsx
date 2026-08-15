@@ -20,7 +20,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
 import { initiateCheckout, verifyPayment } from "@/lib/store-api";
 import { formatPrice, getProductImage, getVariantLabel, generateIdempotencyKey } from "@/lib/utils";
-import { calculateDiscount } from "@/lib/pricing";
+import { buildCartSummary, priceInclGst } from "@/lib/pricing";
 
 interface ShippingForm {
   name: string;
@@ -112,25 +112,30 @@ export default function CheckoutClient() {
     }
   }, [user]);
 
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => {
+  const summary = useMemo(() => {
+    const lineItems = items.map((item) => {
       const variant = item.product.variants?.find((v) => v._id === item.variant);
-      return sum + (variant?.price || item.priceAtAdd) * item.quantity;
-    }, 0);
-  }, [items]);
-
-  const discount = useMemo(() => {
-    if (!cart?.coupon) return 0;
-    return calculateDiscount(subtotal, {
-      type: cart.coupon.type,
-      value: cart.coupon.value,
-      maxDiscount: cart.coupon.maxDiscount ?? null,
+      return {
+        price: variant?.price || item.priceAtAdd,
+        quantity: item.quantity,
+        gst: variant?.gst ?? 18,
+      };
     });
-  }, [subtotal, cart?.coupon]);
 
-  const subtotalAfterDiscount = subtotal - discount;
-  const shippingCost = subtotalAfterDiscount >= 999 ? 0 : 79;
-  const estimatedTotal = subtotalAfterDiscount + shippingCost;
+    return buildCartSummary(
+      lineItems,
+      cart?.coupon
+        ? {
+            type: cart.coupon.type,
+            value: cart.coupon.value,
+            maxDiscount: cart.coupon.maxDiscount ?? null,
+          }
+        : null
+    );
+  }, [items, cart?.coupon]);
+
+  const { subtotal, discount, shipping, gst, grandTotal: estimatedTotal } = summary;
+  const shippingCost = shipping.cost;
 
   const validateAddress = (): boolean => {
     if (!address.name.trim()) { toast("Name is required", "error"); return false; }
@@ -467,6 +472,7 @@ export default function CheckoutClient() {
                         (v) => v._id === item.variant
                       );
                       const price = variant?.price || item.priceAtAdd;
+                      const displayPrice = priceInclGst(price, variant?.gst);
                       return (
                         <div key={item._id} className="flex gap-3">
                           <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border bg-black/45">
@@ -487,7 +493,7 @@ export default function CheckoutClient() {
                             </p>
                           </div>
                           <p className="text-sm font-medium text-foreground shrink-0">
-                            {formatPrice(price * item.quantity)}
+                            {formatPrice(displayPrice * item.quantity)}
                           </p>
                         </div>
                       );
@@ -531,7 +537,7 @@ export default function CheckoutClient() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted">
-                    Items ({items.reduce((s, i) => s + i.quantity, 0)})
+                    Subtotal (excl. GST)
                   </span>
                   <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
@@ -542,20 +548,21 @@ export default function CheckoutClient() {
                   </div>
                 )}
                 <div className="flex justify-between">
+                  <span className="text-muted">GST ({gst.gstLabel})</span>
+                  <span className="font-medium">{formatPrice(gst.totalTax)}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted">Shipping</span>
                   <span className={shippingCost === 0 ? "text-success font-medium" : ""}>
                     {shippingCost === 0 ? "Free" : formatPrice(shippingCost)}
                   </span>
-                </div>
-                <div className="flex justify-between text-xs text-muted">
-                  <span>GST</span>
-                  <span>Calculated at payment</span>
                 </div>
                 <hr className="border-border" />
                 <div className="flex justify-between text-base font-bold">
                   <span>Estimated Total</span>
                   <span>{formatPrice(estimatedTotal)}</span>
                 </div>
+                <p className="text-[11px] text-muted">Total includes GST</p>
               </div>
 
               <div className="mt-4 flex items-center gap-2 border border-border bg-black/45 p-3">

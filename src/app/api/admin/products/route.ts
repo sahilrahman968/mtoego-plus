@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
         color: typeof v.color === "string" ? v.color.trim() : undefined,
         sku: (v.sku as string).toUpperCase().trim(),
         price: v.price,
+        gst: typeof v.gst === "number" ? v.gst : 18,
         compareAtPrice: v.compareAtPrice,
         stock: v.stock ?? 0,
         isActive: v.isActive ?? true,

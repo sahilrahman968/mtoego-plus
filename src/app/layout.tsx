@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ToastProvider } from "@/components/store/Toast";
+import ScrollbarOverlay from "@/components/ScrollbarOverlay";
 import { theme, getThemeCSSVariables } from "@/config/theme";
 
 // ── Font imports ─────────────────────────────────────────────────────────────
@@ -56,7 +57,10 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CartProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              {children}
+              <ScrollbarOverlay />
+            </ToastProvider>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -48,6 +48,8 @@ export interface IOrderItem {
   variantLabel: string; // e.g. "Red / XL"
   sku: string;
   price: number;
+  /** GST percentage snapshot at checkout (0–100) */
+  gst: number;
   quantity: number;
   total: number;
 }
@@ -153,6 +155,13 @@ const orderItemSchema = new Schema<IOrderItem>(
       type: Number,
       required: [true, "Price is required"],
       min: [0, "Price cannot be negative"],
+    },
+    gst: {
+      type: Number,
+      required: [true, "GST is required"],
+      min: [0, "GST cannot be negative"],
+      max: [100, "GST cannot exceed 100"],
+      default: 18,
     },
     quantity: {
       type: Number,

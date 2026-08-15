@@ -15,6 +15,7 @@ interface OrderDetail {
     variantLabel: string;
     sku: string;
     price: number;
+    gst?: number;
     quantity: number;
     total: number;
   }[];
@@ -157,26 +158,36 @@ export default function OrderDetailPage({
               <h3 className="text-sm font-semibold text-slate-900">Order Items</h3>
             </div>
             <div className="divide-y divide-slate-100">
-              {order.items.map((item, i) => (
+              {order.items.map((item, i) => {
+                const gst = typeof item.gst === "number" ? item.gst : 18;
+                const unitIncl = Math.round(item.price * (1 + gst / 100) * 100) / 100;
+                const lineIncl = Math.round(unitIncl * item.quantity * 100) / 100;
+                return (
                 <div key={i} className="px-5 py-3 flex items-center justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-slate-900">{item.title}</p>
                     <p className="text-xs text-slate-500">
                       {item.variantLabel && <span>{item.variantLabel} · </span>}
-                      SKU: {item.sku} · Qty: {item.quantity}
+                      SKU: {item.sku} · Qty: {item.quantity} · GST: {gst}%
                     </p>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-sm font-medium text-slate-900">₹{item.total.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-400">₹{item.price.toLocaleString("en-IN")} each</p>
+                    <p className="text-sm font-medium text-slate-900">₹{lineIncl.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-slate-400">
+                      ₹{unitIncl.toLocaleString("en-IN")} each (incl. GST)
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Base ₹{item.price.toLocaleString("en-IN")} + GST
+                    </p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {/* Pricing summary */}
             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 space-y-1.5">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Subtotal</span>
+                <span className="text-slate-500">Subtotal (excl. GST)</span>
                 <span className="text-slate-700">₹{order.pricing.subtotal.toLocaleString("en-IN")}</span>
               </div>
               {order.pricing.discount > 0 && (
@@ -185,10 +196,34 @@ export default function OrderDetailPage({
                   <span className="text-gray-700">-₹{order.pricing.discount.toLocaleString("en-IN")}</span>
                 </div>
               )}
+              {order.pricing.discount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Taxable amount</span>
+                  <span className="text-slate-700">₹{order.pricing.subtotalAfterDiscount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Tax (GST)</span>
+                <span className="text-slate-500">GST</span>
                 <span className="text-slate-700">₹{order.pricing.totalTax.toLocaleString("en-IN")}</span>
               </div>
+              {order.pricing.cgst > 0 && (
+                <div className="flex justify-between text-xs text-slate-400 pl-2">
+                  <span>CGST</span>
+                  <span>₹{order.pricing.cgst.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              {order.pricing.sgst > 0 && (
+                <div className="flex justify-between text-xs text-slate-400 pl-2">
+                  <span>SGST</span>
+                  <span>₹{order.pricing.sgst.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              {order.pricing.igst > 0 && (
+                <div className="flex justify-between text-xs text-slate-400 pl-2">
+                  <span>IGST</span>
+                  <span>₹{order.pricing.igst.toLocaleString("en-IN")}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Shipping</span>
                 <span className="text-slate-700">
@@ -196,7 +231,7 @@ export default function OrderDetailPage({
                 </span>
               </div>
               <div className="flex justify-between text-sm font-semibold pt-1.5 border-t border-slate-200">
-                <span className="text-slate-900">Grand Total</span>
+                <span className="text-slate-900">Grand Total (incl. GST)</span>
                 <span className="text-slate-900">₹{order.pricing.grandTotal.toLocaleString("en-IN")}</span>
               </div>
             </div>

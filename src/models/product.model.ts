@@ -15,6 +15,8 @@ export interface IProductVariant {
   color?: string;
   sku: string;
   price: number;
+  /** GST percentage (0–100). Price is exclusive of GST. */
+  gst: number;
   compareAtPrice?: number;
   stock: number;
   isActive: boolean;
@@ -87,6 +89,13 @@ const productVariantSchema = new Schema<IProductVariant>(
       type: Number,
       required: [true, "Price is required"],
       min: [0, "Price cannot be negative"],
+    },
+    gst: {
+      type: Number,
+      required: [true, "GST is required"],
+      min: [0, "GST cannot be negative"],
+      max: [100, "GST cannot exceed 100"],
+      default: 18,
     },
     compareAtPrice: {
       type: Number,

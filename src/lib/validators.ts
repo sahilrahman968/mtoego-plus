@@ -84,6 +84,15 @@ export function validateCreateProduct(body: Record<string, unknown>): Validation
       if (v.price === undefined || typeof v.price !== "number" || v.price < 0) {
         errors.push(`Variant ${i}: Price is required and must be a non-negative number`);
       }
+      if (
+        v.gst === undefined ||
+        typeof v.gst !== "number" ||
+        Number.isNaN(v.gst) ||
+        v.gst < 0 ||
+        v.gst > 100
+      ) {
+        errors.push(`Variant ${i}: GST is required and must be a number between 0 and 100`);
+      }
       if (v.stock !== undefined && (typeof v.stock !== "number" || v.stock < 0)) {
         errors.push(`Variant ${i}: Stock must be a non-negative number`);
       }
@@ -172,6 +181,15 @@ export function validateUpdateProduct(body: Record<string, unknown>): Validation
         }
         if (v.price !== undefined && (typeof v.price !== "number" || v.price < 0)) {
           errors.push(`Variant ${i}: Price must be a non-negative number`);
+        }
+        if (
+          v.gst === undefined ||
+          typeof v.gst !== "number" ||
+          Number.isNaN(v.gst) ||
+          v.gst < 0 ||
+          v.gst > 100
+        ) {
+          errors.push(`Variant ${i}: GST is required and must be a number between 0 and 100`);
         }
         if (v.stock !== undefined && (typeof v.stock !== "number" || v.stock < 0)) {
           errors.push(`Variant ${i}: Stock must be a non-negative number`);

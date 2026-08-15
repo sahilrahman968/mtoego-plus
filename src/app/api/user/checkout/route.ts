@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       product: IProductDocument;
       variantId: string;
       price: number;
+      gst: number;
       quantity: number;
       title: string;
       variantLabel: string;
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
         product,
         variantId: variant._id.toString(),
         price: variant.price,
+        gst: typeof variant.gst === "number" ? variant.gst : 18,
         quantity: item.quantity,
         title: product.title,
         variantLabel: label,
@@ -144,6 +146,7 @@ export async function POST(request: NextRequest) {
     const lineItems = validLineItems.map((li) => ({
       price: li.price,
       quantity: li.quantity,
+      gst: li.gst,
     }));
 
     const summary = buildCartSummary(
@@ -185,6 +188,7 @@ export async function POST(request: NextRequest) {
         variantLabel: li.variantLabel,
         sku: li.sku,
         price: li.price,
+        gst: li.gst,
         quantity: li.quantity,
         total: li.price * li.quantity,
       })),

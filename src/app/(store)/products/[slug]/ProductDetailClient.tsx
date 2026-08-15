@@ -38,6 +38,7 @@ import {
   getDiscountPercent,
   getVariantLabel,
 } from "@/lib/utils";
+import { priceInclGst } from "@/lib/pricing";
 import { ProductDetailSkeleton, ReviewCardSkeleton } from "@/components/store/skeletons";
 
 export default function ProductDetailClient({ slug }: { slug: string }) {
@@ -131,7 +132,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   );
 
   const discount = selectedVariant
-    ? getDiscountPercent(selectedVariant.price, selectedVariant.compareAtPrice)
+    ? getDiscountPercent(
+        priceInclGst(selectedVariant.price, selectedVariant.gst),
+        selectedVariant.compareAtPrice
+          ? priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst)
+          : undefined
+      )
     : 0;
 
   const averageRating = reviewStats?.averageRating ?? 0;
@@ -369,12 +375,15 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           {selectedVariant && (
             <div className="mt-5 flex items-end gap-3">
               <span className="text-5xl font-bold leading-none text-foreground">
-                {formatPrice(selectedVariant.price)}
+                {formatPrice(priceInclGst(selectedVariant.price, selectedVariant.gst))}
               </span>
               {selectedVariant.compareAtPrice &&
-                selectedVariant.compareAtPrice > selectedVariant.price && (
+                priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst) >
+                  priceInclGst(selectedVariant.price, selectedVariant.gst) && (
                   <span className="pb-1 text-lg text-muted line-through">
-                    {formatPrice(selectedVariant.compareAtPrice)}
+                    {formatPrice(
+                      priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst)
+                    )}
                   </span>
                 )}
             </div>
@@ -499,7 +508,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             disabled={!selectedVariant || selectedVariant.stock === 0 || addingToCart}
             className="mt-3 h-12 w-full bg-primary px-4 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Buy Now - {selectedVariant ? formatPrice(selectedVariant.price * quantity) : ""}
+            Buy Now -{" "}
+            {selectedVariant
+              ? formatPrice(
+                  priceInclGst(selectedVariant.price, selectedVariant.gst) * quantity
+                )
+              : ""}
           </button>
 
           {selectedVariant && selectedVariant.stock <= 10 && selectedVariant.stock > 0 && (
@@ -591,7 +605,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                             <td className="px-4 py-2">{getVariantLabel(v)}</td>
                             <td className="px-4 py-2 text-muted">{v.sku}</td>
                             <td className="px-4 py-2 text-right font-medium">
-                              {formatPrice(v.price)}
+                              {formatPrice(priceInclGst(v.price, v.gst))}
                             </td>
                             <td className="px-4 py-2 text-center">
                               {v.stock > 0 ? (

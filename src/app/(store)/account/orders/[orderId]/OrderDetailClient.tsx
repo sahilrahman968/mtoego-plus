@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrder, type OrderDetail } from "@/lib/store-api";
 import { formatPrice, getProductImage } from "@/lib/utils";
+import { priceInclGst } from "@/lib/pricing";
 import { OrderDetailPageSkeleton } from "@/components/store/skeletons";
 
 const STATUS_ICONS: Record<string, typeof Package> = {
@@ -209,10 +210,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-medium text-foreground">
-                      {formatPrice(item.total)}
+                      {formatPrice(priceInclGst(item.price, item.gst) * item.quantity)}
                     </p>
                     <p className="text-xs text-muted">
-                      {formatPrice(item.price)} each
+                      {formatPrice(priceInclGst(item.price, item.gst))} each (incl. GST)
                     </p>
                   </div>
                 </div>
@@ -247,7 +248,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">Payment Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted">Subtotal</span>
+                <span className="text-muted">Subtotal (excl. GST)</span>
                 <span>{formatPrice(order.pricing.subtotal)}</span>
               </div>
               {order.pricing.discount > 0 && (
@@ -257,6 +258,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                     {order.coupon ? ` (${order.coupon.code})` : ""}
                   </span>
                   <span>-{formatPrice(order.pricing.discount)}</span>
+                </div>
+              )}
+              {order.pricing.discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted">Taxable amount</span>
+                  <span>{formatPrice(order.pricing.subtotalAfterDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -291,7 +298,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </div>
               <hr className="border-border" />
               <div className="flex justify-between text-base font-bold">
-                <span>Total</span>
+                <span>Total (incl. GST)</span>
                 <span>{formatPrice(order.pricing.grandTotal)}</span>
               </div>
             </div>
