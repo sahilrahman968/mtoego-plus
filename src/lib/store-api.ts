@@ -283,20 +283,6 @@ export async function getOrder(orderId: string) {
 
 // ── Auth ─────────────────────────────────────────────────────────────────
 
-export async function login(email: string, password: string) {
-  return apiFetch<{ user: UserData }>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-}
-
-export async function register(name: string, email: string, password: string) {
-  return apiFetch<{ user: UserData }>("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ name, email, password }),
-  });
-}
-
 export async function logout() {
   return apiFetch("/api/auth/logout", { method: "POST" });
 }
@@ -318,13 +304,6 @@ export async function getGoogleClientId() {
 
 export async function verifyEmail(token: string) {
   return apiFetch<null>(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
-}
-
-export async function resendVerification(email: string) {
-  return apiFetch<null>("/api/auth/resend-verification", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
 }
 
 export async function sendOtp(phone: string) {

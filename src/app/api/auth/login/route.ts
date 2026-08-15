@@ -50,6 +50,14 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid credentials", 401);
     }
 
+    // Store customers must use Google or phone OTP — email/password is admin-only
+    if (user.role === "customer") {
+      return errorResponse(
+        "Please sign in with Google or phone OTP.",
+        403
+      );
+    }
+
     // ── Issue JWT ─────────────────────────────────────────────────────────
     const token = await signToken({
       userId: user._id.toString(),
