@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid credentials", 401);
     }
 
-    // Store customers must use Google or phone OTP — email/password is admin-only
+    // Store customers must use WhatsApp OTP — email/password is admin-only
     if (user.role === "customer") {
       return errorResponse(
-        "Please sign in with Google or phone OTP.",
+        "Please sign in with WhatsApp OTP.",
         403
       );
     }

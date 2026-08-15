@@ -14,7 +14,6 @@ export interface IUserDocument extends Document {
   isEmailVerified: boolean;
   emailVerificationToken?: string | null;
   emailVerificationExpires?: Date | null;
-  googleId?: string | null;
   picture?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -84,11 +83,6 @@ const userSchema = new Schema<IUserDocument>(
       type: Date,
       default: null,
       select: false,
-    },
-    googleId: {
-      type: String,
-      default: null,
-      sparse: true,
     },
     picture: {
       type: String,

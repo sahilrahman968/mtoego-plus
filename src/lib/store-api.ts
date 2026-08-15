@@ -291,17 +291,6 @@ export async function fetchCurrentUser() {
   return apiFetch<{ user: UserData }>("/api/auth/me");
 }
 
-export async function googleAuth(credential: string) {
-  return apiFetch<{ user: UserData }>("/api/auth/google", {
-    method: "POST",
-    body: JSON.stringify({ credential }),
-  });
-}
-
-export async function getGoogleClientId() {
-  return apiFetch<{ clientId: string }>("/api/auth/google-client-id");
-}
-
 export async function verifyEmail(token: string) {
   return apiFetch<null>(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
 }

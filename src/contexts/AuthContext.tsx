@@ -11,7 +11,6 @@ import {
 import {
   fetchCurrentUser,
   logout as apiLogout,
-  googleAuth as apiGoogleAuth,
   sendOtp as apiSendOtp,
   verifyOtp as apiVerifyOtp,
   type UserData,
@@ -21,7 +20,6 @@ interface AuthContextType {
   user: UserData | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  googleSignIn: (credential: string) => Promise<{ success: boolean; message: string }>;
   sendOtp: (phone: string) => Promise<{ success: boolean; message: string; isExistingUser?: boolean }>;
   verifyOtp: (phone: string, otp: string, name?: string) => Promise<{ success: boolean; message: string; needsName?: boolean }>;
   logout: () => Promise<void>;
@@ -50,15 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh().finally(() => setIsLoading(false));
   }, [refresh]);
-
-  const googleSignIn = useCallback(async (credential: string) => {
-    const res = await apiGoogleAuth(credential);
-    if (res.success && res.data?.user) {
-      setUser(res.data.user);
-      return { success: true, message: res.message };
-    }
-    return { success: false, message: res.message || "Google sign-in failed" };
-  }, []);
 
   const sendOtp = useCallback(async (phone: string) => {
     const res = await apiSendOtp(phone);
@@ -97,7 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
-        googleSignIn,
         sendOtp,
         verifyOtp,
         logout,

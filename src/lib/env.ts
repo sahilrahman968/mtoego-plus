@@ -67,11 +67,6 @@ export const env = {
     return process.env.APP_URL ?? "http://localhost:3000";
   },
 
-  // ─── Google OAuth (optional — only needed if Google sign‑in is enabled) ──
-  get GOOGLE_CLIENT_ID() {
-    return process.env.GOOGLE_CLIENT_ID ?? "";
-  },
-
   // ─── Twilio WhatsApp (for OTP verification) ───────────────────────────────
   get TWILIO_ACCOUNT_SID() {
     return process.env.TWILIO_ACCOUNT_SID ?? "";

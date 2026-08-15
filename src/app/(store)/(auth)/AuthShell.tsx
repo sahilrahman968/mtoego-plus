@@ -1,31 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/store/Toast";
-import GoogleSignInButton from "@/components/store/GoogleSignInButton";
+
+const AUTH_BANNER_SRC = "/images/hero-banner.jpg";
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
-  const { googleSignIn, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const isRegister = pathname.startsWith("/register");
-
-  // Tagged with the route it came from so a stale error doesn't survive a switch
-  // between sign-in and create-account.
-  const [googleError, setGoogleError] = useState<{
-    path: string;
-    message: string;
-  } | null>(null);
-  const error = googleError?.path === pathname ? googleError.message : "";
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -33,30 +24,30 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, authLoading, router, redirect]);
 
-  const handleGoogleSuccess = useCallback(
-    async (credential: string) => {
-      setGoogleError(null);
-      const res = await googleSignIn(credential);
-      if (res.success) {
-        toast(isRegister ? "Account created successfully!" : "Welcome!", "success");
-        router.replace(redirect);
-      } else {
-        setGoogleError({ path: pathname, message: res.message });
-      }
-    },
-    [googleSignIn, isRegister, pathname, redirect, router, toast]
-  );
-
-  const handleGoogleError = useCallback(
-    (message: string) => setGoogleError({ path: pathname, message }),
-    [pathname]
-  );
-
   if (authLoading) return null;
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 pb-12 pt-28">
+      <motion.div
+        initial={{ opacity: 0, scale: 1.03 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+        className="absolute inset-0"
+      >
+        <Image
+          src={AUTH_BANNER_SRC}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover animate-hero-slow-zoom"
+          priority
+        />
+      </motion.div>
+
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.82)_0%,rgba(0,0,0,0.46)_42%,rgba(0,0,0,0.28)_68%,rgba(0,0,0,0.75)_100%)]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/40" />
+
+      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-black/55 p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)] backdrop-blur-md sm:p-8">
         <div className="text-center mb-6">
           <Link
             href="/"
@@ -83,36 +74,12 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
             >
               {isRegister
                 ? "Join Motoego+ for exclusive deals and easy checkout"
-                : "Sign in to your account to continue shopping"}
+                : "Sign in with WhatsApp OTP to continue shopping"}
             </motion.p>
           </AnimatePresence>
         </div>
 
-        <div className="auth-form px-1 sm:px-6">
-          <GoogleSignInButton
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-          />
-
-          {error && (
-            <div className="p-3 mt-4 bg-danger/10 border border-danger/25 rounded-lg text-sm text-danger animate-slide-up">
-              {error}
-            </div>
-          )}
-
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-wide">
-              <span className="bg-background px-3 text-muted">
-                or continue with phone
-              </span>
-            </div>
-          </div>
-
-          {/* Reserved height keeps the logo and Google button from shifting
-              while the sign-in and create-account forms cross-fade. */}
+        <div className="auth-form">
           <div className="min-h-[13.5rem]">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div

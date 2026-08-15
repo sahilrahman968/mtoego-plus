@@ -63,14 +63,20 @@ export default function Header() {
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  const isHome = pathname === "/";
+  // Pages with a full-bleed background image let content run under the header.
+  const isFullBleed =
+    pathname === "/" || pathname === "/login" || pathname === "/register";
 
   return (
     <header
-      className={`z-50 w-full ${isHome ? "absolute top-0 left-0 right-0 bg-transparent" : "sticky top-0 border-b border-border/80 bg-black/80 backdrop-blur-xl"}`}
+      className={`sticky top-0 z-50 w-full bg-transparent ${isFullBleed ? "-mb-[4.5rem]" : ""}`}
     >
       <div className="relative">
-        <div className="mx-auto flex h-[4.5rem] max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[7.5rem] bg-gradient-to-b from-black/70 via-black/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]"
+        />
+        <div className="relative mx-auto flex h-[4.5rem] max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6">
           <div className="flex items-center gap-2 lg:gap-3">
             <Link
               href="/"
