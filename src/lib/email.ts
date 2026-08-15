@@ -18,6 +18,240 @@ function getTransporter() {
   return _transporter;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function emailShell(title: string, bodyHtml: string): string {
+  return `
+    <div style="max-width:560px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#151515;background:#f7f7f8">
+      <div style="padding:28px 24px">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="width:48px;height:48px;background:#111;border-radius:12px;display:inline-flex;align-items:center;justify-content:center">
+            <span style="color:#fff;font-weight:700;font-size:18px">M+</span>
+          </div>
+          <p style="margin:12px 0 0;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:#666">Motoego+</p>
+        </div>
+        <div style="padding:28px 24px;border:1px solid #ececec;border-radius:12px;background:#fff">
+          <h1 style="font-size:20px;margin:0 0 12px;color:#111">${title}</h1>
+          ${bodyHtml}
+        </div>
+        <p style="text-align:center;color:#999;font-size:12px;margin:20px 0 0">
+          Questions? Reply to this email or contact support.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+function renderItemsTable(items: OrderEmailItem[]): string {
+  const rows = items
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding:10px 0;border-top:1px solid #f0f0f0;color:#111">
+          <div style="font-weight:600">${escapeHtml(item.title)}</div>
+          ${
+            item.variantLabel
+              ? `<div style="font-size:12px;color:#777;margin-top:2px">${escapeHtml(item.variantLabel)}</div>`
+              : ""
+          }
+          <div style="font-size:12px;color:#777;margin-top:2px">Qty ${item.quantity}</div>
+        </td>
+        <td style="padding:10px 0;border-top:1px solid #f0f0f0;color:#111;text-align:right;font-weight:600;vertical-align:top;white-space:nowrap">
+          ${escapeHtml(item.total)}
+        </td>
+      </tr>`
+    )
+    .join("");
+
+  return `
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0 0">
+      ${rows}
+    </table>
+  `;
+}
+
+function renderAddress(address: OrderEmailAddress): string {
+  const lines = [
+    address.name,
+    address.line1,
+    address.line2,
+    `${address.city}, ${address.state} ${address.pincode}`,
+    `Phone: ${address.phone}`,
+  ]
+    .filter(Boolean)
+    .map((line) => escapeHtml(line as string));
+
+  return `
+    <div style="margin-top:16px;padding:14px;border-radius:8px;background:#fafafa;border:1px solid #efefef">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#555">
+        Shipping address
+      </p>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#222">${lines.join("<br>")}</p>
+    </div>
+  `;
+}
+
+export interface OrderEmailItem {
+  title: string;
+  variantLabel?: string;
+  quantity: number;
+  total: string;
+}
+
+export interface OrderEmailAddress {
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
+export interface OrderConfirmationEmailInput {
+  name: string;
+  orderNumber: string;
+  items: OrderEmailItem[];
+  grandTotal: string;
+  shippingAddress: OrderEmailAddress;
+  orderId: string;
+}
+
+export async function sendOrderConfirmationEmail(
+  to: string,
+  payload: OrderConfirmationEmailInput
+) {
+  const orderUrl = `${env.APP_URL}/account/orders/${payload.orderId}`;
+  const safeName = escapeHtml(payload.name);
+  const safeOrderNumber = escapeHtml(payload.orderNumber);
+
+  await getTransporter().sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject: `Order confirmed — ${payload.orderNumber} — Motoego+`,
+    html: emailShell(
+      "Payment received — order confirmed",
+      `
+        <p style="font-size:14px;color:#555;margin:0 0 8px">
+          Hi ${safeName}, thanks for your order! We've received your payment and are getting things ready.
+        </p>
+        <p style="font-size:14px;color:#111;margin:0 0 4px">
+          <strong>Order:</strong> ${safeOrderNumber}
+        </p>
+        <p style="font-size:14px;color:#111;margin:0">
+          <strong>Total paid:</strong> ${escapeHtml(payload.grandTotal)}
+        </p>
+        ${renderItemsTable(payload.items)}
+        ${renderAddress(payload.shippingAddress)}
+        <div style="text-align:center;margin-top:24px">
+          <a href="${orderUrl}"
+             style="display:inline-block;padding:12px 28px;background:#111;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
+            View order
+          </a>
+        </div>
+      `
+    ),
+  });
+}
+
+export interface OrderShippedEmailInput {
+  name: string;
+  orderNumber: string;
+  items: OrderEmailItem[];
+  trackingNumber: string;
+  trackingUrl: string;
+  orderId: string;
+}
+
+export async function sendOrderShippedEmail(
+  to: string,
+  payload: OrderShippedEmailInput
+) {
+  const orderUrl = `${env.APP_URL}/account/orders/${payload.orderId}`;
+  const safeName = escapeHtml(payload.name);
+  const safeOrderNumber = escapeHtml(payload.orderNumber);
+  const safeTracking = escapeHtml(payload.trackingNumber);
+
+  await getTransporter().sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject: `Your order has shipped — ${payload.orderNumber} — Motoego+`,
+    html: emailShell(
+      "Your order is on the way",
+      `
+        <p style="font-size:14px;color:#555;margin:0 0 8px">
+          Hi ${safeName}, good news — order <strong>${safeOrderNumber}</strong> has been shipped.
+        </p>
+        <div style="margin:16px 0;padding:14px;border-radius:8px;background:#fafafa;border:1px solid #efefef">
+          <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#555">
+            Tracking
+          </p>
+          <p style="margin:0 0 8px;font-size:14px;color:#111">
+            AWB / tracking number: <strong>${safeTracking}</strong>
+          </p>
+          <a href="${escapeHtml(payload.trackingUrl)}"
+             style="font-size:14px;color:#111;font-weight:600">
+            Track shipment →
+          </a>
+        </div>
+        ${renderItemsTable(payload.items)}
+        <div style="text-align:center;margin-top:24px">
+          <a href="${orderUrl}"
+             style="display:inline-block;padding:12px 28px;background:#111;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
+            View order
+          </a>
+        </div>
+      `
+    ),
+  });
+}
+
+export interface OrderDeliveredEmailInput {
+  name: string;
+  orderNumber: string;
+  items: OrderEmailItem[];
+  orderId: string;
+}
+
+export async function sendOrderDeliveredEmail(
+  to: string,
+  payload: OrderDeliveredEmailInput
+) {
+  const orderUrl = `${env.APP_URL}/account/orders/${payload.orderId}`;
+  const safeName = escapeHtml(payload.name);
+  const safeOrderNumber = escapeHtml(payload.orderNumber);
+
+  await getTransporter().sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject: `Delivered — ${payload.orderNumber} — Motoego+`,
+    html: emailShell(
+      "Your order has been delivered",
+      `
+        <p style="font-size:14px;color:#555;margin:0 0 8px">
+          Hi ${safeName}, order <strong>${safeOrderNumber}</strong> has been delivered. We hope you love it!
+        </p>
+        ${renderItemsTable(payload.items)}
+        <div style="text-align:center;margin-top:24px">
+          <a href="${orderUrl}"
+             style="display:inline-block;padding:12px 28px;background:#111;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
+            View order
+          </a>
+        </div>
+        <p style="color:#999;font-size:12px;margin:20px 0 0;text-align:center">
+          If something isn't right, reply to this email and we'll help.
+        </p>
+      `
+    ),
+  });
+}
+
 export async function sendVerificationEmail(
   to: string,
   name: string,
@@ -37,7 +271,7 @@ export async function sendVerificationEmail(
           </div>
           <h1 style="font-size:22px;margin:0 0 8px">Verify your email</h1>
           <p style="color:#666;font-size:14px;margin:0 0 28px">
-            Hi ${name}, thanks for signing up! Please confirm your email address to get started.
+            Hi ${escapeHtml(name)}, thanks for signing up! Please confirm your email address to get started.
           </p>
           <a href="${verifyUrl}"
              style="display:inline-block;padding:12px 32px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">

@@ -128,6 +128,12 @@ export interface IOrderDocument extends Document {
   idempotencyKey?: string;
   /** Whether inventory has been deducted for this order */
   inventoryDeducted: boolean;
+  /** Tracks which customer emails have been sent (idempotency) */
+  emailsSent: {
+    confirmation: boolean;
+    shipped: boolean;
+    delivered: boolean;
+  };
   notes?: string;
   cancelReason?: string;
   createdAt: Date;
@@ -319,6 +325,11 @@ const orderSchema = new Schema<IOrderDocument>(
     inventoryDeducted: {
       type: Boolean,
       default: false,
+    },
+    emailsSent: {
+      confirmation: { type: Boolean, default: false },
+      shipped: { type: Boolean, default: false },
+      delivered: { type: Boolean, default: false },
     },
     trackingNumber: {
       type: String,

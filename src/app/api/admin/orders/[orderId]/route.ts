@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { isValidObjectId } from "@/lib/validators";
 import { restoreInventoryForOrder } from "@/lib/inventory";
+import { notifyOrderDelivered, notifyOrderShipped } from "@/lib/order-emails";
 import Order, { STATUS_TRANSITIONS, OrderStatus, ORDER_STATUSES } from "@/models/order.model";
 
 // ─── GET /api/admin/orders/:orderId — Order detail (admin) ───────────────────
@@ -222,6 +223,12 @@ export async function PATCH(
     });
 
     await order.save();
+
+    if (status === "shipped") {
+      notifyOrderShipped(order);
+    } else if (status === "delivered") {
+      notifyOrderDelivered(order);
+    }
 
     const updated = await Order.findById(orderId)
       .populate({

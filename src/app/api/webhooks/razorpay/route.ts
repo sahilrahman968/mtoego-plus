@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { deductInventoryForOrder } from "@/lib/inventory";
+import { notifyOrderPaid } from "@/lib/order-emails";
 import Order from "@/models/order.model";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
@@ -140,6 +141,9 @@ async function handlePaymentSuccess(event: RazorpayWebhookEvent) {
     });
 
     await order.save();
+
+    // Confirmation email (idempotent vs client verify path)
+    notifyOrderPaid(order);
 
     // Deduct inventory
     try {

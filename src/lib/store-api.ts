@@ -536,7 +536,6 @@ export interface OrderDetail {
   orderNumber: string;
   status: string;
   items: {
-    _id: string;
     product: { slug: string; images: ProductImageData[] } | null;
     title: string;
     variantLabel: string;

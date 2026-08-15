@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { validatePaymentVerification } from "@/lib/validators";
 import { verifyPaymentSignature } from "@/lib/razorpay";
 import { deductInventoryForOrder } from "@/lib/inventory";
+import { notifyOrderPaid } from "@/lib/order-emails";
 import Order from "@/models/order.model";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
@@ -85,6 +86,9 @@ export async function POST(request: NextRequest) {
     });
 
     await order.save();
+
+    // ── Confirmation email (idempotent vs webhook path) ──────────────────
+    notifyOrderPaid(order);
 
     // ── Deduct inventory ─────────────────────────────────────────────────
     try {

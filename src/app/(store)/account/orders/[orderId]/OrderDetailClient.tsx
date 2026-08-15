@@ -238,8 +238,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               Items ({order.items.length})
             </h3>
             <div className="space-y-4">
-              {order.items.map((item) => (
-                <div key={item._id} className="flex gap-4">
+              {order.items.map((item, index) => (
+                <div key={`${item.sku}-${index}`} className="flex gap-4">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-border bg-black/45">
                     <Image
                       src={getProductImage(item.product?.images)}
