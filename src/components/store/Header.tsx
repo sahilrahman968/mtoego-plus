@@ -64,8 +64,7 @@ export default function Header() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   // Pages with a full-bleed background image let content run under the header.
-  const isFullBleed =
-    pathname === "/" || pathname === "/login" || pathname === "/register";
+  const isFullBleed = pathname === "/" || pathname === "/login";
 
   return (
     <header
@@ -220,7 +219,7 @@ export default function Header() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 340, damping: 34 }}
-                className="fixed right-0 top-0 z-[2147483647] flex max-h-dvh w-[68vw] max-w-[17.5rem] flex-col overflow-y-auto border-b border-l border-white/10 bg-[#0d0d11]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.55)] lg:hidden"
+                className="fixed right-0 top-0 z-[2147483647] flex max-h-dvh w-[68vw] max-w-[17.5rem] flex-col overflow-y-auto bg-white/[0.02] backdrop-blur-[2px] backdrop-saturate-150 lg:hidden"
                 aria-label="Mobile navigation"
               >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_35%)]" />
@@ -228,7 +227,7 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
+                  className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full bg-white/[0.04] text-foreground/80 transition-colors hover:text-primary"
                   aria-label="Close menu"
                 >
                   <X size={18} />
@@ -299,12 +298,12 @@ export default function Header() {
                   )}
                 </nav>
 
-                <div className="relative shrink-0 border-t border-white/8 bg-black/20 p-3">
+                <div className="relative shrink-0 p-3">
                   {!isAuthenticated ? (
                     <Link
                       href="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex h-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold tracking-[0.03em] text-white shadow-[0_8px_28px_color-mix(in_srgb,var(--primary)_25%,transparent)] transition-all hover:brightness-110"
+                      className="flex h-10 items-center justify-center bg-white/[0.06] text-sm font-medium tracking-[0.03em] text-white backdrop-blur-[2px] backdrop-saturate-150 transition-colors hover:bg-white/[0.12]"
                     >
                       Login / register
                     </Link>

@@ -70,20 +70,12 @@ export default function VerifyEmailClient() {
               <XCircle size={48} className="mx-auto text-danger mb-4" />
               <h1 className="text-xl font-bold text-foreground">Verification failed</h1>
               <p className="text-sm text-muted mt-2">{message}</p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
-                <Link
-                  href="/register"
-                  className="px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
-                >
-                  Register Again
-                </Link>
-                <Link
-                  href="/login"
-                  className="px-6 py-2.5 border border-border text-foreground font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Sign In
-                </Link>
-              </div>
+              <Link
+                href="/login"
+                className="inline-block mt-6 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
+              >
+                Sign In
+              </Link>
             </>
           )}
         </div>

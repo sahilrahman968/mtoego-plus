@@ -43,8 +43,8 @@ const publicPaths = [
   "/api/auth/logout",
   "/api/auth/verify-email",
   "/api/auth/resend-verification",
-  "/api/auth/send-otp",
-  "/api/auth/verify-otp",
+  "/api/auth/google",
+  "/api/auth/google-client-id",
   "/api/webhooks/",
   "/admin/login",
 ];

@@ -67,18 +67,9 @@ export const env = {
     return process.env.APP_URL ?? "http://localhost:3000";
   },
 
-  // ─── Twilio WhatsApp (for OTP verification) ───────────────────────────────
-  get TWILIO_ACCOUNT_SID() {
-    return process.env.TWILIO_ACCOUNT_SID ?? "";
-  },
-  get TWILIO_AUTH_TOKEN() {
-    return process.env.TWILIO_AUTH_TOKEN ?? "";
-  },
-  get TWILIO_WHATSAPP_FROM() {
-    return process.env.TWILIO_WHATSAPP_FROM ?? "";
-  },
-  get TWILIO_WHATSAPP_CONTENT_SID() {
-    return process.env.TWILIO_WHATSAPP_CONTENT_SID ?? "";
+  // ─── Google OAuth (customer store sign-in) ───────────────────────────────
+  get GOOGLE_CLIENT_ID() {
+    return process.env.GOOGLE_CLIENT_ID ?? "";
   },
 
   // ─── Razorpay ───────────────────────────────────────────────────────────

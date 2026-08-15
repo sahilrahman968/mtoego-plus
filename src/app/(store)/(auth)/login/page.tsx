@@ -1,6 +1,4 @@
 import { Metadata } from "next";
-import { Suspense } from "react";
-import LoginClient from "./LoginClient";
 
 export const metadata: Metadata = {
   title: "Login - Motoego+",
@@ -8,9 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginClient />
-    </Suspense>
-  );
+  return null;
 }

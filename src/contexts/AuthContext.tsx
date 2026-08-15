@@ -11,8 +11,7 @@ import {
 import {
   fetchCurrentUser,
   logout as apiLogout,
-  sendOtp as apiSendOtp,
-  verifyOtp as apiVerifyOtp,
+  googleAuth as apiGoogleAuth,
   type UserData,
 } from "@/lib/store-api";
 
@@ -20,8 +19,7 @@ interface AuthContextType {
   user: UserData | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  sendOtp: (phone: string) => Promise<{ success: boolean; message: string; isExistingUser?: boolean }>;
-  verifyOtp: (phone: string, otp: string, name?: string) => Promise<{ success: boolean; message: string; needsName?: boolean }>;
+  googleSignIn: (credential: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -49,30 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh().finally(() => setIsLoading(false));
   }, [refresh]);
 
-  const sendOtp = useCallback(async (phone: string) => {
-    const res = await apiSendOtp(phone);
-    if (res.success) {
-      return {
-        success: true,
-        message: res.message,
-        isExistingUser: res.data?.isExistingUser,
-      };
+  const googleSignIn = useCallback(async (credential: string) => {
+    const res = await apiGoogleAuth(credential);
+    if (res.success && res.data?.user) {
+      setUser(res.data.user);
+      return { success: true, message: res.message };
     }
-    return { success: false, message: res.message || "Failed to send OTP" };
-  }, []);
-
-  const verifyOtp = useCallback(async (phone: string, otp: string, name?: string) => {
-    const res = await apiVerifyOtp(phone, otp, name);
-    if (res.success && res.data) {
-      if ("needsName" in res.data && res.data.needsName) {
-        return { success: true, message: res.message, needsName: true };
-      }
-      if ("user" in res.data && res.data.user) {
-        setUser(res.data.user);
-        return { success: true, message: res.message };
-      }
-    }
-    return { success: false, message: res.message || "OTP verification failed" };
+    return { success: false, message: res.message || "Google sign-in failed" };
   }, []);
 
   const logout = useCallback(async () => {
@@ -86,8 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
-        sendOtp,
-        verifyOtp,
+        googleSignIn,
         logout,
         refresh,
       }}

@@ -49,11 +49,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/register" className="text-sm transition-colors hover:text-primary">
-                  Register
-                </Link>
-              </li>
-              <li>
                 <Link href="/account/orders" className="text-sm transition-colors hover:text-primary">
                   My Orders
                 </Link>
