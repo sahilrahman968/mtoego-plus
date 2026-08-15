@@ -624,7 +624,11 @@ export interface OrderDetail {
     status: string;
     timestamp: string;
     note?: string;
+    trackingNumber?: string;
+    trackingUrl?: string;
   }[];
+  trackingNumber?: string;
+  trackingUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

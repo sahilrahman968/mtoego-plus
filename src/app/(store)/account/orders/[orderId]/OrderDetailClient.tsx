@@ -12,6 +12,9 @@ import {
   Truck,
   AlertCircle,
   ArrowLeft,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrder, type OrderDetail } from "@/lib/store-api";
@@ -43,6 +46,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copiedTracking, setCopiedTracking] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -51,6 +55,16 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       setLoading(false);
     });
   }, [orderId, isAuthenticated]);
+
+  const copyTrackingNumber = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedTracking(true);
+      setTimeout(() => setCopiedTracking(false), 2000);
+    } catch {
+      // Clipboard may be unavailable; ignore silently
+    }
+  };
 
   if (!authLoading && !isAuthenticated) {
     return (
@@ -137,39 +151,84 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           <div className="border border-border bg-card/75 p-6">
             <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">Order Timeline</h3>
             <div className="space-y-4">
-              {order.statusHistory.map((entry, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <div className="relative">
-                    <div
-                      className={`w-3 h-3 rounded-full mt-1 ${
-                        idx === order.statusHistory.length - 1
-                          ? "bg-primary"
-                          : "bg-muted/45"
-                      }`}
-                    />
-                    {idx < order.statusHistory.length - 1 && (
-                      <div className="absolute left-1.5 top-4 h-6 w-px -translate-x-1/2 bg-border" />
-                    )}
+              {order.statusHistory.map((entry, idx) => {
+                const awb =
+                  entry.trackingNumber ||
+                  (entry.status === "shipped" ? order.trackingNumber : undefined);
+                const trackUrl =
+                  entry.trackingUrl ||
+                  (entry.status === "shipped" ? order.trackingUrl : undefined);
+
+                return (
+                  <div key={idx} className="flex gap-3">
+                    <div className="relative">
+                      <div
+                        className={`w-3 h-3 rounded-full mt-1 ${
+                          idx === order.statusHistory.length - 1
+                            ? "bg-primary"
+                            : "bg-muted/45"
+                        }`}
+                      />
+                      {idx < order.statusHistory.length - 1 && (
+                        <div className="absolute left-1.5 top-4 h-6 w-px -translate-x-1/2 bg-border" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground capitalize">
+                        {entry.status}
+                      </p>
+                      {entry.note && (
+                        <p className="text-xs text-muted">{entry.note}</p>
+                      )}
+                      {entry.status === "shipped" && (awb || trackUrl) && (
+                        <div className="mt-2 space-y-1.5 border border-border bg-black/25 px-3 py-2">
+                          {awb && (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted shrink-0">
+                                AWB
+                              </span>
+                              <code className="text-xs text-foreground truncate">{awb}</code>
+                              <button
+                                type="button"
+                                onClick={() => copyTrackingNumber(awb)}
+                                className="shrink-0 p-1 text-muted transition-colors hover:text-foreground"
+                                title="Copy tracking number"
+                                aria-label="Copy tracking number"
+                              >
+                                {copiedTracking ? (
+                                  <Check size={12} className="text-success" />
+                                ) : (
+                                  <Copy size={12} />
+                                )}
+                              </button>
+                            </div>
+                          )}
+                          {trackUrl && (
+                            <a
+                              href={trackUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline min-w-0"
+                            >
+                              <ExternalLink size={12} className="shrink-0" />
+                              <span className="truncate">Track shipment</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted mt-0.5">
+                        {new Date(entry.timestamp).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground capitalize">
-                      {entry.status}
-                    </p>
-                    {entry.note && (
-                      <p className="text-xs text-muted">{entry.note}</p>
-                    )}
-                    <p className="text-xs text-muted">
-                      {new Date(entry.timestamp).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

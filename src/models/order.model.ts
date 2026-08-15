@@ -96,6 +96,10 @@ export interface IStatusHistoryEntry {
   status: OrderStatus;
   timestamp: Date;
   note?: string;
+  /** AWB / courier tracking number — set when status becomes shipped */
+  trackingNumber?: string;
+  /** Public tracking URL — set when status becomes shipped */
+  trackingUrl?: string;
 }
 
 // ─── Document Interface ──────────────────────────────────────────────────────
@@ -116,6 +120,10 @@ export interface IOrderDocument extends Document {
   };
   status: OrderStatus;
   statusHistory: IStatusHistoryEntry[];
+  /** AWB / courier tracking number (required when marking shipped) */
+  trackingNumber?: string;
+  /** Public tracking URL (required when marking shipped) */
+  trackingUrl?: string;
   /** Idempotency key to prevent duplicate order creation from same checkout */
   idempotencyKey?: string;
   /** Whether inventory has been deducted for this order */
@@ -248,6 +256,8 @@ const statusHistorySchema = new Schema<IStatusHistoryEntry>(
       default: Date.now,
     },
     note: { type: String },
+    trackingNumber: { type: String, trim: true },
+    trackingUrl: { type: String, trim: true },
   },
   { _id: false }
 );
@@ -309,6 +319,16 @@ const orderSchema = new Schema<IOrderDocument>(
     inventoryDeducted: {
       type: Boolean,
       default: false,
+    },
+    trackingNumber: {
+      type: String,
+      trim: true,
+      maxlength: [100, "Tracking number cannot exceed 100 characters"],
+    },
+    trackingUrl: {
+      type: String,
+      trim: true,
+      maxlength: [500, "Tracking URL cannot exceed 500 characters"],
     },
     notes: { type: String, maxlength: 1000 },
     cancelReason: { type: String, maxlength: 500 },

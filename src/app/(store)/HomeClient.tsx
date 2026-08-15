@@ -276,8 +276,8 @@ export default function HomeClient() {
                   key={item.label}
                   className="flex items-center gap-3 bg-card/40 px-4 py-3"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center border border-primary/35 bg-primary/10 text-primary">
-                    <item.icon size={14} />
+                  <div className="flex h-8 w-8 items-center justify-center text-primary">
+                    <item.icon size={22} />
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground">

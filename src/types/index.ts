@@ -372,4 +372,8 @@ export interface UpdateOrderStatusBody {
   status: OrderStatus;
   note?: string;
   cancelReason?: string;
+  /** Required when status is "shipped" */
+  trackingNumber?: string;
+  /** Required when status is "shipped" */
+  trackingUrl?: string;
 }
