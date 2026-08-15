@@ -50,7 +50,6 @@ export default function ProductsClient() {
 
   const [products, setProducts] = useState<ProductData[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -118,7 +117,6 @@ export default function ProductsClient() {
     }).then((res) => {
       if (res.success && res.data) {
         setProducts(res.data.items);
-        setTotal(res.data.total);
         setTotalPages(res.data.totalPages);
       }
       setLoading(false);
@@ -274,15 +272,13 @@ export default function ProductsClient() {
   return (
     <>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-          {search ? `Search results for "${search}"` : "All Products"}
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          {total} product{total !== 1 ? "s" : ""} found
-        </p>
-      </div>
+      {search && (
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+            Search results for &quot;{search}&quot;
+          </h1>
+        </div>
+      )}
 
       {/* Active filters */}
       {activeCategory && (

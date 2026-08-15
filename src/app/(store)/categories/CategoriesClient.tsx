@@ -13,7 +13,9 @@ export default function CategoriesClient() {
 
   useEffect(() => {
     fetchCategories().then((res) => {
-      if (res.success && res.data) setCategories(res.data);
+      if (res.success && res.data) {
+        setCategories(res.data.filter((cat) => (cat.productCount ?? 0) > 0));
+      }
       setLoading(false);
     });
   }, []);
@@ -49,7 +51,7 @@ export default function CategoriesClient() {
 
         {categories.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((cat, idx) => (
+            {categories.map((cat) => (
               <div key={cat._id}>
                 <Link
                   href={`/categories/${cat.slug}`}
@@ -75,7 +77,7 @@ export default function CategoriesClient() {
                   </div>
                   <div className="absolute inset-x-0 bottom-0 p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary/85">
-                      {String(12 + (idx % 4) * 7)} Pieces
+                      {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
                     </p>
                     <h2 className="mt-1 text-3xl font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary">
                       {cat.name}

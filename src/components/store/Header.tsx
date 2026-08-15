@@ -90,22 +90,16 @@ export default function Header() {
 
           <nav className="ml-10 hidden items-center gap-8 lg:flex">
             <Link
-              href="/"
-              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors ${isActive("/") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
+              href="/categories"
+              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors ${isActive("/categories") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
             >
-              Home
+              Categories
             </Link>
             <Link
               href="/products"
               className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors ${isActive("/products") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
             >
               Products
-            </Link>
-            <Link
-              href="/categories"
-              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors ${isActive("/categories") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
-            >
-              Categories
             </Link>
           </nav>
 
@@ -239,9 +233,8 @@ export default function Header() {
                     Browse
                   </p>
                   {[
-                    { href: "/", label: "Home" },
-                    { href: "/products", label: "Products" },
                     { href: "/categories", label: "Categories" },
+                    { href: "/products", label: "Products" },
                     { href: "/wishlist", label: "Wishlist" },
                     { href: "/search", label: "Search" },
                     { href: "/cart", label: "Cart" },
