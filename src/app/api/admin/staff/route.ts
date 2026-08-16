@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
+import crypto from "crypto";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { connectDB } from "@/lib/db/mongoose";
 import User from "@/models/user.model";
-import bcrypt from "bcryptjs";
+import { isValidEmail } from "@/lib/validators";
 
 // ─── GET /api/admin/staff ────────────────────────────────────────────────────
 // List all staff and super_admin users. Super admin only.
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 }
 
 // ─── POST /api/admin/staff ───────────────────────────────────────────────────
-// Create a new staff member. Super admin only.
+// Create a new staff member by email. They sign in via Google at /admin/login.
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,43 +70,50 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { name, email, password, role } = body;
+    const { email, role } = body;
 
-    // Validate required fields
-    if (!name || !email || !password) {
-      return errorResponse("Name, email and password are required", 400);
+    if (!email || typeof email !== "string") {
+      return errorResponse("Email is required", 400);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!isValidEmail(normalizedEmail)) {
+      return errorResponse("Please provide a valid email address", 400);
     }
 
     if (!["staff", "super_admin"].includes(role)) {
       return errorResponse("Role must be staff or super_admin", 400);
     }
 
-    if (password.length < 8) {
-      return errorResponse("Password must be at least 8 characters", 400);
-    }
-
-    // Check for existing user
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
-      return errorResponse("A user with this email already exists", 409);
+      if (["super_admin", "staff"].includes(existing.role)) {
+        return errorResponse("A staff member with this email already exists", 409);
+      }
+
+      // Promote an existing customer account to the requested admin role
+      existing.role = role;
+      existing.isActive = true;
+      await existing.save();
+
+      return successResponse(existing.toJSON(), "Existing user promoted to staff", 200);
     }
 
-    // Hash password manually since we're using create
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const localPart = normalizedEmail.split("@")[0] || "Staff";
+    const name = localPart.length >= 2 ? localPart : `${localPart} user`;
+    const randomPassword =
+      crypto.randomBytes(32).toString("hex") + "A1a!";
 
     const user = await User.create({
       name,
-      email: email.toLowerCase(),
-      password: hashedPassword,
+      email: normalizedEmail,
+      password: randomPassword,
       role,
       isActive: true,
+      isEmailVerified: true,
     });
 
-    // Return without password
-    const userObj = user.toJSON();
-
-    return successResponse(userObj, "Staff member created successfully", 201);
+    return successResponse(user.toJSON(), "Staff member created successfully", 201);
   } catch (err) {
     console.error("[Staff Create] Error:", err);
     return errorResponse("Failed to create staff member");

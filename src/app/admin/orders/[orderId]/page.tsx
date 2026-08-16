@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Check, Copy, ExternalLink } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import StatusBadge from "../../components/StatusBadge";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { getProductImage } from "@/lib/utils";
 
 interface StatusHistoryEntry {
   status: string;
@@ -27,6 +29,10 @@ interface OrderDetail {
     gst?: number;
     quantity: number;
     total: number;
+    product?: {
+      slug?: string;
+      images?: { url: string; alt?: string }[];
+    } | null;
   }[];
   shippingAddress: {
     name: string;
@@ -248,15 +254,26 @@ export default function OrderDetailPage({
                 const unitIncl = Math.round(item.price * (1 + gst / 100) * 100) / 100;
                 const lineIncl = Math.round(unitIncl * item.quantity * 100) / 100;
                 return (
-                <div key={i} className="px-5 py-3 flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-900">{item.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {item.variantLabel && <span>{item.variantLabel} · </span>}
-                      SKU: {item.sku} · Qty: {item.quantity} · GST: {gst}%
-                    </p>
+                <div key={i} className="px-5 py-3 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                      <Image
+                        src={getProductImage(item.product?.images)}
+                        alt={item.title}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{item.title}</p>
+                      <p className="text-xs text-slate-500">
+                        {item.variantLabel && <span>{item.variantLabel} · </span>}
+                        SKU: {item.sku} · Qty: {item.quantity} · GST: {gst}%
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right ml-4">
+                  <div className="text-right shrink-0">
                     <p className="text-sm font-medium text-slate-900">₹{lineIncl.toLocaleString("en-IN")}</p>
                     <p className="text-xs text-slate-400">
                       ₹{unitIncl.toLocaleString("en-IN")} each (incl. GST)

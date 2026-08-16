@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       let needsSave = false;
       if (!user.googleId) {
         user.googleId = googleId;
+        if (name) user.name = name;
         needsSave = true;
       }
       if (picture && user.picture !== picture) {

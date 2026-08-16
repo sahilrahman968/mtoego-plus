@@ -9,9 +9,7 @@ export default function NewStaffPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [role, setRole] = useState<"staff" | "super_admin">("staff");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,7 +21,7 @@ export default function NewStaffPage() {
       const res = await fetch("/api/admin/staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ email, role }),
       });
       const json = await res.json();
       if (json.success) {
@@ -40,7 +38,10 @@ export default function NewStaffPage() {
 
   return (
     <div>
-      <PageHeader title="Add Staff Member" description="Create a new admin or staff account" />
+      <PageHeader
+        title="Add Staff Member"
+        description="Authorize an email for admin access. They sign in with Google."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
         {error && (
@@ -49,17 +50,6 @@ export default function NewStaffPage() {
 
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                placeholder="John Doe"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
               <input
@@ -70,18 +60,9 @@ export default function NewStaffPage() {
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                 placeholder="john@example.com"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                placeholder="Minimum 8 characters"
-              />
+              <p className="mt-1.5 text-xs text-slate-400">
+                Name is filled in when they sign in with Google using this email.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Role</label>

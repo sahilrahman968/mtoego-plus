@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingCart, Trash2, ArrowRight } from "lucide-react";
+import { Heart, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
@@ -12,9 +11,9 @@ import {
   removeFromWishlist,
   type WishlistItemData,
 } from "@/lib/store-api";
-import { formatPrice, getProductImage, isProductUnavailable } from "@/lib/utils";
-import { priceInclGst } from "@/lib/pricing";
-import { WishlistCardSkeleton } from "@/components/store/skeletons";
+import { isProductUnavailable } from "@/lib/utils";
+import ProductCard from "@/components/store/ProductCard";
+import { ProductCardSkeleton } from "@/components/store/skeletons";
 
 export default function WishlistClient() {
   const { isAuthenticated } = useAuth();
@@ -99,9 +98,9 @@ export default function WishlistClient() {
   if (loading) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 justify-center gap-6 sm:grid-cols-[repeat(auto-fit,minmax(260px,290px))]">
+        <div className="grid grid-cols-2 gap-4 sm:gap-10 lg:grid-cols-4 lg:gap-14">
           {Array.from({ length: 4 }).map((_, i) => (
-            <WishlistCardSkeleton key={i} />
+            <ProductCardSkeleton key={i} />
           ))}
         </div>
       </div>
@@ -131,21 +130,10 @@ export default function WishlistClient() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <div className="grid grid-cols-1 justify-center gap-6 sm:grid-cols-[repeat(auto-fit,minmax(260px,290px))]">
+      <div className="grid grid-cols-2 gap-4 sm:gap-10 lg:grid-cols-4 lg:gap-14">
         {items.map((item) => {
           const product = item.product;
           const unavailable = isProductUnavailable(product);
-          const title = product?.title || "Product unavailable";
-          const lowestPrice = (() => {
-            if (!product || unavailable) return null;
-            const active = product.variants?.filter((v) => v.isActive !== false) ?? [];
-            if (active.length > 0) {
-              return Math.min(...active.map((v) => priceInclGst(v.price, v.gst)));
-            }
-            return product.priceRange?.min
-              ? priceInclGst(product.priceRange.min, 18)
-              : 0;
-          })();
           const isRemoving = removingIds.has(item._id);
           const isOutOfStock =
             !unavailable &&
@@ -155,98 +143,32 @@ export default function WishlistClient() {
             );
 
           return (
-            <article
+            <ProductCard
               key={item._id}
-              className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card/85 shadow-[0_18px_50px_rgba(0,0,0,0.28)] transition-all duration-300 ${
-                unavailable
-                  ? "opacity-80"
-                  : "hover:-translate-y-1 hover:border-primary/45 hover:shadow-[0_22px_60px_rgba(0,0,0,0.4)]"
-              } ${isRemoving ? "opacity-50" : ""}`}
-            >
-              {unavailable || !product ? (
-                <div className="relative block aspect-square overflow-hidden bg-white">
-                  <Image
-                    src={getProductImage(product?.images)}
-                    alt={title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 290px"
-                    className="object-contain p-3 grayscale"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-                    <span className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
-                      Product unavailable
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  href={`/products/${product.slug}`}
-                  className="relative block aspect-square overflow-hidden bg-white"
-                >
-                  <Image
-                    src={getProductImage(product.images)}
-                    alt={title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 290px"
-                    className="object-contain p-3 transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={() => handleRemove(item._id)}
-                disabled={isRemoving}
-                aria-label={`Remove ${title} from wishlist`}
-                className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/65 text-white/80 backdrop-blur-sm transition-colors hover:border-danger/60 hover:bg-danger hover:text-white disabled:cursor-not-allowed"
-              >
-                <Trash2 size={16} />
-              </button>
-
-              <div className="flex flex-1 flex-col p-4">
-                {unavailable || !product ? (
-                  <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-muted">
-                    {title}
-                  </h3>
-                ) : (
-                  <Link href={`/products/${product.slug}`} className="block">
-                    <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
-                      {title}
-                    </h3>
-                  </Link>
-                )}
-
-                <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-4">
-                  <p className="text-lg font-bold tracking-tight text-foreground">
-                    {lowestPrice != null ? formatPrice(lowestPrice) : "—"}
-                  </p>
-                  <span
-                    className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                      unavailable || isOutOfStock ? "text-danger" : "text-success"
-                    }`}
-                  >
-                    {unavailable
-                      ? "Unavailable"
-                      : isOutOfStock
-                        ? "Out of stock"
-                        : "In stock"}
-                  </span>
-                </div>
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => handleMoveToCart(item)}
-                    disabled={isRemoving || unavailable || isOutOfStock}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(227,45,34,0.22)] transition-all hover:bg-primary-dark hover:shadow-[0_10px_28px_rgba(227,45,34,0.32)] disabled:cursor-not-allowed disabled:bg-card-hover disabled:text-muted disabled:shadow-none"
-                  >
-                    <ShoppingCart size={17} />
-                    {unavailable || isOutOfStock ? "Unavailable" : "Add to Cart"}
-                  </button>
-                </div>
-              </div>
-            </article>
+              product={
+                product ?? {
+                  _id: item._id,
+                  title: "Product unavailable",
+                  slug: "",
+                  images: [],
+                  variants: [],
+                }
+              }
+              unavailable={unavailable}
+              busy={isRemoving}
+              isWishlisted
+              onWishlistToggle={() => handleRemove(item._id)}
+              onAddToCart={() => handleMoveToCart(item)}
+              addToCartDisabled={isRemoving || isOutOfStock}
+              status={{
+                label: unavailable
+                  ? "Unavailable"
+                  : isOutOfStock
+                    ? "Out of stock"
+                    : "In stock",
+                tone: unavailable || isOutOfStock ? "danger" : "success",
+              }}
+            />
           );
         })}
       </div>

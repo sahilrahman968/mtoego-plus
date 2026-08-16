@@ -31,8 +31,9 @@ export async function GET(request: NextRequest) {
         .skip(skip)
         .limit(limit)
         .select(
-          "orderNumber status pricing.grandTotal items.title items.quantity payment.paidAt createdAt"
+          "orderNumber status pricing.grandTotal items.title items.quantity items.product payment.paidAt createdAt"
         )
+        .populate({ path: "items.product", select: "images" })
         .lean(),
       Order.countDocuments(filter),
     ]);

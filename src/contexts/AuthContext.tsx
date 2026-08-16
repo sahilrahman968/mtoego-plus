@@ -19,7 +19,9 @@ interface AuthContextType {
   user: UserData | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  googleSignIn: (credential: string) => Promise<{ success: boolean; message: string }>;
+  googleSignIn: (
+    credential: string
+  ) => Promise<{ success: boolean; message: string; user?: UserData }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -51,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await apiGoogleAuth(credential);
     if (res.success && res.data?.user) {
       setUser(res.data.user);
-      return { success: true, message: res.message };
+      return { success: true, message: res.message, user: res.data.user };
     }
     return { success: false, message: res.message || "Google sign-in failed" };
   }, []);

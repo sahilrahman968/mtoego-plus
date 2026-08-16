@@ -74,7 +74,7 @@ npm install -D tsx dotenv
 npx tsx scripts/seed-admin.ts
 ```
 
-Default credentials: `admin@ecom.local` / `Admin@1234` — **change immediately**.
+Seeds `motoegoplus@gmail.com` as `super_admin`. Sign in at `/admin/login` with Google.
 
 ### 4. Run the dev server
 

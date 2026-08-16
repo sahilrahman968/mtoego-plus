@@ -1,22 +1,98 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Package, ChevronRight, Clock, Filter } from "lucide-react";
+import {
+  Package,
+  ChevronRight,
+  Clock,
+  Banknote,
+  Check,
+  Truck,
+  AlertCircle,
+  RotateCcw,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrders, type OrderListItem } from "@/lib/store-api";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getProductImage } from "@/lib/utils";
 import { OrderListCardSkeleton } from "@/components/store/skeletons";
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "border border-[#4A3B17] bg-[#251D0D] text-[#D4A64C]",
-  paid: "border border-primary/45 bg-primary/15 text-primary",
-  processing: "border border-[#3A2F52] bg-[#1B1627] text-[#A68CFF]",
-  shipped: "border border-[#264352] bg-[#111E26] text-[#6FBEE9]",
-  delivered: "border border-[#1E4C33] bg-[#10241A] text-[#6DD79C]",
-  cancelled: "border border-[#5A232F] bg-[#2A1218] text-[#F08095]",
-  refunded: "border border-[#4F355E] bg-[#24172C] text-[#D09EFF]",
+const STATUS_ICONS: Record<string, LucideIcon> = {
+  pending: Clock,
+  paid: Banknote,
+  processing: Package,
+  shipped: Truck,
+  delivered: Check,
+  cancelled: AlertCircle,
+  refunded: RotateCcw,
 };
+
+const STATUS_ICON_COLORS: Record<string, string> = {
+  pending: "text-[#D4A64C]",
+  paid: "text-primary",
+  processing: "text-[#A68CFF]",
+  shipped: "text-[#6FBEE9]",
+  delivered: "text-[#6DD79C]",
+  cancelled: "text-[#F08095]",
+  refunded: "text-[#D09EFF]",
+};
+
+function OrderProductThumbnails({
+  items,
+}: {
+  items: OrderListItem["items"];
+}) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const checkOverflow = () => {
+      setOverflows(el.scrollWidth > el.clientWidth + 1);
+    };
+
+    checkOverflow();
+    const observer = new ResizeObserver(checkOverflow);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [items]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="relative mt-2.5 max-w-full">
+      <div
+        ref={scrollerRef}
+        className="flex gap-1.5 overflow-hidden"
+      >
+        {items.map((item, index) => (
+          <div
+            key={`${item.title}-${index}`}
+            className="relative h-10 w-10 shrink-0 overflow-hidden border border-border bg-black/40"
+          >
+            <Image
+              src={getProductImage(item.product?.images)}
+              alt={item.title}
+              fill
+              sizes="40px"
+              className="object-cover"
+            />
+          </div>
+        ))}
+      </div>
+      {overflows && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card via-card/80 to-transparent backdrop-blur-[1px]"
+        />
+      )}
+    </div>
+  );
+}
 
 export default function OrdersClient() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -25,18 +101,17 @@ export default function OrdersClient() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("");
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
-    const res = await getOrders({ page, limit: 10, status: statusFilter || undefined });
+    const res = await getOrders({ page, limit: 10 });
     if (res.success && res.data) {
       setOrders(res.data.items);
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);
     }
     setLoading(false);
-  }, [page, statusFilter]);
+  }, [page]);
 
   useEffect(() => {
     if (isAuthenticated) loadOrders();
@@ -60,35 +135,16 @@ export default function OrdersClient() {
 
   return (
     <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
-      <div className="mb-6 flex items-center justify-between border-b border-border/60 pb-5">
-        <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
-            03 / Account
-          </p>
-          <h1 className="text-4xl font-bold uppercase tracking-[0.05em] text-foreground sm:text-5xl">My Orders</h1>
-          <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-muted">
-            {total} order{total !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-muted" />
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="border border-border bg-black/45 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground outline-none transition-colors focus:border-primary"
-          >
-            <option value="">All Orders</option>
-            <option value="pending">Pending</option>
-            <option value="paid">Paid</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
+      <div className="mb-6 border-b border-border/60 pb-5">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
+          03 / Account
+        </p>
+        <h1 className="text-2xl font-bold uppercase tracking-[0.05em] text-foreground sm:text-5xl">
+          My Orders
+        </h1>
+        <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-muted">
+          {total} order{total !== 1 ? "s" : ""}
+        </p>
       </div>
 
       {loading ? (
@@ -100,55 +156,60 @@ export default function OrdersClient() {
       ) : orders.length > 0 ? (
         <>
           <div className="space-y-4">
-            {orders.map((order) => (
-              <Link
-                key={order._id}
-                href={`/account/orders/${order._id}`}
-                className="block border border-border bg-card/75 p-4 transition-all hover:border-primary/35 hover:bg-card sm:p-5"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-base font-bold uppercase tracking-[0.04em] text-foreground">
-                        {order.orderNumber}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] capitalize ${
-                          STATUS_COLORS[order.status] || "border border-border bg-card text-muted"
-                        }`}
-                      >
-                        {order.status}
-                      </span>
+            {orders.map((order) => {
+              const StatusIcon = STATUS_ICONS[order.status] || Package;
+              const statusColor =
+                STATUS_ICON_COLORS[order.status] || "text-muted";
+
+              return (
+                <Link
+                  key={order._id}
+                  href={`/account/orders/${order._id}`}
+                  className="block border border-border bg-card/75 p-4 transition-all hover:border-primary/35 hover:bg-card sm:p-5"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <StatusIcon
+                          size={16}
+                          className={`shrink-0 ${statusColor}`}
+                          aria-label={order.status}
+                        />
+                        <span className="truncate text-sm font-bold uppercase tracking-[0.04em] text-foreground sm:text-base">
+                          {order.orderNumber}
+                        </span>
+                      </div>
+
+                      <OrderProductThumbnails items={order.items} />
+
+                      <div className="mt-2 flex items-center gap-3 text-[11px] uppercase tracking-[0.08em] text-muted">
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} />
+                          {new Date(order.createdAt).toLocaleString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-2 text-sm text-muted line-clamp-2">
-                      {order.items
-                        .map((item) => `${item.title} × ${item.quantity}`)
-                        .join(", ")}
-                    </div>
-                    <div className="mt-2 flex items-center gap-3 text-[11px] uppercase tracking-[0.08em] text-muted">
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} />
-                        {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-sm font-bold text-foreground sm:text-lg">
+                        {formatPrice(order.pricing.grandTotal)}
                       </span>
+                      <ChevronRight size={16} className="text-muted" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-lg font-bold text-foreground">
-                      {formatPrice(order.pricing.grandTotal)}
-                    </span>
-                    <ChevronRight size={16} className="text-muted" />
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
+            <div className="mt-8 flex items-center justify-center gap-2">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
@@ -170,10 +231,10 @@ export default function OrdersClient() {
           )}
         </>
       ) : (
-        <div className="text-center py-20">
+        <div className="py-20 text-center">
           <Package size={48} className="mx-auto mb-4 text-muted/40" />
           <h2 className="text-lg font-semibold uppercase tracking-[0.08em] text-foreground">No orders yet</h2>
-          <p className="text-sm text-muted mt-1">
+          <p className="mt-1 text-sm text-muted">
             When you make a purchase, your orders will appear here
           </p>
           <Link

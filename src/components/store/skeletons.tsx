@@ -43,22 +43,6 @@ export function CategoryCardSkeleton() {
   );
 }
 
-export function WishlistCardSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-xl bg-card/75">
-      <div className="aspect-square animate-pulse-slow bg-card-hover/80" />
-      <div className="space-y-3 p-3 sm:p-4">
-        <SkeletonLine className="h-4 w-full" />
-        <SkeletonLine className="h-5 w-2/5" />
-        <div className="mt-3 flex gap-2">
-          <SkeletonLine className="h-9 flex-1" />
-          <SkeletonLine className="h-9 w-9" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function CartItemSkeleton() {
   return (
     <div className="flex gap-4 rounded-xl bg-card/75 p-4">
@@ -80,19 +64,21 @@ export function CartItemSkeleton() {
 
 export function OrderListCardSkeleton() {
   return (
-    <div className="bg-card/75 p-4 sm:p-5">
+    <div className="border border-border bg-card/75 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <SkeletonLine className="h-4 w-4 shrink-0" />
             <SkeletonLine className="h-5 w-28" />
-            <SkeletonLine className="h-5 w-16" />
           </div>
-          <SkeletonLine className="h-4 w-full" />
+          <div className="flex gap-1.5">
+            <SkeletonLine className="h-10 w-10 shrink-0" />
+            <SkeletonLine className="h-10 w-10 shrink-0" />
+            <SkeletonLine className="h-10 w-10 shrink-0" />
+          </div>
           <SkeletonLine className="h-3 w-40" />
         </div>
-        <div className="space-y-2">
-          <SkeletonLine className="h-6 w-20" />
-        </div>
+        <SkeletonLine className="h-6 w-20 shrink-0" />
       </div>
     </div>
   );

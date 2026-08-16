@@ -526,7 +526,11 @@ export interface OrderListItem {
   orderNumber: string;
   status: string;
   pricing: { grandTotal: number };
-  items: { title: string; quantity: number }[];
+  items: {
+    title: string;
+    quantity: number;
+    product?: { images: ProductImageData[] } | null;
+  }[];
   payment?: { paidAt?: string };
   createdAt: string;
 }
