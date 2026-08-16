@@ -42,8 +42,12 @@ export default function StatsCard({ title, value, icon, trend, color }: StatsCar
           <p className="text-sm font-medium text-slate-500 truncate">{title}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
           {trend && (
-            <p className={`mt-1 text-xs font-medium ${trend.positive ? "text-gray-700" : "text-gray-500"}`}>
-              {trend.positive ? "+" : ""}{trend.value}
+            <p
+              className={`mt-1 text-xs font-medium ${
+                trend.positive ? "text-emerald-700" : "text-rose-600"
+              }`}
+            >
+              {trend.value}
             </p>
           )}
         </div>
