@@ -8,6 +8,7 @@ import {
   Heart,
   Minus,
   Plus,
+  ShoppingCart,
   Star,
   Truck,
   Shield,
@@ -351,45 +352,47 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             </Link>
           )}
 
-          <h1 className="mt-2 text-3xl font-bold uppercase leading-[0.88] text-foreground sm:text-4xl">
+          <h1 className="mt-2 text-xl font-bold uppercase leading-[0.88] text-foreground sm:text-4xl">
             {product.title}
           </h1>
 
-          <div className="mt-3 flex items-center gap-3 text-xs uppercase tracking-[0.14em] text-muted">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  size={14}
-                  className={s <= Math.round(averageRating) ? "fill-primary text-primary" : "text-muted/35"}
-                />
-              ))}
-            </div>
-            <span>
-              {totalReviews > 0 ? `${averageRating.toFixed(1)} / ${totalReviews} Reviews` : "No Reviews Yet"}
-            </span>
-          </div>
-
-          {selectedVariant && (
-            <div className="mt-5 flex items-end gap-3">
-              <span className="text-5xl font-bold leading-none text-foreground">
-                {formatPrice(priceInclGst(selectedVariant.price, selectedVariant.gst))}
-              </span>
-              {selectedVariant.compareAtPrice &&
-                priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst) >
-                  priceInclGst(selectedVariant.price, selectedVariant.gst) && (
-                  <span className="pb-1 text-lg text-muted line-through">
-                    {formatPrice(
-                      priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst)
-                    )}
-                  </span>
-                )}
-            </div>
-          )}
-
-          <p className="mt-4 text-base text-muted">
+          <p className="mt-3 text-sm text-muted sm:text-base">
             {product.description || "All-black version. Same armor. No compromise."}
           </p>
+
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <div className="text-xs uppercase tracking-[0.14em] text-muted">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    size={14}
+                    className={s <= Math.round(averageRating) ? "fill-primary text-primary" : "text-muted/35"}
+                  />
+                ))}
+              </div>
+              <span className="mt-1.5 block">
+                {totalReviews > 0 ? `${averageRating.toFixed(1)} / ${totalReviews} Reviews` : "No Reviews Yet"}
+              </span>
+            </div>
+
+            {selectedVariant && (
+              <div className="flex items-end gap-2">
+                <span className="text-2xl font-bold leading-none text-foreground sm:text-5xl">
+                  {formatPrice(priceInclGst(selectedVariant.price, selectedVariant.gst))}
+                </span>
+                {selectedVariant.compareAtPrice &&
+                  priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst) >
+                    priceInclGst(selectedVariant.price, selectedVariant.gst) && (
+                    <span className="pb-0.5 text-sm text-muted line-through sm:text-lg">
+                      {formatPrice(
+                        priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst)
+                      )}
+                    </span>
+                  )}
+              </div>
+            )}
+          </div>
 
           {uniqueColors.length > 0 && (
             <div className="mt-7">
@@ -428,9 +431,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
           {uniqueSizes.length > 0 && (
             <div className="mt-6">
-              <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">
                 <span>Size</span>
-                <span className="text-primary">Size Guide</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {uniqueSizes.map((size) => {
@@ -487,9 +489,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                 !selectedVariant ||
                 selectedVariant.stock === 0
               }
-              className="flex-1 border border-border bg-black/35 px-4 text-xs font-semibold uppercase tracking-[0.28em] text-foreground transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-11 w-11 items-center justify-center border border-border bg-black/35 text-foreground transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={
+                selectedVariant?.stock === 0 ? "Out of stock" : "Add to cart"
+              }
             >
-              {addingToCart ? "Processing..." : selectedVariant?.stock === 0 ? "Out of Stock" : "Add To Bag"}
+              <ShoppingCart size={16} />
             </button>
 
             <button
@@ -506,12 +511,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             disabled={!selectedVariant || selectedVariant.stock === 0 || addingToCart}
             className="mt-3 h-12 w-full bg-primary px-4 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Buy Now -{" "}
-            {selectedVariant
-              ? formatPrice(
-                  priceInclGst(selectedVariant.price, selectedVariant.gst) * quantity
-                )
-              : ""}
+            Buy Now
           </button>
 
           {selectedVariant && selectedVariant.stock <= 10 && selectedVariant.stock > 0 && (
@@ -644,7 +644,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                           : "Submitting..."
                         : editingReviewId
                         ? "Update Review"
-                        : "Submit Review"}
+                        : "Submit"}
                     </button>
                   </div>
                 </div>
@@ -742,7 +742,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           <h2 className="mb-6 text-xl font-bold uppercase tracking-[0.08em] text-foreground sm:text-2xl">
             Related Products
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10 sm:gap-14">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-14">
             {relatedProducts.map((p) => (
               <ProductCard key={p._id} product={p} />
             ))}

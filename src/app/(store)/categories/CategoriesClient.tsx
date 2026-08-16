@@ -41,16 +41,16 @@ export default function CategoriesClient() {
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
             01 / Categories
           </p>
-          <h1 className="text-5xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-6xl">
+          <h1 className="text-3xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-5xl lg:text-6xl">
             All Categories
           </h1>
-          <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted sm:text-xs">
             Browse our collection of {categories.length} categories
           </p>
         </div>
 
         {categories.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {categories.map((cat) => (
               <div key={cat._id}>
                 <Link
@@ -63,7 +63,7 @@ export default function CategoriesClient() {
                         src={cat.image.url}
                         alt={cat.name}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        sizes="(max-width: 1024px) 50vw, 25vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (
@@ -75,11 +75,11 @@ export default function CategoriesClient() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/42 to-transparent" />
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary/85">
+                  <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-primary/85 sm:text-[10px]">
                       {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
                     </p>
-                    <h2 className="mt-1 text-3xl font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary">
+                    <h2 className="mt-1 text-base font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary sm:text-2xl">
                       {cat.name}
                     </h2>
                   </div>

@@ -102,7 +102,7 @@ export default function HomeClient() {
   };
 
   return (
-    <div className="pb-8">
+    <div>
       <section className="relative h-screen min-h-[36rem] w-full overflow-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 1.03 }}
@@ -188,7 +188,7 @@ export default function HomeClient() {
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
                   01 / Categories
                 </p>
-                <h2 className="text-5xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-6xl">
+                <h2 className="text-3xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-5xl lg:text-6xl">
                   Gear Up
                 </h2>
               </div>
@@ -199,7 +199,7 @@ export default function HomeClient() {
                 View All <ArrowRight size={16} />
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {categories.slice(0, 4).map((cat) => (
                 <div key={cat._id}>
                   <Link
@@ -212,7 +212,7 @@ export default function HomeClient() {
                           src={cat.image.url}
                           alt={cat.name}
                           fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          sizes="(max-width: 1024px) 50vw, 25vw"
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       ) : (
@@ -224,11 +224,11 @@ export default function HomeClient() {
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/42 to-transparent" />
                     </div>
-                    <div className="absolute inset-x-0 bottom-0 p-4">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary/85">
+                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-primary/85 sm:text-[10px]">
                         {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
                       </p>
-                      <h3 className="mt-1 text-3xl font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary">
+                      <h3 className="mt-1 text-base font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary sm:text-2xl">
                         {cat.name}
                       </h3>
                     </div>
@@ -238,6 +238,14 @@ export default function HomeClient() {
                   </Link>
                 </div>
               ))}
+            </div>
+            <div className="mt-6 flex justify-end sm:hidden">
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-muted transition-colors hover:text-foreground"
+              >
+                View All <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </section>
@@ -257,15 +265,7 @@ export default function HomeClient() {
           </div>
 
           <div className="pt-1">
-            <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-              We don&apos;t make commodity gear. Every helmet is laid up by hand. Every jacket is cut
-              from fullgrain leather and fitted with CE Level 2 armor. Every glove is stitched to
-              take a slide.
-            </p>
-            <p className="mt-4 max-w-2xl border-t border-border/60 pt-4 text-sm leading-relaxed text-muted sm:text-base">
-              If you&apos;ve ever felt the world go quiet at 9000 RPM, you already know why we exist.
-            </p>
-            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[
                 { icon: Truck, label: "Free Shipping", sublabel: "On orders above ₹999" },
                 { icon: ShieldCheck, label: "Secure Payment", sublabel: "100% secure checkout" },
