@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { theme } from "@/config/theme";
 
+
 export default function Footer() {
   return (
     <footer className="border-t border-border/70 bg-black text-muted">
