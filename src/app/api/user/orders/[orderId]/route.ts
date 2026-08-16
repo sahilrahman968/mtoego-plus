@@ -30,7 +30,7 @@ export async function GET(
       .select("-payment.razorpaySignature -payment.webhookEvents -idempotencyKey")
       .populate({
         path: "items.product",
-        select: "slug images",
+        select: "slug images isActive",
       })
       .lean();
 

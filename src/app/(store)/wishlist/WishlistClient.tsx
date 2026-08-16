@@ -12,7 +12,7 @@ import {
   removeFromWishlist,
   type WishlistItemData,
 } from "@/lib/store-api";
-import { formatPrice, getProductImage } from "@/lib/utils";
+import { formatPrice, getProductImage, isProductUnavailable } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
 import { WishlistCardSkeleton } from "@/components/store/skeletons";
 
@@ -31,11 +31,9 @@ export default function WishlistClient() {
     void getWishlist().then((res) => {
       if (cancelled) return;
       if (res.success && res.data) {
-        setItems(
-          (res.data.items || []).filter(
-            (item: WishlistItemData) => item.product != null
-          )
-        );
+        // Keep inactive products so customers can see "unavailable";
+        // drop only orphaned refs with no product document left.
+        setItems(res.data.items || []);
       }
       setLoading(false);
     });
@@ -62,7 +60,7 @@ export default function WishlistClient() {
   };
 
   const handleMoveToCart = async (item: WishlistItemData) => {
-    if (!item.product) {
+    if (isProductUnavailable(item.product) || !item.product) {
       toast("This product is no longer available", "error");
       return;
     }
@@ -136,8 +134,10 @@ export default function WishlistClient() {
       <div className="grid grid-cols-1 justify-center gap-6 sm:grid-cols-[repeat(auto-fit,minmax(260px,290px))]">
         {items.map((item) => {
           const product = item.product;
-          if (!product) return null;
+          const unavailable = isProductUnavailable(product);
+          const title = product?.title || "Product unavailable";
           const lowestPrice = (() => {
+            if (!product || unavailable) return null;
             const active = product.variants?.filter((v) => v.isActive !== false) ?? [];
             if (active.length > 0) {
               return Math.min(...active.map((v) => priceInclGst(v.price, v.gst)));
@@ -147,58 +147,90 @@ export default function WishlistClient() {
               : 0;
           })();
           const isRemoving = removingIds.has(item._id);
-          const isOutOfStock = !product.variants?.some(
-            (variant) => variant.isActive !== false && variant.stock > 0
-          );
+          const isOutOfStock =
+            !unavailable &&
+            !!product &&
+            !product.variants?.some(
+              (variant) => variant.isActive !== false && variant.stock > 0
+            );
 
           return (
             <article
               key={item._id}
-              className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card/85 shadow-[0_18px_50px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-[0_22px_60px_rgba(0,0,0,0.4)] ${
-                isRemoving ? "opacity-50" : ""
-              }`}
+              className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card/85 shadow-[0_18px_50px_rgba(0,0,0,0.28)] transition-all duration-300 ${
+                unavailable
+                  ? "opacity-80"
+                  : "hover:-translate-y-1 hover:border-primary/45 hover:shadow-[0_22px_60px_rgba(0,0,0,0.4)]"
+              } ${isRemoving ? "opacity-50" : ""}`}
             >
-              <Link
-                href={`/products/${product.slug}`}
-                className="relative block aspect-square overflow-hidden bg-white"
-              >
-                <Image
-                  src={getProductImage(product.images)}
-                  alt={product.title}
-                  fill
-                  sizes="(max-width: 640px) 100vw, 290px"
-                  className="object-contain p-3 transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                />
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
-              </Link>
+              {unavailable || !product ? (
+                <div className="relative block aspect-square overflow-hidden bg-white">
+                  <Image
+                    src={getProductImage(product?.images)}
+                    alt={title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 290px"
+                    className="object-contain p-3 grayscale"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+                    <span className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
+                      Product unavailable
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href={`/products/${product.slug}`}
+                  className="relative block aspect-square overflow-hidden bg-white"
+                >
+                  <Image
+                    src={getProductImage(product.images)}
+                    alt={title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 290px"
+                    className="object-contain p-3 transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
+                </Link>
+              )}
 
               <button
                 type="button"
                 onClick={() => handleRemove(item._id)}
                 disabled={isRemoving}
-                aria-label={`Remove ${product.title} from wishlist`}
+                aria-label={`Remove ${title} from wishlist`}
                 className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/65 text-white/80 backdrop-blur-sm transition-colors hover:border-danger/60 hover:bg-danger hover:text-white disabled:cursor-not-allowed"
               >
                 <Trash2 size={16} />
               </button>
 
               <div className="flex flex-1 flex-col p-4">
-                <Link href={`/products/${product.slug}`} className="block">
-                  <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
-                    {product.title}
+                {unavailable || !product ? (
+                  <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-muted">
+                    {title}
                   </h3>
-                </Link>
+                ) : (
+                  <Link href={`/products/${product.slug}`} className="block">
+                    <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
+                      {title}
+                    </h3>
+                  </Link>
+                )}
 
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-4">
                   <p className="text-lg font-bold tracking-tight text-foreground">
-                    {formatPrice(lowestPrice)}
+                    {lowestPrice != null ? formatPrice(lowestPrice) : "—"}
                   </p>
                   <span
                     className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                      isOutOfStock ? "text-danger" : "text-success"
+                      unavailable || isOutOfStock ? "text-danger" : "text-success"
                     }`}
                   >
-                    {isOutOfStock ? "Out of stock" : "In stock"}
+                    {unavailable
+                      ? "Unavailable"
+                      : isOutOfStock
+                        ? "Out of stock"
+                        : "In stock"}
                   </span>
                 </div>
 
@@ -206,11 +238,11 @@ export default function WishlistClient() {
                   <button
                     type="button"
                     onClick={() => handleMoveToCart(item)}
-                    disabled={isRemoving || isOutOfStock}
+                    disabled={isRemoving || unavailable || isOutOfStock}
                     className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(227,45,34,0.22)] transition-all hover:bg-primary-dark hover:shadow-[0_10px_28px_rgba(227,45,34,0.32)] disabled:cursor-not-allowed disabled:bg-card-hover disabled:text-muted disabled:shadow-none"
                   >
                     <ShoppingCart size={17} />
-                    {isOutOfStock ? "Unavailable" : "Add to Cart"}
+                    {unavailable || isOutOfStock ? "Unavailable" : "Add to Cart"}
                   </button>
                 </div>
               </div>

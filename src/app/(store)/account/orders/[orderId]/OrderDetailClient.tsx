@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrder, type OrderDetail } from "@/lib/store-api";
-import { formatPrice, getProductImage } from "@/lib/utils";
+import { formatPrice, getProductImage, isProductUnavailable } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
 import { OrderDetailPageSkeleton } from "@/components/store/skeletons";
 
@@ -238,7 +238,11 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               Items ({order.items.length})
             </h3>
             <div className="space-y-4">
-              {order.items.map((item, index) => (
+              {order.items.map((item, index) => {
+                const unavailable = isProductUnavailable(item.product);
+                const canLink = !unavailable && !!item.product?.slug;
+
+                return (
                 <div key={`${item.sku}-${index}`} className="flex gap-4">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-border bg-black/45">
                     <Image
@@ -246,13 +250,13 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                       alt={item.title}
                       fill
                       sizes="64px"
-                      className="object-cover"
+                      className={`object-cover ${unavailable ? "grayscale" : ""}`}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    {item.product?.slug ? (
+                    {canLink ? (
                       <Link
-                        href={`/products/${item.product.slug}`}
+                        href={`/products/${item.product!.slug}`}
                         className="text-sm font-medium text-foreground hover:text-primary transition-colors"
                       >
                         {item.title}
@@ -260,6 +264,11 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                     ) : (
                       <p className="text-sm font-medium text-foreground">
                         {item.title}
+                      </p>
+                    )}
+                    {unavailable && (
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-danger">
+                        Product unavailable
                       </p>
                     )}
                     <p className="text-xs text-muted">
@@ -276,7 +285,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                     </p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

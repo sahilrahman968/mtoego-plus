@@ -28,13 +28,17 @@ interface PaginatedResponse {
   totalPages: number;
 }
 
+type DialogMode = "delete" | "disable" | "enable";
+
 export default function ProductsPage() {
   const [data, setData] = useState<PaginatedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [target, setTarget] = useState<Product | null>(null);
+  const [dialogMode, setDialogMode] = useState<DialogMode>("delete");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -55,20 +59,64 @@ export default function ProductsPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  const closeDialog = () => {
+    setTarget(null);
+    setDialogMode("delete");
+    setErrorMessage(null);
+  };
+
+  const setProductActive = async (productId: string, isActive: boolean) => {
+    const res = await fetch(`/api/admin/products/${productId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive }),
+    });
+    const json = await res.json();
+    return { ok: Boolean(json.success), message: json.message as string | undefined };
+  };
+
+  const handleConfirm = async () => {
+    if (!target) return;
+    setActionLoading(true);
+    setErrorMessage(null);
     try {
-      const res = await fetch(`/api/admin/products/${deleteTarget._id}`, { method: "DELETE" });
+      if (dialogMode === "disable" || dialogMode === "enable") {
+        const nextActive = dialogMode === "enable";
+        const result = await setProductActive(target._id, nextActive);
+        if (result.ok) {
+          closeDialog();
+          fetchProducts();
+        } else {
+          setErrorMessage(
+            result.message ||
+              (nextActive ? "Failed to enable product" : "Failed to disable product")
+          );
+        }
+        return;
+      }
+
+      const res = await fetch(`/api/admin/products/${target._id}`, {
+        method: "DELETE",
+      });
       const json = await res.json();
       if (json.success) {
-        setDeleteTarget(null);
+        closeDialog();
         fetchProducts();
+        return;
       }
+
+      if (res.status === 409 && json.data?.canDisable) {
+        setDialogMode("disable");
+        setErrorMessage(null);
+        return;
+      }
+
+      setErrorMessage(json.message || "Failed to delete product");
     } catch (err) {
-      console.error("Failed to delete product:", err);
+      console.error("Failed to process product action:", err);
+      setErrorMessage("Something went wrong. Please try again.");
     } finally {
-      setDeleting(false);
+      setActionLoading(false);
     }
   };
 
@@ -88,6 +136,21 @@ export default function ProductsPage() {
   const getTotalStock = (variants: Product["variants"]) =>
     variants.reduce((sum, v) => sum + v.stock, 0);
 
+  const dialogTitle =
+    dialogMode === "enable"
+      ? "Enable Product"
+      : dialogMode === "disable"
+        ? "Disable Product"
+        : "Delete Product";
+  const dialogMessage =
+    dialogMode === "enable"
+      ? `Enable "${target?.title}"? It will appear in the store catalog again and customers can purchase it.`
+      : dialogMode === "disable"
+        ? `"${target?.title}" is referenced in customer carts, wishlists, or orders, so it cannot be permanently deleted. Disable it instead? Customers will see it as unavailable.`
+        : `Are you sure you want to permanently delete "${target?.title}"? This action cannot be undone.`;
+  const confirmLabel =
+    dialogMode === "enable" ? "Enable" : dialogMode === "disable" ? "Disable" : "Delete";
+
   return (
     <div>
       <PageHeader
@@ -102,7 +165,10 @@ export default function ProductsPage() {
           type="text"
           placeholder="Search products..."
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           className="w-full sm:w-80 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
         />
       </div>
@@ -114,8 +180,16 @@ export default function ProductsPage() {
         ) : !data || data.items.length === 0 ? (
           <EmptyState
             title="No products found"
-            description={search ? "Try a different search term" : "Get started by adding your first product"}
-            action={!search ? { label: "Add Product", href: "/admin/products/new" } : undefined}
+            description={
+              search
+                ? "Try a different search term"
+                : "Get started by adding your first product"
+            }
+            action={
+              !search
+                ? { label: "Add Product", href: "/admin/products/new" }
+                : undefined
+            }
           />
         ) : (
           <>
@@ -123,17 +197,32 @@ export default function ProductsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Product</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">Category</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Price</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden sm:table-cell">Stock</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Status</th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Actions</th>
+                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                      Product
+                    </th>
+                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">
+                      Category
+                    </th>
+                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                      Price
+                    </th>
+                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden sm:table-cell">
+                      Stock
+                    </th>
+                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                      Status
+                    </th>
+                    <th className="text-right font-medium text-slate-500 px-4 py-3">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {data.items.map((product) => (
-                    <tr key={product._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr
+                      key={product._id}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {product.images[0] ? (
@@ -144,30 +233,56 @@ export default function ProductsPage() {
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                              <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              <svg
+                                className="w-5 h-5 text-slate-300"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
                               </svg>
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-slate-900 truncate">{product.title}</p>
-                            <p className="text-xs text-slate-400 truncate">{product.slug}</p>
+                            <p className="font-medium text-slate-900 truncate">
+                              {product.title}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {product.slug}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-600">{product.category?.name || "—"}</span>
+                        <span className="text-slate-600">
+                          {product.category?.name || "—"}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-slate-900 font-medium">{getPriceRange(product.variants)}</span>
+                        <span className="text-slate-900 font-medium">
+                          {getPriceRange(product.variants)}
+                        </span>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className={`font-medium ${getTotalStock(product.variants) === 0 ? "text-gray-600" : "text-slate-600"}`}>
+                        <span
+                          className={`font-medium ${
+                            getTotalStock(product.variants) === 0
+                              ? "text-gray-600"
+                              : "text-slate-600"
+                          }`}
+                        >
                           {getTotalStock(product.variants)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={product.isActive ? "active" : "inactive"} />
+                        <StatusBadge
+                          status={product.isActive ? "active" : "inactive"}
+                        />
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -177,8 +292,24 @@ export default function ProductsPage() {
                           >
                             Edit
                           </Link>
+                          {!product.isActive ? (
+                            <button
+                              onClick={() => {
+                                setTarget(product);
+                                setDialogMode("enable");
+                                setErrorMessage(null);
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
+                            >
+                              Enable
+                            </button>
+                          ) : null}
                           <button
-                            onClick={() => setDeleteTarget(product)}
+                            onClick={() => {
+                              setTarget(product);
+                              setDialogMode("delete");
+                              setErrorMessage(null);
+                            }}
                             className="px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
                           >
                             Delete
@@ -191,21 +322,25 @@ export default function ProductsPage() {
               </table>
             </div>
             <div className="px-4 border-t border-slate-100">
-              <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
+              <Pagination
+                page={data.page}
+                totalPages={data.totalPages}
+                onPageChange={setPage}
+              />
             </div>
           </>
         )}
       </div>
 
       <ConfirmDialog
-        open={!!deleteTarget}
-        title="Delete Product"
-        message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        variant="danger"
-        loading={deleting}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        open={!!target}
+        title={dialogTitle}
+        message={errorMessage || dialogMessage}
+        confirmLabel={confirmLabel}
+        variant={dialogMode === "delete" || dialogMode === "disable" ? "danger" : "default"}
+        loading={actionLoading}
+        onConfirm={handleConfirm}
+        onCancel={closeDialog}
       />
     </div>
   );

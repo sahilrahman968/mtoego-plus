@@ -11,13 +11,19 @@ export function successResponse<T>(
   return NextResponse.json({ success: true, message, data }, { status });
 }
 
-export function errorResponse(
+export function errorResponse<T = unknown>(
   message = "Internal server error",
   status = 500,
-  error?: string
-): NextResponse<ApiResponse> {
+  error?: string,
+  data?: T
+): NextResponse<ApiResponse<T>> {
   return NextResponse.json(
-    { success: false, message, error: error ?? message },
+    {
+      success: false,
+      message,
+      error: error ?? message,
+      ...(data !== undefined ? { data } : {}),
+    },
     { status }
   );
 }

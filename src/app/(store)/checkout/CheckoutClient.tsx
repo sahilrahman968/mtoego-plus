@@ -19,7 +19,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
 import { initiateCheckout, verifyPayment } from "@/lib/store-api";
-import { formatPrice, getProductImage, getVariantLabel, generateIdempotencyKey } from "@/lib/utils";
+import {
+  formatPrice,
+  getProductImage,
+  getVariantLabel,
+  generateIdempotencyKey,
+  isProductUnavailable,
+} from "@/lib/utils";
 import { buildCartSummary, priceInclGst } from "@/lib/pricing";
 
 interface ShippingForm {
@@ -112,9 +118,15 @@ export default function CheckoutClient() {
     }
   }, [user]);
 
+  const availableItems = useMemo(
+    () => items.filter((item) => !isProductUnavailable(item.product)),
+    [items]
+  );
+  const hasUnavailableItems = availableItems.length < items.length;
+
   const summary = useMemo(() => {
-    const lineItems = items.map((item) => {
-      const variant = item.product.variants?.find((v) => v._id === item.variant);
+    const lineItems = availableItems.map((item) => {
+      const variant = item.product!.variants?.find((v) => v._id === item.variant);
       return {
         price: variant?.price || item.priceAtAdd,
         quantity: item.quantity,
@@ -132,7 +144,7 @@ export default function CheckoutClient() {
           }
         : null
     );
-  }, [items, cart?.coupon]);
+  }, [availableItems, cart?.coupon]);
 
   const { subtotal, discount, shipping, gst, grandTotal: estimatedTotal } = summary;
   const shippingCost = shipping.cost;
@@ -148,10 +160,23 @@ export default function CheckoutClient() {
   };
 
   const handleProceedToReview = () => {
+    if (hasUnavailableItems) {
+      toast("Remove unavailable products from your cart before checkout", "error");
+      return;
+    }
+    if (availableItems.length === 0) {
+      toast("Your cart has no available items", "error");
+      return;
+    }
     if (validateAddress()) setStep("review");
   };
 
   const handlePayment = async () => {
+    if (hasUnavailableItems || availableItems.length === 0) {
+      toast("Remove unavailable products from your cart before payment", "error");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -466,35 +491,58 @@ export default function CheckoutClient() {
                   <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">
                     Order Items ({items.length})
                   </h3>
+                  {hasUnavailableItems && (
+                    <div className="mb-3 border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+                      Some items are no longer available.{" "}
+                      <Link href="/cart" className="underline hover:text-danger">
+                        Return to cart
+                      </Link>{" "}
+                      to remove them.
+                    </div>
+                  )}
                   <div className="space-y-3">
                     {items.map((item) => {
-                      const variant = item.product.variants?.find(
+                      const unavailable = isProductUnavailable(item.product);
+                      const product = item.product;
+                      const variant = product?.variants?.find(
                         (v) => v._id === item.variant
                       );
                       const price = variant?.price || item.priceAtAdd;
                       const displayPrice = priceInclGst(price, variant?.gst);
+                      const title = product?.title || "Product unavailable";
                       return (
-                        <div key={item._id} className="flex gap-3">
+                        <div
+                          key={item._id}
+                          className={`flex gap-3 ${unavailable ? "opacity-70" : ""}`}
+                        >
                           <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border bg-black/45">
                             <Image
-                              src={getProductImage(item.product.images)}
-                              alt={item.product.title}
+                              src={getProductImage(product?.images)}
+                              alt={title}
                               fill
                               sizes="56px"
-                              className="object-cover"
+                              className={`object-cover ${unavailable ? "grayscale" : ""}`}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">
-                              {item.product.title}
+                              {title}
                             </p>
-                            <p className="text-xs text-muted">
-                              {variant ? getVariantLabel(variant) : ""} × {item.quantity}
-                            </p>
+                            {unavailable ? (
+                              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-danger">
+                                Product unavailable
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted">
+                                {variant ? getVariantLabel(variant) : ""} × {item.quantity}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-sm font-medium text-foreground shrink-0">
-                            {formatPrice(displayPrice * item.quantity)}
-                          </p>
+                          {!unavailable && (
+                            <p className="text-sm font-medium text-foreground shrink-0">
+                              {formatPrice(displayPrice * item.quantity)}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -504,7 +552,7 @@ export default function CheckoutClient() {
                 {/* Payment button */}
                 <button
                   onClick={handlePayment}
-                  disabled={loading}
+                  disabled={loading || hasUnavailableItems || availableItems.length === 0}
                   className="flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
                 >
                   {loading ? (

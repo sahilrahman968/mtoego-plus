@@ -10,6 +10,9 @@ import {
 } from "@/lib/cloudinary";
 import Product from "@/models/product.model";
 import Category from "@/models/category.model";
+import Cart from "@/models/cart.model";
+import Wishlist from "@/models/wishlist.model";
+import Order from "@/models/order.model";
 import { IProductImage } from "@/models/product.model";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -181,6 +184,30 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const product = await Product.findById(id);
     if (!product) {
       return errorResponse("Product not found", 404);
+    }
+
+    // Hard delete only when the product is not referenced by customers.
+    // Otherwise the product must be disabled (isActive: false) instead.
+    const [inCart, inWishlist, inOrders] = await Promise.all([
+      Cart.exists({ "items.product": id }),
+      Wishlist.exists({ "items.product": id }),
+      Order.exists({ "items.product": id }),
+    ]);
+
+    if (inCart || inWishlist || inOrders) {
+      return errorResponse(
+        "This product cannot be deleted because it appears in customer carts, wishlists, or orders. Disable it instead.",
+        409,
+        "PRODUCT_IN_USE",
+        {
+          canDisable: true,
+          references: {
+            cart: Boolean(inCart),
+            wishlist: Boolean(inWishlist),
+            orders: Boolean(inOrders),
+          },
+        }
+      );
     }
 
     // Delete the slug folder to catch both persisted images and any orphaned

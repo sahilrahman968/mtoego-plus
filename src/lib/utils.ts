@@ -24,6 +24,13 @@ export function getProductImage(
   return "/placeholder-product.svg";
 }
 
+/** True when a referenced product was deleted or soft-disabled */
+export function isProductUnavailable(
+  product: { isActive?: boolean } | null | undefined
+): boolean {
+  return !product || product.isActive === false;
+}
+
 /** Truncate text with ellipsis */
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;

@@ -13,7 +13,6 @@ import {
   Shield,
   RotateCcw,
   ChevronRight,
-  Check,
 } from "lucide-react";
 import ProductCard from "@/components/store/ProductCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,7 +35,6 @@ import {
   formatPrice,
   getProductImage,
   getDiscountPercent,
-  getVariantLabel,
 } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
 import { ProductDetailSkeleton, ReviewCardSkeleton } from "@/components/store/skeletons";
@@ -584,45 +582,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           {activeTab === "description" ? (
             <div className="prose prose-sm max-w-none text-foreground">
               <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
-
-              {/* Variant details table */}
-              {activeVariants.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-base font-semibold mb-3">Available Variants</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full overflow-hidden border border-border text-sm">
-                      <thead className="bg-card">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-medium">Variant</th>
-                          <th className="px-4 py-2 text-left font-medium">SKU</th>
-                          <th className="px-4 py-2 text-right font-medium">Price</th>
-                          <th className="px-4 py-2 text-center font-medium">Stock</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {activeVariants.map((v) => (
-                          <tr key={v._id}>
-                            <td className="px-4 py-2">{getVariantLabel(v)}</td>
-                            <td className="px-4 py-2 text-muted">{v.sku}</td>
-                            <td className="px-4 py-2 text-right font-medium">
-                              {formatPrice(priceInclGst(v.price, v.gst))}
-                            </td>
-                            <td className="px-4 py-2 text-center">
-                              {v.stock > 0 ? (
-                                <span className="text-success">
-                                  <Check size={14} className="inline" /> In Stock
-                                </span>
-                              ) : (
-                                <span className="text-danger">Out of Stock</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-8">

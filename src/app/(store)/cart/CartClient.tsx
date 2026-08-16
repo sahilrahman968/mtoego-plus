@@ -16,22 +16,33 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
-import { formatPrice, getProductImage, getVariantLabel } from "@/lib/utils";
+import {
+  formatPrice,
+  getProductImage,
+  getVariantLabel,
+  isProductUnavailable,
+} from "@/lib/utils";
 import { buildCartSummary, priceInclGst } from "@/lib/pricing";
 import { CartItemSkeleton } from "@/components/store/skeletons";
 
 export default function CartClient() {
   const { isAuthenticated } = useAuth();
-  const { items, cart, updateItem, removeItem, clear, applyCoupon, removeCoupon, isLoading } =
+  const { items, cart, updateItem, removeItem, applyCoupon, removeCoupon, isLoading } =
     useCart();
   const { toast } = useToast();
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
+  const availableItems = useMemo(
+    () => items.filter((item) => !isProductUnavailable(item.product)),
+    [items]
+  );
+  const hasUnavailableItems = availableItems.length < items.length;
+
   const summary = useMemo(() => {
-    const lineItems = items.map((item) => {
-      const variant = item.product.variants?.find((v) => v._id === item.variant);
+    const lineItems = availableItems.map((item) => {
+      const variant = item.product!.variants?.find((v) => v._id === item.variant);
       return {
         price: variant?.price || item.priceAtAdd,
         quantity: item.quantity,
@@ -49,7 +60,7 @@ export default function CartClient() {
           }
         : null
     );
-  }, [items, cart?.coupon]);
+  }, [availableItems, cart?.coupon]);
 
   const { subtotal, discount, shipping, gst, grandTotal: estimatedTotal } = summary;
   const shippingCost = shipping.cost;
@@ -159,78 +170,112 @@ export default function CartClient() {
 
   return (
     <div className="mx-auto max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+      {hasUnavailableItems && (
+        <div className="mb-4 border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+          Some items in your cart are no longer available. Remove them to continue checkout.
+        </div>
+      )}
+
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Cart Items */}
         <div className="space-y-4 lg:col-span-2">
           {items.map((item) => {
-            const variant = item.product.variants?.find(
-              (v) => v._id === item.variant
-            );
+            const unavailable = isProductUnavailable(item.product);
+            const product = item.product;
+            const variant = product?.variants?.find((v) => v._id === item.variant);
             const price = variant?.price || item.priceAtAdd;
             const displayPrice = priceInclGst(price, variant?.gst);
             const isUpdating = updatingItems.has(item._id);
+            const title = product?.title || "Product unavailable";
+            const imageSrc = getProductImage(product?.images);
 
             return (
               <div
                 key={item._id}
                 className={`flex gap-4 border border-border bg-card/50 p-4 transition-opacity ${
                   isUpdating ? "opacity-60" : ""
-                }`}
+                } ${unavailable ? "opacity-75" : ""}`}
               >
                 {/* Image */}
-                <Link
-                  href={`/products/${item.product.slug}`}
-                  className="relative h-20 w-20 shrink-0 overflow-hidden border border-border bg-black/45 sm:h-24 sm:w-24"
-                >
-                  <Image
-                    src={getProductImage(item.product.images)}
-                    alt={item.product.title}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
-                  />
-                </Link>
+                {unavailable || !product ? (
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden border border-border bg-black/45 sm:h-24 sm:w-24">
+                    <Image
+                      src={imageSrc}
+                      alt={title}
+                      fill
+                      sizes="96px"
+                      className="object-cover grayscale"
+                    />
+                  </div>
+                ) : (
+                  <Link
+                    href={`/products/${product.slug}`}
+                    className="relative h-20 w-20 shrink-0 overflow-hidden border border-border bg-black/45 sm:h-24 sm:w-24"
+                  >
+                    <Image
+                      src={imageSrc}
+                      alt={title}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  </Link>
+                )}
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <Link
-                    href={`/products/${item.product.slug}`}
-                    className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.04em] text-foreground transition-colors hover:text-primary"
-                  >
-                    {item.product.title}
-                  </Link>
-                  {variant && (
-                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-muted">
-                      {getVariantLabel(variant)}
+                  {unavailable || !product ? (
+                    <p className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.04em] text-muted">
+                      {title}
                     </p>
+                  ) : (
+                    <Link
+                      href={`/products/${product.slug}`}
+                      className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.04em] text-foreground transition-colors hover:text-primary"
+                    >
+                      {title}
+                    </Link>
+                  )}
+                  {unavailable ? (
+                    <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-danger">
+                      Product unavailable
+                    </p>
+                  ) : (
+                    variant && (
+                      <p className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-muted">
+                        {getVariantLabel(variant)}
+                      </p>
+                    )
                   )}
                   {/* Quantity + Remove */}
                   <div className="mt-2 flex items-center gap-4">
-                    <div className="inline-flex items-center border border-border bg-black/35">
-                      <button
-                        onClick={() =>
-                          item.quantity > 1
-                            ? handleUpdateQuantity(item._id, item.quantity - 1)
-                            : handleRemoveItem(item._id)
-                        }
-                        disabled={isUpdating}
-                        className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="w-8 text-center text-sm font-medium text-foreground">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleUpdateQuantity(item._id, item.quantity + 1)
-                        }
-                        disabled={isUpdating}
-                        className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
+                    {!unavailable && (
+                      <div className="inline-flex items-center border border-border bg-black/35">
+                        <button
+                          onClick={() =>
+                            item.quantity > 1
+                              ? handleUpdateQuantity(item._id, item.quantity - 1)
+                              : handleRemoveItem(item._id)
+                          }
+                          disabled={isUpdating}
+                          className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-8 text-center text-sm font-medium text-foreground">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleUpdateQuantity(item._id, item.quantity + 1)
+                          }
+                          disabled={isUpdating}
+                          className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    )}
                     <button
                       onClick={() => handleRemoveItem(item._id)}
                       disabled={isUpdating}
@@ -239,18 +284,22 @@ export default function CartClient() {
                       <Trash2 size={16} />
                     </button>
                   </div>
-                  <p className="mt-2 text-sm font-bold text-foreground sm:hidden">
-                    {formatPrice(displayPrice * item.quantity)}
-                  </p>
+                  {!unavailable && (
+                    <p className="mt-2 text-sm font-bold text-foreground sm:hidden">
+                      {formatPrice(displayPrice * item.quantity)}
+                    </p>
+                  )}
                 </div>
 
                 {/* Line total */}
-                <div className="hidden shrink-0 text-right sm:block">
-                  <p className="text-base font-bold text-foreground">
-                    {formatPrice(displayPrice * item.quantity)}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-muted">incl. GST</p>
-                </div>
+                {!unavailable && (
+                  <div className="hidden shrink-0 text-right sm:block">
+                    <p className="text-base font-bold text-foreground">
+                      {formatPrice(displayPrice * item.quantity)}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-muted">incl. GST</p>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -317,7 +366,7 @@ export default function CartClient() {
             </div>
 
             {/* Coupon Input */}
-            {!cart?.coupon && (
+            {!cart?.coupon && availableItems.length > 0 && (
               <div className="mt-4">
                 <div className="flex gap-2">
                   <input
@@ -338,13 +387,25 @@ export default function CartClient() {
               </div>
             )}
 
-            <Link
-              href="/checkout"
-              className="mt-4 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
-            >
-              Proceed to Checkout
-              <ArrowRight size={18} />
-            </Link>
+            {availableItems.length > 0 && !hasUnavailableItems ? (
+              <Link
+                href="/checkout"
+                className="mt-4 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
+              >
+                Proceed to Checkout
+                <ArrowRight size={18} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="mt-4 flex w-full cursor-not-allowed items-center justify-center gap-2 border border-border bg-card-hover px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-muted"
+              >
+                {availableItems.length === 0
+                  ? "No available items"
+                  : "Remove unavailable items"}
+              </button>
+            )}
 
             <Link
               href="/products"

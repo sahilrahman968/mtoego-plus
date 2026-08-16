@@ -448,7 +448,7 @@ export interface CartItemData {
     images: ProductImageData[];
     isActive: boolean;
     variants: ProductVariantData[];
-  };
+  } | null;
   variant: string;
   quantity: number;
   priceAtAdd: number;
@@ -481,7 +481,7 @@ export interface WishlistItemData {
     isActive: boolean;
     variants: ProductVariantData[];
     priceRange?: { min: number; max: number } | null;
-  };
+  } | null;
   variant?: string;
   addedAt: string;
 }
@@ -536,7 +536,7 @@ export interface OrderDetail {
   orderNumber: string;
   status: string;
   items: {
-    product: { slug: string; images: ProductImageData[] } | null;
+    product: { slug: string; images: ProductImageData[]; isActive?: boolean } | null;
     title: string;
     variantLabel: string;
     sku: string;
