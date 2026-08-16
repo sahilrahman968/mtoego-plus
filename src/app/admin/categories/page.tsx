@@ -14,6 +14,7 @@ interface Category {
   name: string;
   slug: string;
   description?: string;
+  image?: { url: string; publicId: string } | null;
   parent?: { _id: string; name: string } | null;
   isActive: boolean;
   createdAt: string;
@@ -114,11 +115,36 @@ export default function CategoriesPage() {
                   {data.items.map((cat) => (
                     <tr key={cat._id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-slate-900">{cat.name}</p>
-                          {cat.description && (
-                            <p className="text-xs text-slate-400 truncate max-w-xs">{cat.description}</p>
+                        <div className="flex items-center gap-3">
+                          {cat.image?.url ? (
+                            <img
+                              src={cat.image.url}
+                              alt={cat.name}
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                              <svg
+                                className="w-5 h-5 text-slate-300"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                              </svg>
+                            </div>
                           )}
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900">{cat.name}</p>
+                            {cat.description && (
+                              <p className="text-xs text-slate-400 truncate max-w-xs">{cat.description}</p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">

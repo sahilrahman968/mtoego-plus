@@ -90,6 +90,7 @@ export default function Header() {
                 className="object-contain object-left drop-shadow-[0_0_12px_rgba(179,3,47,0.3)]"
                 priority
               />
+              <span aria-hidden="true" className="logo-flare" />
             </Link>
           </div>
 
