@@ -46,16 +46,16 @@ export default function VerifyEmailClient() {
           {status === "loading" && (
             <>
               <Loader2 size={48} className="mx-auto text-primary animate-spin mb-4" />
-              <h1 className="text-xl font-bold text-foreground">Verifying your email…</h1>
-              <p className="text-sm text-muted mt-2">This will only take a moment.</p>
+              <h1 className="text-xl text-foreground">Verifying your email…</h1>
+              <p className="body-copy mx-auto mt-3 text-muted">This will only take a moment.</p>
             </>
           )}
 
           {status === "success" && (
             <>
               <CheckCircle2 size={48} className="mx-auto text-green-600 mb-4" />
-              <h1 className="text-xl font-bold text-foreground">Email verified!</h1>
-              <p className="text-sm text-muted mt-2">{message}</p>
+              <h1 className="text-xl text-foreground">Email verified!</h1>
+              <p className="body-copy mx-auto mt-3 text-muted">{message}</p>
               <Link
                 href="/login"
                 className="inline-block mt-6 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
@@ -68,8 +68,8 @@ export default function VerifyEmailClient() {
           {status === "error" && (
             <>
               <XCircle size={48} className="mx-auto text-danger mb-4" />
-              <h1 className="text-xl font-bold text-foreground">Verification failed</h1>
-              <p className="text-sm text-muted mt-2">{message}</p>
+              <h1 className="text-xl text-foreground">Verification failed</h1>
+              <p className="body-copy mx-auto mt-3 text-muted">{message}</p>
               <Link
                 href="/login"
                 className="inline-block mt-6 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"

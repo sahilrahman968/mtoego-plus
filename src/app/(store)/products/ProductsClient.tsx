@@ -142,7 +142,7 @@ export default function ProductsClient() {
 
       <div className={mobile ? "relative px-4 pb-6 pt-14" : ""}>
         {mobile && (
-          <p className="mb-4 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+          <p className="eyebrow-xs mb-4 px-3 text-muted/70">
             Filters & Sort
           </p>
         )}
@@ -151,8 +151,8 @@ export default function ProductsClient() {
           <h4
             className={
               mobile
-                ? "mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70"
-                : "mb-3 text-sm font-semibold text-foreground"
+                ? "eyebrow-xs mb-2 px-3 text-muted/70"
+                : "label-text mb-3 text-foreground"
             }
           >
             Category
@@ -169,7 +169,7 @@ export default function ProductsClient() {
               }}
               className={`block w-full text-left transition-colors ${
                 mobile
-                  ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                  ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
                       !category
                         ? "text-primary"
                         : "text-foreground/85 hover:text-foreground"
@@ -198,7 +198,7 @@ export default function ProductsClient() {
                 }}
                 className={`block w-full text-left transition-colors ${
                   mobile
-                    ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                    ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
                         category === cat._id
                           ? "text-primary"
                           : "text-foreground/85 hover:text-foreground"
@@ -222,8 +222,8 @@ export default function ProductsClient() {
           <h4
             className={
               mobile
-                ? "mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70"
-                : "mb-3 text-sm font-semibold text-foreground"
+                ? "eyebrow-xs mb-2 px-3 text-muted/70"
+                : "label-text mb-3 text-foreground"
             }
           >
             Sort by Price
@@ -245,7 +245,7 @@ export default function ProductsClient() {
                   }}
                   className={`block w-full text-left transition-colors ${
                     mobile
-                      ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                      ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
                           active
                             ? "text-primary"
                             : "text-foreground/85 hover:text-foreground"
@@ -283,7 +283,7 @@ export default function ProductsClient() {
       {/* Active filters */}
       {activeCategory && (
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-light text-primary text-xs font-medium rounded-full">
+          <span className="eyebrow-xs inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-primary">
             {activeCategory}
             <button onClick={() => updateParams({ category: "" })}>
               <X size={12} />
@@ -291,7 +291,7 @@ export default function ProductsClient() {
           </span>
           <button
             onClick={() => router.push("/products")}
-            className="text-xs text-muted hover:text-foreground"
+            className="meta-text text-muted hover:text-foreground"
           >
             Clear all
           </button>
@@ -357,7 +357,7 @@ export default function ProductsClient() {
                         <button
                           key={pageNum}
                           onClick={() => updateParams({ page: String(pageNum) })}
-                          className={`w-10 h-10 text-sm font-medium rounded-lg transition-colors ${
+                          className={`tabular h-10 w-10 rounded-lg text-sm font-medium leading-none transition-colors ${
                             pageNum === page
                               ? "bg-primary text-white"
                               : "hover:bg-gray-50 text-foreground"
@@ -383,8 +383,8 @@ export default function ProductsClient() {
               <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <SlidersHorizontal size={32} className="text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">No products found</h3>
-              <p className="text-sm text-muted mt-1">
+              <h3 className="text-lg text-foreground">No products found</h3>
+              <p className="meta-text mx-auto mt-2 max-w-xs text-muted">
                 Try adjusting your filters or search terms
               </p>
               <button

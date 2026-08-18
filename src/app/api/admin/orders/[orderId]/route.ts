@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { isValidObjectId } from "@/lib/validators";
 import { restoreInventoryForOrder } from "@/lib/inventory";
 import { notifyOrderDelivered, notifyOrderShipped } from "@/lib/order-emails";
@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "orders.view");
     if (auth.error) return auth.error;
 
     const { orderId } = await params;
@@ -92,7 +92,7 @@ export async function PATCH(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "orders.update_status");
     if (auth.error) return auth.error;
 
     const { orderId } = await params;

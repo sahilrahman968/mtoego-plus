@@ -14,6 +14,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import InfoTooltip from "@/app/admin/components/InfoTooltip";
 
 function formatCurrency(value: number): string {
   if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
@@ -31,20 +32,20 @@ const tooltipStyle = {
 
 function ChartCard({
   title,
-  description,
+  info,
   children,
 }: {
   title: string;
-  description?: string;
+  info?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
+    <div className="bg-white rounded-xl border border-slate-200 p-5 overflow-visible">
       <div className="mb-4">
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-        {description && (
-          <p className="text-sm text-slate-500">{description}</p>
-        )}
+        <h3 className="flex items-center gap-1.5 text-base font-semibold text-slate-900">
+          {title}
+          {info && <InfoTooltip text={info} />}
+        </h3>
       </div>
       <div className="h-72">{children}</div>
     </div>
@@ -62,7 +63,7 @@ interface DailyPoint {
 
 export function DailyRevenueChart({ data }: { data: DailyPoint[] }) {
   return (
-    <ChartCard title="Daily revenue" description="Paid orders in the selected period">
+    <ChartCard title="Daily revenue" info="Total paid order revenue for each day in the selected period.">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
           <defs>
@@ -87,7 +88,7 @@ export function DailyRevenueChart({ data }: { data: DailyPoint[] }) {
 
 export function OrdersAovChart({ data }: { data: DailyPoint[] }) {
   return (
-    <ChartCard title="Orders & AOV" description="Volume vs average order value">
+    <ChartCard title="Orders & AOV" info="Daily paid order count alongside average order value (AOV) to spot volume vs basket-size trends.">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
@@ -113,7 +114,7 @@ export function OrdersAovChart({ data }: { data: DailyPoint[] }) {
 
 export function GrossVsDiscountChart({ data }: { data: DailyPoint[] }) {
   return (
-    <ChartCard title="Gross vs discount" description="Subtotal and discounts given">
+    <ChartCard title="Gross vs discount" info="Daily merchandise subtotal before discounts versus the discount amount given on paid orders.">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
@@ -153,8 +154,11 @@ export function FunnelChart({
   const total = data.reduce((a, b) => a + b.count, 0) || 1;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-base font-semibold text-slate-900 mb-4">Order status funnel</h3>
+    <div className="bg-white rounded-xl border border-slate-200 p-5 overflow-visible">
+      <h3 className="mb-4 flex items-center gap-1.5 text-base font-semibold text-slate-900">
+        Order status funnel
+        <InfoTooltip text="Distribution of orders by fulfillment status in the selected period. Bars are relative to the total order count." />
+      </h3>
       <div className="space-y-3">
         {data.map((row) => {
           const pct = Math.round((row.count / total) * 100);
@@ -184,7 +188,7 @@ export function AbandonmentAgeChart({
   data: { label: string; value: number; count: number }[];
 }) {
   return (
-    <ChartCard title="Cart value by age" description="Non-empty carts without a later paid order">
+    <ChartCard title="Cart value by age" info="Value of non-empty carts that have not converted to a paid order, grouped by how long they have been sitting.">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
@@ -213,7 +217,7 @@ export function PaymentSuccessChart({
   data: { label: string; paid: number; failed: number; successRate: number }[];
 }) {
   return (
-    <ChartCard title="Payment success (weekly)" description="Paid vs cancelled unpaid checkouts">
+    <ChartCard title="Payment success (weekly)" info="Weekly paid checkouts vs cancelled unpaid checkouts, with success rate overlaid as a percentage.">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
@@ -240,12 +244,14 @@ export function PaymentSuccessChart({
 
 export function SimpleBarList({
   title,
+  info,
   data,
   nameKey,
   valueKey,
   valuePrefix = "",
 }: {
   title: string;
+  info?: string;
   data: Record<string, string | number>[];
   nameKey: string;
   valueKey: string;
@@ -253,8 +259,11 @@ export function SimpleBarList({
 }) {
   const max = Math.max(...data.map((d) => Number(d[valueKey]) || 0), 1);
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-base font-semibold text-slate-900 mb-4">{title}</h3>
+    <div className="bg-white rounded-xl border border-slate-200 p-5 overflow-visible">
+      <h3 className="mb-4 flex items-center gap-1.5 text-base font-semibold text-slate-900">
+        {title}
+        {info && <InfoTooltip text={info} />}
+      </h3>
       {data.length === 0 ? (
         <p className="text-sm text-slate-500 text-center py-6">No data yet</p>
       ) : (

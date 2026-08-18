@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { isValidObjectId, validateUpdateCoupon } from "@/lib/validators";
 import Coupon from "@/models/coupon.model";
 
@@ -11,7 +11,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "coupons.view");
     if (auth.error) return auth.error;
 
     const { id } = await context.params;
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "coupons.update");
     if (auth.error) return auth.error;
 
     const { id } = await context.params;
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "coupons.delete");
     if (auth.error) return auth.error;
 
     const { id } = await context.params;

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { isValidObjectId, sanitize } from "@/lib/validators";
 import {
   CALLBACK_REQUEST_STATUSES,
@@ -14,7 +14,7 @@ type RouteParams = { params: Promise<{ requestId: string }> };
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "callback_requests.update");
     if (auth.error) return auth.error;
 
     const { requestId } = await params;

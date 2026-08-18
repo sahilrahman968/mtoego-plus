@@ -51,7 +51,7 @@ export default function AuthShell() {
         />
 
         {error && (
-          <div className="p-3 mt-4 bg-danger/10 border border-danger/25 rounded-lg text-sm text-danger animate-slide-up">
+          <div className="mt-4 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm leading-relaxed text-danger animate-slide-up">
             {error}
           </div>
         )}

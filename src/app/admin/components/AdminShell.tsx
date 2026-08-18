@@ -8,15 +8,22 @@ interface AdminShellProps {
   children: React.ReactNode;
   userName: string;
   userRole: string;
+  permissions: string[];
 }
 
-export default function AdminShell({ children, userName, userRole }: AdminShellProps) {
+export default function AdminShell({
+  children,
+  userName,
+  userRole,
+  permissions,
+}: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar
         userRole={userRole}
+        permissions={permissions}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

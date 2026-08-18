@@ -5,9 +5,13 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { connectDB } from "@/lib/db/mongoose";
 import User from "@/models/user.model";
 import { isValidEmail } from "@/lib/validators";
+import {
+  ensureSystemRoles,
+  getRoleBySlug,
+  listAdminRoles,
+} from "@/lib/auth/roles";
 
 // ─── GET /api/admin/staff ────────────────────────────────────────────────────
-// List all staff and super_admin users. Super admin only.
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,14 +19,18 @@ export async function GET(request: NextRequest) {
     if (auth.error) return auth.error;
 
     await connectDB();
+    await ensureSystemRoles();
 
     const { searchParams } = request.nextUrl;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20")));
     const search = searchParams.get("search") || "";
 
+    const adminRoles = await listAdminRoles();
+    const adminSlugs = adminRoles.map((r) => r.slug);
+
     const filter: Record<string, unknown> = {
-      role: { $in: ["super_admin", "staff"] },
+      role: { $in: adminSlugs },
     };
 
     if (search) {
@@ -43,9 +51,18 @@ export async function GET(request: NextRequest) {
     ]);
 
     const totalPages = Math.ceil(total / limit);
+    const roleMap = Object.fromEntries(
+      adminRoles.map((r) => [r.slug, { name: r.name, slug: r.slug }])
+    );
 
     return successResponse({
       items,
+      roles: adminRoles.map((r) => ({
+        slug: r.slug,
+        name: r.name,
+        isSystem: r.isSystem,
+      })),
+      roleMap,
       total,
       page,
       limit,
@@ -60,7 +77,6 @@ export async function GET(request: NextRequest) {
 }
 
 // ─── POST /api/admin/staff ───────────────────────────────────────────────────
-// Create a new staff member by email. They sign in via Google at /admin/login.
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,6 +84,7 @@ export async function POST(request: NextRequest) {
     if (auth.error) return auth.error;
 
     await connectDB();
+    await ensureSystemRoles();
 
     const body = await request.json();
     const { email, role } = body;
@@ -81,18 +98,22 @@ export async function POST(request: NextRequest) {
       return errorResponse("Please provide a valid email address", 400);
     }
 
-    if (!["staff", "super_admin"].includes(role)) {
-      return errorResponse("Role must be staff or super_admin", 400);
+    if (!role || typeof role !== "string") {
+      return errorResponse("Role is required", 400);
+    }
+
+    const roleDoc = await getRoleBySlug(role);
+    if (!roleDoc || !roleDoc.isAdmin) {
+      return errorResponse("Invalid admin role", 400);
     }
 
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
-      if (["super_admin", "staff"].includes(existing.role)) {
+      if (existing.role !== "customer") {
         return errorResponse("A staff member with this email already exists", 409);
       }
 
-      // Promote an existing customer account to the requested admin role
-      existing.role = role;
+      existing.role = roleDoc.slug;
       existing.isActive = true;
       await existing.save();
 
@@ -108,7 +129,7 @@ export async function POST(request: NextRequest) {
       name,
       email: normalizedEmail,
       password: randomPassword,
-      role,
+      role: roleDoc.slug,
       isActive: true,
       isEmailVerified: true,
     });

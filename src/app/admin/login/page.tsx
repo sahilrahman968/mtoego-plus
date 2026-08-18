@@ -5,21 +5,18 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthBackdrop from "@/components/store/AuthBackdrop";
 import GoogleSignInButton from "@/components/store/GoogleSignInButton";
-
-const ADMIN_ROLES = ["super_admin", "staff"];
+import { isAdminPanelRole } from "@/lib/auth/permissions";
 
 export default function AdminLoginPage() {
   const { user, isLoading: authLoading, googleSignIn } = useAuth();
   const [error, setError] = useState("");
 
-  // Full page load: /admin/login shares the /admin layout, and a client-side
-  // push would reuse the cached sidebar-less version rendered for the login page.
   const goToAdmin = useCallback(() => {
     window.location.replace("/admin");
   }, []);
 
   useEffect(() => {
-    if (!authLoading && user && ADMIN_ROLES.includes(user.role)) {
+    if (!authLoading && user && isAdminPanelRole(user.role)) {
       goToAdmin();
     }
   }, [authLoading, user, goToAdmin]);
@@ -33,7 +30,7 @@ export default function AdminLoginPage() {
         setError(res.message);
         return;
       }
-      if (!res.user || !ADMIN_ROLES.includes(res.user.role)) {
+      if (!res.user || !isAdminPanelRole(res.user.role)) {
         setError("You do not have admin access");
         return;
       }
@@ -79,7 +76,7 @@ export default function AdminLoginPage() {
       </div>
 
       <p className="mt-6 text-center text-xs text-muted">
-        Only authorized admin and staff accounts can access this panel.
+        Only authorized admin accounts can access this panel.
       </p>
     </AuthBackdrop>
   );

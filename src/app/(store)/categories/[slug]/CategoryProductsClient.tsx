@@ -126,7 +126,7 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
 
       <div className={mobile ? "relative px-4 pb-6 pt-14" : ""}>
         {mobile && (
-          <p className="mb-4 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+          <p className="eyebrow-xs mb-4 px-3 text-muted/70">
             Sort
           </p>
         )}
@@ -135,8 +135,8 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
           <h4
             className={
               mobile
-                ? "mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70"
-                : "mb-3 text-sm font-semibold text-foreground"
+                ? "eyebrow-xs mb-2 px-3 text-muted/70"
+                : "label-text mb-3 text-foreground"
             }
           >
             Sort by Price
@@ -158,7 +158,7 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
                   }}
                   className={`block w-full text-left transition-colors ${
                     mobile
-                      ? `min-h-10 px-3.5 text-sm font-medium tracking-[0.03em] ${
+                      ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
                           active
                             ? "text-primary"
                             : "text-foreground/85 hover:text-foreground"
@@ -186,7 +186,7 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
     <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted mb-6">
+        <nav className="eyebrow-xs mb-6 flex items-center gap-2 overflow-x-auto text-muted">
           <Link href="/" className="hover:text-foreground">
             Home
           </Link>
@@ -240,7 +240,7 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
                     >
                       Previous
                     </button>
-                    <span className="text-sm text-muted px-4">
+                    <span className="tabular meta-text px-4 text-muted">
                       Page {page} of {totalPages}
                     </span>
                     <button
@@ -256,10 +256,10 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
             ) : (
               <div className="text-center py-20">
                 <Package size={40} className="mx-auto text-gray-300 mb-3" />
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg text-foreground">
                   No products in this category
                 </h2>
-                <p className="text-sm text-muted mt-1">
+                <p className="meta-text mx-auto mt-2 text-muted">
                   Check back later for new arrivals
                 </p>
                 <Link

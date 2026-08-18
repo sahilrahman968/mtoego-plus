@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { connectDB } from "@/lib/db/mongoose";
 import { validateCreateProduct } from "@/lib/validators";
@@ -10,7 +10,7 @@ import Category from "@/models/category.model";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "products.list");
     if (auth.error) return auth.error;
 
     await connectDB();
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "products.create");
     if (auth.error) return auth.error;
 
     await connectDB();

@@ -37,14 +37,14 @@ export default function CategoriesClient() {
   return (
     <div className="bg-black py-8 sm:py-10">
       <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-        <div className="mb-7">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
+        <div className="mb-8">
+          <p className="eyebrow mb-3 text-primary/90">
             01 / Categories
           </p>
-          <h1 className="text-3xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-5xl lg:text-6xl">
+          <h1 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
             All Categories
           </h1>
-          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted sm:text-xs">
+          <p className="meta-text tabular mt-3 text-muted">
             Browse our collection of {categories.length} categories
           </p>
         </div>
@@ -76,10 +76,10 @@ export default function CategoriesClient() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/42 to-transparent" />
                   </div>
                   <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-primary/85 sm:text-[10px]">
+                    <p className="eyebrow-xs tabular text-primary/85">
                       {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
                     </p>
-                    <h2 className="mt-1 text-base font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary sm:text-2xl">
+                    <h2 className="section-title mt-1.5 text-base text-foreground transition-colors group-hover:text-primary sm:text-2xl">
                       {cat.name}
                     </h2>
                   </div>
@@ -93,8 +93,8 @@ export default function CategoriesClient() {
         ) : (
           <div className="py-20 text-center">
             <Grid3x3 size={40} className="mx-auto mb-3 text-muted/35" />
-            <h2 className="text-lg font-semibold uppercase tracking-[0.08em] text-foreground">No categories yet</h2>
-            <p className="mt-1 text-sm text-muted">Check back soon for new categories</p>
+            <h2 className="text-lg text-foreground">No categories yet</h2>
+            <p className="meta-text mt-2 text-muted">Check back soon for new categories</p>
           </div>
         )}
       </div>

@@ -345,6 +345,7 @@ export interface ProductImageData {
   url: string;
   publicId: string;
   alt?: string;
+  color?: string;
 }
 
 export interface ProductData {

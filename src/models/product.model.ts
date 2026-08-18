@@ -7,6 +7,8 @@ export interface IProductImage {
   url: string;
   publicId: string;
   alt?: string;
+  /** When set, storefront shows this image for the matching colorway. */
+  color?: string;
 }
 
 export interface IProductVariant {
@@ -55,6 +57,14 @@ const productImageSchema = new Schema<IProductImage>(
       type: String,
       trim: true,
       maxlength: [200, "Alt text must be at most 200 characters"],
+    },
+    color: {
+      type: String,
+      trim: true,
+      enum: {
+        values: [...PRODUCT_COLORS, ""],
+        message: "Color must be one of the predefined values",
+      },
     },
   },
   { _id: false }

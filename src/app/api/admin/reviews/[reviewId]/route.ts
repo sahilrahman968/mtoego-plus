@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { errorResponse, successResponse } from "@/lib/api-response";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { isValidObjectId } from "@/lib/validators";
 import Review from "@/models/review.model";
 import { Types } from "mongoose";
@@ -10,7 +10,7 @@ type RouteParams = { params: Promise<{ reviewId: string }> };
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "reviews.moderate");
     if (auth.error) return auth.error;
 
     const { reviewId } = await params;
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = requireAuth(request, ["super_admin"]);
+    const auth = await requirePermission(request, "reviews.delete");
     if (auth.error) return auth.error;
 
     const { reviewId } = await params;

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
 import { useToast } from "@/components/store/Toast";
+import { validateProductColorImages } from "@/lib/validators";
 
 interface Variant {
   _id?: string;
@@ -21,6 +22,7 @@ interface ProductImage {
   url: string;
   publicId: string;
   alt?: string;
+  color?: string;
 }
 
 interface Category {
@@ -349,7 +351,6 @@ export default function ProductForm({ productId }: ProductFormProps) {
   // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     const body = {
@@ -373,6 +374,15 @@ export default function ProductForm({ productId }: ProductFormProps) {
       images,
     };
 
+    const colorErrors = validateProductColorImages(body.variants, body.images);
+    if (colorErrors.length > 0) {
+      const message = colorErrors.join(". ");
+      setError(message);
+      toast(message, "error");
+      return;
+    }
+
+    setLoading(true);
     try {
       const url = isEdit ? `/api/admin/products/${productId}` : "/api/admin/products";
       const method = isEdit ? "PUT" : "POST";
@@ -503,10 +513,14 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
       {/* Images */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-4">Images</h2>
+        <h2 className="text-base font-semibold text-slate-900 mb-1">Images</h2>
+        <p className="text-xs text-slate-500 mb-4">
+          Tag images with a color so the storefront gallery updates when shoppers pick that colorway.
+          Untagged images are shown for every color.
+        </p>
         <div className="flex flex-wrap gap-3 mb-4">
           {images.map((img, index) => (
-            <div key={index} className="relative group">
+            <div key={img.publicId || index} className="relative group w-24">
               <img
                 src={img.url}
                 alt={img.alt || "Product"}
@@ -520,9 +534,28 @@ export default function ProductForm({ productId }: ProductFormProps) {
               >
                 ×
               </button>
+              <select
+                value={img.color || ""}
+                onChange={(e) =>
+                  setImages((prev) =>
+                    prev.map((image, i) =>
+                      i === index ? { ...image, color: e.target.value || undefined } : image
+                    )
+                  )
+                }
+                className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11px] text-slate-700"
+                aria-label={`Color for image ${index + 1}`}
+              >
+                <option value="">Any color</option>
+                {PRODUCT_COLORS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
           ))}
-          <label className="w-24 h-24 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-50/50 transition-colors">
+          <label className="w-24 h-24 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-50/50 transition-colors self-start">
             <input
               type="file"
               multiple

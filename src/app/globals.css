@@ -39,36 +39,183 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-success: var(--success);
-  --font-sans: var(--font-barlow);
-  --font-display: var(--font-bebas);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display-face);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  background-image:
-    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 38%),
-    radial-gradient(circle at 84% 0%, color-mix(in srgb, #ffffff 6%, transparent), transparent 36%);
-  min-height: 100vh;
+/*
+ * ─── Typography scale ───────────────────────────────────────────────────────
+ * One tracking value per role instead of ad-hoc `tracking-[0.29em]` guesses.
+ * Uppercase micro-labels need generous tracking to stay legible; body copy and
+ * large headings need almost none. Reach for the `.eyebrow` / `.label-text` /
+ * `.meta-text` / `.body-copy` classes below instead of arbitrary values.
+ */
+:root {
+  /* Uppercase label tracking, by size. Smaller text needs more of it. */
+  --track-eyebrow: 0.16em;
+  --track-label: 0.1em;
+  --track-button: 0.08em;
+
+  /* Heading tracking, tightening as type scales up (optical compensation).
+     Derived from theme.headings.letterSpacing so that stays the single knob. */
+  --track-heading-base: var(--heading-letter-spacing, 0.015em);
+  --track-heading-sm: var(--track-heading-base);
+  --track-heading-md: calc(var(--track-heading-base) - 0.01em);
+  --track-heading-lg: calc(var(--track-heading-base) - 0.025em);
+
+  /* Line heights */
+  --leading-display: 0.95;
+  --leading-heading: 1.12;
+  --leading-snug: 1.4;
+  --leading-body: 1.65;
+  --leading-relaxed: 1.75;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  letter-spacing: var(--heading-letter-spacing, 0.04em);
-  text-transform: var(--heading-text-transform, uppercase);
+/*
+ * Element defaults live in `base` and the text-role classes in `components`, so
+ * a one-off Tailwind utility (`leading-tight`, `tracking-normal`, …) still wins.
+ * Unlayered rules would outrank every utility and silently ignore them.
+ */
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+    line-height: var(--leading-body);
+    letter-spacing: 0;
+    background-image:
+      radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 38%),
+      radial-gradient(circle at 84% 0%, color-mix(in srgb, #ffffff 6%, transparent), transparent 36%);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: var(--heading-text-transform, uppercase);
+    line-height: var(--leading-heading);
+    text-wrap: balance;
+  }
+
+  /* Optical tracking: the bigger the heading, the tighter it should be set. */
+  h1 { letter-spacing: var(--track-heading-lg); line-height: var(--leading-display); }
+  h2 { letter-spacing: var(--track-heading-md); }
+  h3 { letter-spacing: var(--track-heading-sm); }
+  h4, h5, h6 { letter-spacing: var(--track-heading-sm); line-height: var(--leading-snug); }
+
+  /* Avoid orphans/ragged last lines in prose without hard-wrapping. */
+  p {
+    text-wrap: pretty;
+  }
 }
 
-.hero-kicker {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  letter-spacing: 0.42em;
-}
+/*
+ * ─── Text role classes ──────────────────────────────────────────────────────
+ * These set size / weight / tracking / leading only — never colour, so they
+ * compose freely with `text-muted`, `text-primary`, etc.
+ */
+@layer components {
+  /* Wide-tracked uppercase micro-label ("01 / Categories", "Free Shipping"). */
+  .eyebrow {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    /* 11px: 9px caps at wide tracking were below the legibility floor. */
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-eyebrow);
+    line-height: var(--leading-snug);
+  }
 
-.hero-title {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  line-height: 0.88;
+  @media (min-width: 640px) {
+    .eyebrow { font-size: 0.75rem; }
+  }
+
+  /* Same role, for tight spots (badges, chips, ticker) where 12px will not fit. */
+  .eyebrow-xs {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    line-height: var(--leading-snug);
+  }
+
+  /* Form labels, table headers, tab labels, section kickers inside cards. */
+  .label-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-label);
+    line-height: var(--leading-snug);
+  }
+
+  /* Button and CTA text. Tracking stays modest so words stay a single unit. */
+  .btn-text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-button);
+    line-height: 1;
+  }
+
+  /* Supporting copy: timestamps, helper text, sublabels. */
+  .meta-text {
+    font-size: 0.8125rem;
+    line-height: var(--leading-snug);
+    letter-spacing: 0;
+  }
+
+  /* Body copy with a capped measure — stops paragraphs running too wide. */
+  .body-copy {
+    font-size: 0.9375rem;
+    line-height: var(--leading-relaxed);
+    letter-spacing: 0;
+    max-width: 68ch;
+  }
+
+  /* Numerals that must align in columns (prices, totals, quantities, counts). */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Prices: tabular figures, slightly tightened, never uppercase-tracked. */
+  .price {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .hero-kicker {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+    /* Was 0.42em — so wide the words stopped reading as words. */
+    letter-spacing: 0.2em;
+    line-height: var(--leading-snug);
+  }
+
+  .hero-title {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    font-weight: 700;
+    /* Space Grotesk is proportional, so large caps need no extra tracking. */
+    letter-spacing: -0.015em;
+    line-height: 0.97;
+    text-wrap: balance;
+  }
+
+  /* Section heading paired with an .eyebrow above it. */
+  .section-title {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
 }
 
 .hero-title-outline {

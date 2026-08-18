@@ -58,7 +58,7 @@ export default function SearchClient() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search for products..."
-            className="w-full pl-12 pr-12 py-4 text-base bg-gray-50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            className="w-full rounded-xl border border-border bg-gray-50 py-4 pl-12 pr-12 text-base leading-snug transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             autoFocus
           />
           {searchInput && (
@@ -79,10 +79,10 @@ export default function SearchClient() {
       {/* Results */}
       {query && (
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+          <h1 className="text-2xl text-foreground sm:text-3xl">
             Results for &ldquo;{query}&rdquo;
           </h1>
-          <p className="text-sm text-muted mt-1">
+          <p className="meta-text tabular mt-2 text-muted">
             {total} product{total !== 1 ? "s" : ""} found
           </p>
         </div>
@@ -103,8 +103,8 @@ export default function SearchClient() {
       ) : query ? (
         <div className="text-center py-20">
           <Search size={40} className="mx-auto text-gray-300 mb-3" />
-          <h2 className="text-lg font-semibold text-foreground">No results found</h2>
-          <p className="text-sm text-muted mt-1 max-w-md mx-auto">
+          <h2 className="text-lg text-foreground">No results found</h2>
+          <p className="body-copy mx-auto mt-2 text-muted">
             We couldn&apos;t find any products matching &ldquo;{query}&rdquo;. Try
             different keywords or browse our categories.
           </p>
@@ -112,10 +112,10 @@ export default function SearchClient() {
       ) : (
         <div className="text-center py-20">
           <Search size={40} className="mx-auto text-gray-300 mb-3" />
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg text-foreground">
             Search for products
           </h2>
-          <p className="text-sm text-muted mt-1">
+          <p className="body-copy mx-auto mt-2 text-muted">
             Type in the search bar above to find products
           </p>
         </div>

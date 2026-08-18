@@ -124,28 +124,25 @@ export default function HomeClient() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/40" />
         <div className="absolute inset-0 mx-auto flex h-full w-full max-w-[92rem] items-end px-3 pb-14 sm:px-4 sm:pb-20 lg:px-6 lg:pb-24">
           <div className="max-w-2xl text-left">
-            <p className="hero-kicker mb-4 text-[10px] font-semibold uppercase text-primary/90 sm:text-xs">
+            <p className="hero-kicker mb-5 text-[11px] uppercase text-primary/90 sm:text-xs">
               Drop 07 / Stealth Series
             </p>
-            <h1 className="hero-title text-5xl uppercase tracking-[0.01em] leading-[0.98] text-foreground sm:text-7xl lg:text-8xl">
+            <h1 className="hero-title text-5xl uppercase text-foreground sm:text-7xl lg:text-8xl">
               <span className="block">Forged For</span>
               <span className="hero-title-outline block">Street</span>
               <span className="block">Supremacy</span>
             </h1>
-            <p className="mt-5 hidden max-w-xl text-sm leading-relaxed text-foreground/72 sm:block sm:text-[1.1rem]">
-              Race-bred gear and accessories built for speed, protection, and unmistakable street presence.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link
                 href="/products"
-                className="inline-flex items-center gap-2 bg-[#e32d22] px-6 py-3 text-xs font-semibold uppercase tracking-[0.28em] text-white transition-colors hover:bg-[#8f0226]"
+                className="btn-text inline-flex items-center gap-2 bg-[#e32d22] px-7 py-3.5 text-white transition-colors hover:bg-[#8f0226]"
               >
                 Shop The Drop
                 <ArrowRight size={14} />
               </Link>
               <Link
                 href="/categories"
-                className="inline-flex items-center gap-2 border border-white/30 bg-black/35 px-6 py-3 text-xs font-semibold uppercase tracking-[0.28em] text-white transition-colors hover:border-accent hover:bg-black/55"
+                className="btn-text inline-flex items-center gap-2 border border-white/30 bg-black/35 px-7 py-3.5 text-white transition-colors hover:border-accent hover:bg-black/55"
               >
                 All Gear
               </Link>
@@ -159,7 +156,7 @@ export default function HomeClient() {
             {[0, 1].map((setIdx) => (
               <div
                 key={setIdx}
-                className="flex min-w-max items-center gap-6 px-3 text-[9px] font-medium leading-none uppercase tracking-[0.32em] text-[#AAA7AE] sm:px-4 lg:px-6"
+                className="eyebrow-xs flex min-w-max items-center gap-6 px-3 leading-none text-[#AAA7AE] sm:px-4 lg:px-6"
               >
                 {[
                   "30-Day Returns",
@@ -183,18 +180,18 @@ export default function HomeClient() {
       {categories.length > 0 && (
         <section className="bg-black py-16 sm:py-20">
           <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <div className="mb-7 flex items-start justify-between">
+            <div className="mb-8 flex items-start justify-between gap-6">
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
+                <p className="eyebrow mb-3 text-primary/90">
                   01 / Categories
                 </p>
-                <h2 className="text-3xl font-bold uppercase leading-[0.88] tracking-[0.03em] text-foreground sm:text-5xl lg:text-6xl">
+                <h2 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
                   Gear Up
                 </h2>
               </div>
               <Link
                 href="/categories"
-                className="mt-6 hidden items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-muted transition-colors hover:text-foreground sm:inline-flex"
+                className="eyebrow mt-7 hidden shrink-0 items-center gap-2 text-muted transition-colors hover:text-foreground sm:inline-flex"
               >
                 View All <ArrowRight size={16} />
               </Link>
@@ -225,10 +222,10 @@ export default function HomeClient() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/42 to-transparent" />
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-primary/85 sm:text-[10px]">
+                      <p className="eyebrow-xs tabular text-primary/85">
                         {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
                       </p>
-                      <h3 className="mt-1 text-base font-bold uppercase leading-none tracking-[0.03em] text-foreground transition-colors group-hover:text-primary sm:text-2xl">
+                      <h3 className="section-title mt-1.5 text-base text-foreground transition-colors group-hover:text-primary sm:text-2xl">
                         {cat.name}
                       </h3>
                     </div>
@@ -242,7 +239,7 @@ export default function HomeClient() {
             <div className="mt-6 flex justify-end sm:hidden">
               <Link
                 href="/categories"
-                className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-muted transition-colors hover:text-foreground"
+                className="eyebrow inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
               >
                 View All <ArrowRight size={16} />
               </Link>
@@ -254,10 +251,10 @@ export default function HomeClient() {
       <section className="border-t border-border/70 bg-black py-16 sm:py-20">
         <div className="mx-auto grid w-full max-w-[92rem] items-center gap-8 px-3 sm:px-4 lg:grid-cols-[1fr_1.2fr] lg:gap-12 lg:px-6">
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
+            <p className="eyebrow mb-3 text-primary/90">
               03 / Manifesto
             </p>
-            <h2 className="hero-title text-5xl uppercase text-foreground sm:text-6xl lg:text-7xl">
+            <h2 className="hero-title text-4xl uppercase text-foreground sm:text-5xl lg:text-6xl">
               <span className="block">Built For The</span>
               <span className="block text-primary">Moment</span>
               <span className="block">Between Rides.</span>
@@ -279,11 +276,11 @@ export default function HomeClient() {
                   <div className="flex h-8 w-8 items-center justify-center text-primary">
                     <item.icon size={22} />
                   </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground">
+                  <div className="min-w-0">
+                    <p className="label-text text-foreground">
                       {item.label}
                     </p>
-                    <p className="text-[10px] text-muted">{item.sublabel}</p>
+                    <p className="meta-text mt-0.5 text-muted">{item.sublabel}</p>
                   </div>
                 </div>
               ))}
@@ -309,10 +306,10 @@ export default function HomeClient() {
                     <Bot size={17} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary/90">
+                    <p className="eyebrow-xs text-primary/90">
                       Neo Commerce Signal
                     </p>
-                    <p className="mt-1 text-sm font-medium text-foreground/90">
+                    <p className="mt-1.5 text-sm font-medium leading-snug text-foreground/90">
                       Need custom builds or event-volume orders?
                     </p>
                   </div>
@@ -330,7 +327,7 @@ export default function HomeClient() {
               <div className="px-4 pb-4 pt-3">
                 {!isFormOpen && !showSuccessState && (
                   <div className="space-y-4">
-                    <p className="text-sm leading-relaxed text-foreground/85">
+                    <p className="body-copy text-foreground/85">
                       We provide product customisations and also accept bulk orders for events.
                       Share your brief and our team will call you back.
                     </p>
@@ -340,7 +337,7 @@ export default function HomeClient() {
                         setCallbackError("");
                         setIsFormOpen(true);
                       }}
-                      className="inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-primary-dark"
+                      className="btn-text inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-white transition-colors hover:bg-primary-dark"
                     >
                       <PhoneCall size={14} />
                       Request Callback
@@ -388,14 +385,14 @@ export default function HomeClient() {
                           setCallbackError("");
                           setIsFormOpen(false);
                         }}
-                        className="text-xs font-medium uppercase tracking-[0.16em] text-muted transition-colors hover:text-foreground"
+                        className="btn-text text-muted transition-colors hover:text-foreground"
                       >
                         Back
                       </button>
                       <button
                         type="submit"
                         disabled={isSubmittingCallback}
-                        className="inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
+                        className="btn-text inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
                       >
                         {isSubmittingCallback ? (
                           <>
@@ -428,10 +425,10 @@ export default function HomeClient() {
                     >
                       <CheckCircle2 size={22} />
                     </motion.div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-success">
+                    <p className="label-text text-success">
                       Callback Requested
                     </p>
-                    <p className="mt-1 text-xs text-foreground/80">
+                    <p className="meta-text mt-1.5 text-foreground/80">
                       Our team will connect with you in your preferred hours.
                     </p>
                     <span className="pointer-events-none absolute left-1/4 top-1/4 h-1.5 w-1.5 animate-ping rounded-full bg-success/80" />
@@ -451,7 +448,7 @@ export default function HomeClient() {
             initial={{ opacity: 0, x: 18 }}
             animate={{ opacity: 1, x: 0 }}
             whileHover={{ x: -3 }}
-            className="pointer-events-auto absolute bottom-5 right-0 inline-flex items-center gap-2 rounded-l-full border border-r-0 border-primary/50 bg-[linear-gradient(120deg,rgba(11,11,18,0.98),rgba(27,9,15,0.95))] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground shadow-[0_0_22px_rgba(176,3,47,0.25)]"
+            className="eyebrow-xs pointer-events-auto absolute bottom-5 right-0 inline-flex items-center gap-2 rounded-l-full border border-r-0 border-primary/50 bg-[linear-gradient(120deg,rgba(11,11,18,0.98),rgba(27,9,15,0.95))] px-3.5 py-2.5 text-foreground shadow-[0_0_22px_rgba(176,3,47,0.25)]"
           >
             <PhoneCall size={13} className="text-primary" />
             <span>Callback</span>

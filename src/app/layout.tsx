@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed, Teko } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -8,19 +8,22 @@ import ScrollbarOverlay from "@/components/ScrollbarOverlay";
 import { theme, getThemeCSSVariables } from "@/config/theme";
 
 // ── Font imports ─────────────────────────────────────────────────────────────
-// To change fonts: swap the imports below AND update fonts.sans / fonts.display
+// To change fonts: swap the imports below AND update fonts.body / fonts.display
 // in src/config/theme.ts so the variable names stay in sync.
+//
+// Both are variable fonts, so the whole weight range ships in a single file
+// instead of one request per static weight.
 
-const barlow = Barlow_Condensed({
-  variable: "--font-barlow",
+const bodyFont = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
-const bebasNeue = Teko({
-  variable: "--font-bebas",
+const displayFont = Space_Grotesk({
+  variable: "--font-display-face",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 // ── Metadata (reads from theme config) ───────────────────────────────────────
@@ -52,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${barlow.variable} ${bebasNeue.variable} antialiased`}
+        className={`${bodyFont.variable} ${displayFont.variable} antialiased`}
         style={themeVars as React.CSSProperties}
       >
         <AuthProvider>

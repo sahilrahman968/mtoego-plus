@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
-import { USER_ROLES, UserRole } from "@/types";
+import { UserRole } from "@/types";
 
 // ─── Document Interface ─────────────────────────────────────────────────────
 export interface IUserDocument extends Document {
@@ -9,6 +9,7 @@ export interface IUserDocument extends Document {
   password?: string | null;
   phone?: string | null;
   isPhoneVerified: boolean;
+  /** Role slug — system (super_admin/staff/customer) or custom admin role */
   role: UserRole;
   isActive: boolean;
   isEmailVerified: boolean;
@@ -61,11 +62,14 @@ const userSchema = new Schema<IUserDocument>(
     },
     role: {
       type: String,
-      enum: {
-        values: USER_ROLES,
-        message: "Role must be one of: super_admin, staff, customer",
-      },
+      required: true,
       default: "customer",
+      trim: true,
+      lowercase: true,
+      match: [
+        /^[a-z][a-z0-9_]{1,31}$/,
+        "Role must be a valid slug (2–32 chars)",
+      ],
     },
     isActive: {
       type: Boolean,

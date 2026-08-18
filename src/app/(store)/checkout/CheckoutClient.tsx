@@ -271,11 +271,11 @@ export default function CheckoutClient() {
     return (
       <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
         <Lock size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">Login Required</h1>
-        <p className="text-muted mt-2">Please login to proceed with checkout</p>
+        <h1 className="text-3xl text-foreground">Login Required</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Please login to proceed with checkout</p>
         <Link
           href="/login?redirect=/checkout"
-          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -287,11 +287,11 @@ export default function CheckoutClient() {
     return (
       <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
         <CreditCard size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">Nothing to checkout</h1>
-        <p className="text-muted mt-2">Your cart is empty</p>
+        <h1 className="text-3xl text-foreground">Nothing to checkout</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Your cart is empty</p>
         <Link
           href="/products"
-          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Start Shopping
         </Link>
@@ -305,12 +305,12 @@ export default function CheckoutClient() {
         {/* Progress steps */}
         <div className="mb-8 flex items-center justify-center gap-3 border-b border-border/60 pb-6">
           <div
-            className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] ${
+            className={`label-text flex items-center gap-2 ${
               step === "address" ? "text-primary" : "text-muted"
             }`}
           >
             <div
-              className={`flex h-6 w-6 items-center justify-center text-[10px] ${
+              className={`tabular flex h-6 w-6 items-center justify-center text-[11px] font-semibold leading-none ${
                 step === "address"
                   ? "bg-primary text-white"
                   : "border border-border bg-card text-muted"
@@ -322,12 +322,12 @@ export default function CheckoutClient() {
           </div>
           <ChevronRight size={16} className="text-muted" />
           <div
-            className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] ${
+            className={`label-text flex items-center gap-2 ${
               step === "review" ? "text-primary" : "text-muted"
             }`}
           >
             <div
-              className={`flex h-6 w-6 items-center justify-center text-[10px] ${
+              className={`tabular flex h-6 w-6 items-center justify-center text-[11px] font-semibold leading-none ${
                 step === "review"
                   ? "bg-primary text-white"
                   : "border border-border bg-card text-muted"
@@ -346,14 +346,14 @@ export default function CheckoutClient() {
               <div className="border border-border bg-card/80 p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <MapPin size={20} className="text-primary" />
-                  <h2 className="text-lg font-bold uppercase tracking-[0.08em] text-foreground">
+                  <h2 className="section-title text-lg text-foreground">
                     Shipping Address
                   </h2>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       Full Name *
                     </label>
                     <input
@@ -365,7 +365,7 @@ export default function CheckoutClient() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       Phone Number *
                     </label>
                     <input
@@ -380,7 +380,7 @@ export default function CheckoutClient() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       Address Line 1 *
                     </label>
                     <input
@@ -393,7 +393,7 @@ export default function CheckoutClient() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       Address Line 2
                     </label>
                     <input
@@ -405,7 +405,7 @@ export default function CheckoutClient() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       City *
                     </label>
                     <input
@@ -417,7 +417,7 @@ export default function CheckoutClient() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       State *
                     </label>
                     <select
@@ -435,7 +435,7 @@ export default function CheckoutClient() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    <label className="label-text mb-2 block text-muted">
                       Pincode *
                     </label>
                     <input
@@ -453,7 +453,7 @@ export default function CheckoutClient() {
 
                 <button
                   onClick={handleProceedToReview}
-                  className="mt-6 flex w-full items-center justify-center gap-2 bg-primary px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
+                  className="btn-text mt-7 flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark"
                 >
                   Continue to Review
                   <ChevronRight size={18} />
@@ -466,33 +466,33 @@ export default function CheckoutClient() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-primary" />
-                      <h3 className="font-semibold uppercase tracking-[0.08em] text-foreground">Shipping To</h3>
+                      <h3 className="section-title text-base text-foreground">Shipping To</h3>
                     </div>
                     <button
                       onClick={() => setStep("address")}
-                      className="text-xs font-semibold uppercase tracking-[0.12em] text-primary hover:underline"
+                      className="btn-text text-primary hover:underline"
                     >
                       Edit
                     </button>
                   </div>
-                  <p className="text-sm text-foreground">{address.name}</p>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm font-medium leading-relaxed text-foreground">{address.name}</p>
+                  <p className="meta-text text-muted">
                     {address.line1}
                     {address.line2 ? `, ${address.line2}` : ""}
                   </p>
-                  <p className="text-sm text-muted">
+                  <p className="meta-text text-muted">
                     {address.city}, {address.state} - {address.pincode}
                   </p>
-                  <p className="text-sm text-muted">Phone: {address.phone}</p>
+                  <p className="meta-text tabular text-muted">Phone: {address.phone}</p>
                 </div>
 
                 {/* Cart items */}
                 <div className="border border-border bg-card/80 p-6">
-                  <h3 className="mb-4 font-semibold uppercase tracking-[0.08em] text-foreground">
+                  <h3 className="section-title mb-4 text-base text-foreground">
                     Order Items ({items.length})
                   </h3>
                   {hasUnavailableItems && (
-                    <div className="mb-3 border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+                    <div className="meta-text mb-3 border border-danger/40 bg-danger/10 px-3 py-2.5 text-danger">
                       Some items are no longer available.{" "}
                       <Link href="/cart" className="underline hover:text-danger">
                         Return to cart
@@ -525,21 +525,21 @@ export default function CheckoutClient() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
+                            <p className="truncate text-sm font-medium leading-snug text-foreground">
                               {title}
                             </p>
                             {unavailable ? (
-                              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-danger">
+                              <p className="eyebrow-xs mt-0.5 text-danger">
                                 Product unavailable
                               </p>
                             ) : (
-                              <p className="text-xs text-muted">
+                              <p className="meta-text tabular mt-0.5 text-muted">
                                 {variant ? getVariantLabel(variant) : ""} × {item.quantity}
                               </p>
                             )}
                           </div>
                           {!unavailable && (
-                            <p className="text-sm font-medium text-foreground shrink-0">
+                            <p className="price shrink-0 text-sm font-medium text-foreground">
                               {formatPrice(displayPrice * item.quantity)}
                             </p>
                           )}
@@ -553,7 +553,7 @@ export default function CheckoutClient() {
                 <button
                   onClick={handlePayment}
                   disabled={loading || hasUnavailableItems || availableItems.length === 0}
-                  className="flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                  className="btn-text flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 size={20} className="animate-spin" />
@@ -567,7 +567,7 @@ export default function CheckoutClient() {
 
                 <button
                   onClick={() => setStep("address")}
-                  className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition-colors hover:text-foreground"
+                  className="label-text flex items-center gap-2 text-muted transition-colors hover:text-foreground"
                 >
                   <ArrowLeft size={16} />
                   Back to Shipping
@@ -579,10 +579,10 @@ export default function CheckoutClient() {
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-28 border border-border bg-card/90 p-6">
-              <h2 className="mb-4 text-lg font-bold uppercase tracking-[0.08em] text-foreground">
+              <h2 className="section-title mb-5 text-lg text-foreground">
                 Order Summary
               </h2>
-              <div className="space-y-3 text-sm">
+              <div className="tabular space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted">
                     Subtotal (excl. GST)
@@ -610,12 +610,12 @@ export default function CheckoutClient() {
                   <span>Estimated Total</span>
                   <span>{formatPrice(estimatedTotal)}</span>
                 </div>
-                <p className="text-[11px] text-muted">Total includes GST</p>
+                <p className="eyebrow-xs text-muted">Total includes GST</p>
               </div>
 
               <div className="mt-4 flex items-center gap-2 border border-border bg-black/45 p-3">
                 <Shield size={16} className="shrink-0 text-primary" />
-                <p className="text-xs text-muted">
+                <p className="meta-text text-muted">
                   Your payment is secured with Razorpay&apos;s 256-bit encryption
                 </p>
               </div>
@@ -635,8 +635,8 @@ export default function CheckoutClient() {
                 <item.icon size={14} className="text-primary" />
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">{item.title}</p>
-                <p className="text-[10px] text-muted">{item.desc}</p>
+                <p className="label-text text-foreground">{item.title}</p>
+                <p className="meta-text mt-0.5 text-muted">{item.desc}</p>
               </div>
             </div>
           ))}

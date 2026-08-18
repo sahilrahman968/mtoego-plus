@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Pagination from "../components/Pagination";
@@ -18,8 +17,15 @@ interface StaffMember {
   createdAt: string;
 }
 
+interface AdminRoleOption {
+  slug: string;
+  name: string;
+  isSystem: boolean;
+}
+
 interface PaginatedResponse {
   items: StaffMember[];
+  roles: AdminRoleOption[];
   total: number;
   page: number;
   totalPages: number;
@@ -33,17 +39,22 @@ export default function StaffPage() {
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const params = new URLSearchParams({ page: String(page), limit: "15" });
       if (search) params.set("search", search);
       const res = await fetch(`/api/admin/staff?${params}`);
       const json = await res.json();
       if (json.success) setData(json.data);
+      else setError(json.message || "Failed to fetch staff");
     } catch (err) {
       console.error("Failed to fetch staff:", err);
+      setError("Failed to fetch staff");
     } finally {
       setLoading(false);
     }
@@ -62,6 +73,8 @@ export default function StaffPage() {
       if (json.success) {
         setDeleteTarget(null);
         fetchStaff();
+      } else {
+        setError(json.message || "Failed to delete staff member");
       }
     } catch (err) {
       console.error("Failed to delete staff:", err);
@@ -72,6 +85,7 @@ export default function StaffPage() {
 
   const toggleActive = async (member: StaffMember) => {
     setToggling(member._id);
+    setError("");
     try {
       const res = await fetch(`/api/admin/staff/${member._id}`, {
         method: "PUT",
@@ -80,6 +94,7 @@ export default function StaffPage() {
       });
       const json = await res.json();
       if (json.success) fetchStaff();
+      else setError(json.message || "Failed to update status");
     } catch (err) {
       console.error("Failed to toggle staff status:", err);
     } finally {
@@ -87,13 +102,46 @@ export default function StaffPage() {
     }
   };
 
+  const changeRole = async (member: StaffMember, role: string) => {
+    if (role === member.role) return;
+    setUpdatingRole(member._id);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/staff/${member._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      const json = await res.json();
+      if (json.success) fetchStaff();
+      else {
+        setError(json.message || "Failed to update role");
+        fetchStaff();
+      }
+    } catch (err) {
+      console.error("Failed to update role:", err);
+      setError("Failed to update role");
+    } finally {
+      setUpdatingRole(null);
+    }
+  };
+
+  const roleLabel = (slug: string) =>
+    data?.roles.find((r) => r.slug === slug)?.name || slug.replace(/_/g, " ");
+
   return (
     <div>
       <PageHeader
         title="Staff Management"
-        description="Manage admin and staff accounts (Super Admin only)"
+        description="Manage admin panel users and their roles (Super Admin only)"
         action={{ label: "Add Staff", href: "/admin/staff/new" }}
       />
+
+      {error && (
+        <div className="mb-4 p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">
+          {error}
+        </div>
+      )}
 
       <div className="mb-4">
         <input
@@ -146,7 +194,19 @@ export default function StaffPage() {
                         <span className="text-slate-600">{member.email}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={member.role} />
+                        <select
+                          value={member.role}
+                          disabled={updatingRole === member._id}
+                          onChange={(e) => changeRole(member, e.target.value)}
+                          className="max-w-[11rem] px-2 py-1.5 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
+                          title={roleLabel(member.role)}
+                        >
+                          {data.roles.map((role) => (
+                            <option key={role.slug} value={role.slug}>
+                              {role.name}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={member.isActive ? "active" : "inactive"} />

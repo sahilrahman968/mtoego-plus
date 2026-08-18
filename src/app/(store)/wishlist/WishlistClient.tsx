@@ -83,11 +83,11 @@ export default function WishlistClient() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
         <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">Your Wishlist</h1>
-        <p className="text-muted mt-2">Please login to view your wishlist</p>
+        <h1 className="text-2xl text-foreground">Your Wishlist</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Please login to view your wishlist</p>
         <Link
           href="/login?redirect=/wishlist"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="btn-text mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -111,15 +111,15 @@ export default function WishlistClient() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
         <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="text-2xl text-foreground">
           Your wishlist is empty
         </h1>
-        <p className="text-muted mt-2">
+        <p className="body-copy mx-auto mt-3 text-muted">
           Save items you love to your wishlist
         </p>
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
+          className="btn-text mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Explore Products
           <ArrowRight size={18} />

@@ -40,6 +40,45 @@ interface ValidationResult {
   errors: string[];
 }
 
+type ColorEntry = { color?: unknown };
+
+/**
+ * Every color used by a variant must have a tagged image, and every tagged
+ * image color must be represented by a variant.
+ */
+export function validateProductColorImages(
+  variants: ColorEntry[],
+  images: ColorEntry[]
+): string[] {
+  const variantColors = new Set(
+    variants
+      .map((variant) =>
+        typeof variant.color === "string" ? variant.color.trim() : ""
+      )
+      .filter(Boolean)
+  );
+  const imageColors = new Set(
+    images
+      .map((image) => (typeof image.color === "string" ? image.color.trim() : ""))
+      .filter(Boolean)
+  );
+  const errors: string[] = [];
+
+  for (const color of variantColors) {
+    if (!imageColors.has(color)) {
+      errors.push(`Add an image tagged "${color}" for the ${color} SKU`);
+    }
+  }
+
+  for (const color of imageColors) {
+    if (!variantColors.has(color)) {
+      errors.push(`Add a SKU with color "${color}" or remove that image tag`);
+    }
+  }
+
+  return errors;
+}
+
 export function validateCreateProduct(body: Record<string, unknown>): ValidationResult {
   const errors: string[] = [];
 
@@ -127,6 +166,15 @@ export function validateCreateProduct(body: Record<string, unknown>): Validation
     }
   }
 
+  if (Array.isArray(body.variants) && Array.isArray(body.images)) {
+    errors.push(
+      ...validateProductColorImages(
+        body.variants as ColorEntry[],
+        body.images as ColorEntry[]
+      )
+    );
+  }
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -212,6 +260,15 @@ export function validateUpdateProduct(body: Record<string, unknown>): Validation
     } else if (body.tags.length > 20) {
       errors.push("A product can have at most 20 tags");
     }
+  }
+
+  if (Array.isArray(body.variants) && Array.isArray(body.images)) {
+    errors.push(
+      ...validateProductColorImages(
+        body.variants as ColorEntry[],
+        body.images as ColorEntry[]
+      )
+    );
   }
 
   return { valid: errors.length === 0, errors };

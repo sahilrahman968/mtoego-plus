@@ -121,11 +121,11 @@ export default function OrdersClient() {
     return (
       <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
         <Package size={48} className="mx-auto mb-4 text-muted/40" />
-        <h1 className="text-3xl font-bold uppercase tracking-[0.06em] text-foreground">My Orders</h1>
-        <p className="text-muted mt-2">Please login to view your orders</p>
+        <h1 className="text-3xl text-foreground">My Orders</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Please login to view your orders</p>
         <Link
           href="/login?redirect=/account/orders"
-          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -136,13 +136,13 @@ export default function OrdersClient() {
   return (
     <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
       <div className="mb-6 border-b border-border/60 pb-5">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-primary/90">
+        <p className="eyebrow mb-3 text-primary/90">
           03 / Account
         </p>
-        <h1 className="text-2xl font-bold uppercase tracking-[0.05em] text-foreground sm:text-5xl">
+        <h1 className="section-title text-3xl text-foreground sm:text-5xl">
           My Orders
         </h1>
-        <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-muted">
+        <p className="eyebrow-xs tabular mt-2.5 text-muted">
           {total} order{total !== 1 ? "s" : ""}
         </p>
       </div>
@@ -175,14 +175,14 @@ export default function OrdersClient() {
                           className={`shrink-0 ${statusColor}`}
                           aria-label={order.status}
                         />
-                        <span className="truncate text-sm font-bold uppercase tracking-[0.04em] text-foreground sm:text-base">
+                        <span className="tabular truncate text-sm font-bold uppercase text-foreground sm:text-base">
                           {order.orderNumber}
                         </span>
                       </div>
 
                       <OrderProductThumbnails items={order.items} />
 
-                      <div className="mt-2 flex items-center gap-3 text-[11px] uppercase tracking-[0.08em] text-muted">
+                      <div className="eyebrow-xs mt-2.5 flex items-center gap-3 text-muted">
                         <span className="flex items-center gap-1">
                           <Clock size={12} />
                           {new Date(order.createdAt).toLocaleString("en-IN", {
@@ -197,7 +197,7 @@ export default function OrdersClient() {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-sm font-bold text-foreground sm:text-lg">
+                      <span className="price text-sm font-bold text-foreground sm:text-lg">
                         {formatPrice(order.pricing.grandTotal)}
                       </span>
                       <ChevronRight size={16} className="text-muted" />
@@ -213,17 +213,17 @@ export default function OrdersClient() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className="border border-border bg-black/45 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-text border border-border bg-black/45 px-4 py-2.5 hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Previous
               </button>
-              <span className="px-4 text-xs font-semibold uppercase tracking-[0.1em] text-muted">
+              <span className="btn-text tabular px-4 text-muted">
                 Page {page} of {totalPages}
               </span>
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page >= totalPages}
-                className="border border-border bg-black/45 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-text border border-border bg-black/45 px-4 py-2.5 hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
@@ -233,13 +233,13 @@ export default function OrdersClient() {
       ) : (
         <div className="py-20 text-center">
           <Package size={48} className="mx-auto mb-4 text-muted/40" />
-          <h2 className="text-lg font-semibold uppercase tracking-[0.08em] text-foreground">No orders yet</h2>
-          <p className="mt-1 text-sm text-muted">
+          <h2 className="text-lg text-foreground">No orders yet</h2>
+          <p className="body-copy mx-auto mt-2 text-muted">
             When you make a purchase, your orders will appear here
           </p>
           <Link
             href="/products"
-            className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary hover:underline"
+            className="btn-text mt-5 inline-flex items-center gap-2 text-primary hover:underline"
           >
             Start Shopping
           </Link>

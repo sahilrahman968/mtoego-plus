@@ -8,6 +8,7 @@ import {
 } from "@/lib/analytics/periods";
 import { MetricWithDelta } from "@/lib/analytics/format";
 import StatsCard from "@/app/admin/components/StatsCard";
+import InfoTooltip from "@/app/admin/components/InfoTooltip";
 import PeriodToggle from "./components/PeriodToggle";
 import AnalyticsSection from "./components/AnalyticsSection";
 import AnalyticsTable, {
@@ -26,6 +27,29 @@ import {
 
 function formatCurrency(value: number): string {
   return `₹${Math.round(value).toLocaleString("en-IN")}`;
+}
+
+function MetricTile({
+  label,
+  value,
+  info,
+  hint,
+}: {
+  label: string;
+  value: React.ReactNode;
+  info: string;
+  hint?: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 overflow-visible">
+      <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        {label}
+        <InfoTooltip text={info} />
+      </p>
+      <p className="text-xl font-bold text-slate-900">{value}</p>
+      {hint}
+    </div>
+  );
 }
 
 function trendFromDelta(deltaPct: number | null | undefined) {
@@ -275,18 +299,99 @@ export default function AnalyticsClient() {
       >
         {m && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard title="Revenue" value={formatCurrency(m.revenue.value)} color="emerald" icon={iconBox} trend={trendFromDelta(m.revenue.deltaPct)} />
-            <StatsCard title="Orders" value={m.orders.value.toLocaleString()} color="indigo" icon={iconBox} trend={trendFromDelta(m.orders.deltaPct)} />
-            <StatsCard title="AOV" value={formatCurrency(m.aov.value)} color="amber" icon={iconBox} trend={trendFromDelta(m.aov.deltaPct)} />
-            <StatsCard title="Payment success" value={`${m.paymentSuccessPct.value.toFixed(1)}%`} color="rose" icon={iconBox} trend={trendFromDelta(m.paymentSuccessPct.deltaPct)} />
-            <StatsCard title="Net after discount" value={formatCurrency(m.netAfterDiscount.value)} color="emerald" icon={iconBox} trend={trendFromDelta(m.netAfterDiscount.deltaPct)} />
-            <StatsCard title="Pending payment" value={formatCurrency(m.pendingRevenue.value)} color="amber" icon={iconBox} trend={{ value: `${m.pendingRevenue.count} orders`, positive: true }} />
-            <StatsCard title="Abandoned carts" value={formatCurrency(m.abandonedCart.value)} color="rose" icon={iconBox} trend={{ value: `${m.abandonedCart.count} carts`, positive: false }} />
-            <StatsCard title="Low-stock SKUs" value={m.lowStockCount} color="amber" icon={iconBox} />
-            <StatsCard title="Cancel rate" value={`${m.cancelRatePct.value.toFixed(1)}%`} color="rose" icon={iconBox} trend={trendFromDelta(m.cancelRatePct.deltaPct)} />
-            <StatsCard title="Refund rate" value={`${m.refundRatePct.value.toFixed(1)}%`} color="rose" icon={iconBox} trend={trendFromDelta(m.refundRatePct.deltaPct)} />
-            <StatsCard title="Open callbacks" value={m.openCallbacks} color="indigo" icon={iconBox} />
-            <StatsCard title="Active products" value={`${m.products.active} / ${m.products.total}`} color="indigo" icon={iconBox} />
+            <StatsCard
+              title="Revenue"
+              value={formatCurrency(m.revenue.value)}
+              color="emerald"
+              icon={iconBox}
+              trend={trendFromDelta(m.revenue.deltaPct)}
+              info="Total paid order revenue in the selected period, compared with the previous equal period."
+            />
+            <StatsCard
+              title="Orders"
+              value={m.orders.value.toLocaleString()}
+              color="indigo"
+              icon={iconBox}
+              trend={trendFromDelta(m.orders.deltaPct)}
+              info="Count of paid orders placed in the selected period."
+            />
+            <StatsCard
+              title="AOV"
+              value={formatCurrency(m.aov.value)}
+              color="amber"
+              icon={iconBox}
+              trend={trendFromDelta(m.aov.deltaPct)}
+              info="Average order value — revenue divided by paid orders in the selected period."
+            />
+            <StatsCard
+              title="Payment success"
+              value={`${m.paymentSuccessPct.value.toFixed(1)}%`}
+              color="rose"
+              icon={iconBox}
+              trend={trendFromDelta(m.paymentSuccessPct.deltaPct)}
+              info="Share of checkout attempts that completed payment successfully (paid vs cancelled unpaid)."
+            />
+            <StatsCard
+              title="Net after discount"
+              value={formatCurrency(m.netAfterDiscount.value)}
+              color="emerald"
+              icon={iconBox}
+              trend={trendFromDelta(m.netAfterDiscount.deltaPct)}
+              info="Merchandise subtotal after discounts on paid orders (before shipping/tax adjustments)."
+            />
+            <StatsCard
+              title="Pending payment"
+              value={formatCurrency(m.pendingRevenue.value)}
+              color="amber"
+              icon={iconBox}
+              trend={{ value: `${m.pendingRevenue.count} orders`, positive: true }}
+              info="Value of orders that are still awaiting payment and have not been cancelled."
+            />
+            <StatsCard
+              title="Abandoned carts"
+              value={formatCurrency(m.abandonedCart.value)}
+              color="rose"
+              icon={iconBox}
+              trend={{ value: `${m.abandonedCart.count} carts`, positive: false }}
+              info="Estimated value of non-empty carts that never converted to a paid order."
+            />
+            <StatsCard
+              title="Low-stock SKUs"
+              value={m.lowStockCount}
+              color="amber"
+              icon={iconBox}
+              info="Number of product variants currently at or below the low-stock threshold."
+            />
+            <StatsCard
+              title="Cancel rate"
+              value={`${m.cancelRatePct.value.toFixed(1)}%`}
+              color="rose"
+              icon={iconBox}
+              trend={trendFromDelta(m.cancelRatePct.deltaPct)}
+              info="Percentage of orders that were cancelled during the selected period."
+            />
+            <StatsCard
+              title="Refund rate"
+              value={`${m.refundRatePct.value.toFixed(1)}%`}
+              color="rose"
+              icon={iconBox}
+              trend={trendFromDelta(m.refundRatePct.deltaPct)}
+              info="Percentage of paid orders that were refunded during the selected period."
+            />
+            <StatsCard
+              title="Open callbacks"
+              value={m.openCallbacks}
+              color="indigo"
+              icon={iconBox}
+              info="Customisation / callback requests that are still open and need follow-up."
+            />
+            <StatsCard
+              title="Active products"
+              value={`${m.products.active} / ${m.products.total}`}
+              color="indigo"
+              icon={iconBox}
+              info="Active catalog products versus the total product count (active + inactive)."
+            />
           </div>
         )}
       </AnalyticsSection>
@@ -320,22 +425,26 @@ export default function AnalyticsClient() {
         {merch.data && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs text-slate-500">Wishlisted products</p>
-                <p className="text-xl font-bold text-slate-900">{merch.data.wishlistOverlap.wishlistedProducts}</p>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs text-slate-500">Purchased products</p>
-                <p className="text-xl font-bold text-slate-900">{merch.data.wishlistOverlap.purchasedProducts}</p>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs text-slate-500">Wishlist ∩ purchased</p>
-                <p className="text-xl font-bold text-slate-900">{merch.data.wishlistOverlap.overlapProducts}</p>
-              </div>
+              <MetricTile
+                label="Wishlisted products"
+                value={merch.data.wishlistOverlap.wishlistedProducts}
+                info="Distinct products currently present on at least one customer wishlist."
+              />
+              <MetricTile
+                label="Purchased products"
+                value={merch.data.wishlistOverlap.purchasedProducts}
+                info="Distinct products that appeared on paid orders in the selected period."
+              />
+              <MetricTile
+                label="Wishlist ∩ purchased"
+                value={merch.data.wishlistOverlap.overlapProducts}
+                info="Products that are both on a wishlist and were purchased in the selected period."
+              />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AnalyticsTable
                 title="Top products by revenue"
+                info="Highest-revenue products from paid orders in the selected period."
                 rows={merch.data.topProducts}
                 rowKey={(r) => r.productId}
                 columns={[
@@ -355,6 +464,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Top categories"
+                info="Categories ranked by revenue from paid orders in the selected period."
                 rows={merch.data.topCategories}
                 rowKey={(r) => r.categoryId || r.name}
                 columns={[
@@ -370,6 +480,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="High wishlist, low sales"
+                info="Products with strong wishlist interest but few units sold — candidates to promote or discount."
                 rows={merch.data.highWishlistLowSales}
                 rowKey={(r) => r.productId}
                 columns={[
@@ -384,6 +495,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Abandoned carts to recover"
+                info="Non-empty carts that never converted — prioritize outreach by age and cart value."
                 rows={merch.data.abandonedCarts}
                 rowKey={(r) => r.cartId}
                 columns={[
@@ -414,6 +526,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Top abandoned products"
+                info="Products that appear most often in abandoned carts, ranked by estimated cart value."
                 rows={merch.data.topAbandonedProducts}
                 rowKey={(r) => r.productId}
                 columns={[
@@ -433,6 +546,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Low-stock bestsellers"
+                info="Top-selling variants that are running low on stock and may need restocking soon."
                 rows={merch.data.lowStockBestsellers}
                 rowKey={(r) => `${r.productId}-${r.sku}`}
                 columns={[
@@ -448,6 +562,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Dead stock (60d no sales)"
+                info="In-stock products with no paid sales in the last 60 days — review for markdown or delisting."
                 rows={merch.data.deadStock}
                 rowKey={(r) => r.productId!}
                 columns={[
@@ -461,6 +576,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Price-drift carts (≥5%)"
+                info="Active carts where the current price differs by 5% or more from the price when the item was added."
                 rows={merch.data.priceDriftCarts}
                 rowKey={(r) => `${r.productId}-${r.user.email}-${r.driftPct}`}
                 columns={[
@@ -506,31 +622,64 @@ export default function AnalyticsClient() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {(
                 [
-                  ["Paid → Processing", trust.data.sla.paidToProcessing],
-                  ["Processing → Shipped", trust.data.sla.processingToShipped],
-                  ["Shipped → Delivered", trust.data.sla.shippedToDelivered],
+                  [
+                    "Paid → Processing",
+                    trust.data.sla.paidToProcessing,
+                    "Median hours from paid to processing for orders that completed this step in the period.",
+                  ],
+                  [
+                    "Processing → Shipped",
+                    trust.data.sla.processingToShipped,
+                    "Median hours from processing to shipped for orders that completed this step in the period.",
+                  ],
+                  [
+                    "Shipped → Delivered",
+                    trust.data.sla.shippedToDelivered,
+                    "Median hours from shipped to delivered for orders that completed this step in the period.",
+                  ],
                 ] as const
-              ).map(([label, s]) => (
-                <div key={label} className="bg-white rounded-xl border border-slate-200 p-4">
-                  <p className="text-xs text-slate-500">{label}</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {s.medianHours !== null ? `${s.medianHours}h` : "—"}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    median · avg {s.avgHours ?? "—"}h · n={s.sampleSize}
-                  </p>
-                </div>
+              ).map(([label, s, info]) => (
+                <MetricTile
+                  key={label}
+                  label={label}
+                  value={s.medianHours !== null ? `${s.medianHours}h` : "—"}
+                  info={info}
+                  hint={
+                    <p className="text-xs text-slate-500 mt-1">
+                      median · avg {s.avgHours ?? "—"}h · n={s.sampleSize}
+                    </p>
+                  }
+                />
               ))}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatsCard title="Cancel rate" value={`${trust.data.cancels.ratePct}%`} color="rose" icon={iconBox} />
-              <StatsCard title="Cancel ₹" value={formatCurrency(trust.data.cancels.revenue)} color="rose" icon={iconBox} />
-              <StatsCard title="Refund rate" value={`${trust.data.refunds.ratePct}%`} color="amber" icon={iconBox} />
+              <StatsCard
+                title="Cancel rate"
+                value={`${trust.data.cancels.ratePct}%`}
+                color="rose"
+                icon={iconBox}
+                info="Share of orders cancelled in the selected period."
+              />
+              <StatsCard
+                title="Cancel ₹"
+                value={formatCurrency(trust.data.cancels.revenue)}
+                color="rose"
+                icon={iconBox}
+                info="Estimated revenue lost from cancelled orders in the selected period."
+              />
+              <StatsCard
+                title="Refund rate"
+                value={`${trust.data.refunds.ratePct}%`}
+                color="amber"
+                icon={iconBox}
+                info="Share of paid orders that were refunded in the selected period."
+              />
               <StatsCard
                 title="Avg rating"
                 value={trust.data.reviews.avgRating ?? "—"}
                 color="emerald"
                 icon={iconBox}
+                info="Average product review rating across reviews submitted in the selected period."
                 trend={{
                   value: `${trust.data.reviews.count} reviews · ${trust.data.reviews.coverage.coveragePct}% coverage`,
                   positive: true,
@@ -540,6 +689,7 @@ export default function AnalyticsClient() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AnalyticsTable
                 title="Stuck orders (>3 days)"
+                info="Orders that have stayed in the same non-terminal status for more than 3 days and may need ops attention."
                 rows={trust.data.stuckOrders}
                 rowKey={(r) => r._id}
                 columns={[
@@ -561,12 +711,14 @@ export default function AnalyticsClient() {
               />
               <SimpleBarList
                 title="Cancel reasons"
+                info="Most common cancellation reasons reported in the selected period."
                 data={trust.data.cancels.reasons}
                 nameKey="reason"
                 valueKey="count"
               />
               <AnalyticsTable
                 title="Coupon performance"
+                info="Coupon usage, discount given, and GMV attributed to each code in the selected period."
                 rows={trust.data.coupons}
                 rowKey={(r) => r.code}
                 columns={[
@@ -595,12 +747,14 @@ export default function AnalyticsClient() {
               />
               <SimpleBarList
                 title="Payment methods"
+                info="How customers paid for orders in the selected period."
                 data={trust.data.paymentMethods}
                 nameKey="method"
                 valueKey="count"
               />
               <AnalyticsTable
                 title="Revenue by state"
+                info="Paid order revenue and volume grouped by shipping state."
                 rows={trust.data.geo.byState}
                 rowKey={(r) => r.state}
                 columns={[
@@ -616,6 +770,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Low-rated products (≤2★, ≥3 reviews)"
+                info="Products with average rating of 2 stars or below and at least 3 reviews — quality risk flags."
                 rows={trust.data.reviews.lowRatedProducts}
                 rowKey={(r) => r.productId}
                 columns={[
@@ -648,6 +803,7 @@ export default function AnalyticsClient() {
                 value={formatCurrency(customers.data.newVsReturning.newCustomers.revenue)}
                 color="emerald"
                 icon={iconBox}
+                info="Revenue from customers whose first paid order falls in the selected period."
                 trend={{
                   value: `${customers.data.newVsReturning.newCustomers.orders} orders`,
                   positive: true,
@@ -658,6 +814,7 @@ export default function AnalyticsClient() {
                 value={formatCurrency(customers.data.newVsReturning.returningCustomers.revenue)}
                 color="indigo"
                 icon={iconBox}
+                info="Revenue from customers who had at least one prior paid order before this period."
                 trend={{
                   value: `${customers.data.newVsReturning.returningCustomers.orders} orders`,
                   positive: true,
@@ -668,6 +825,7 @@ export default function AnalyticsClient() {
                 value={`${customers.data.signupToPurchase.conversionPct}%`}
                 color="amber"
                 icon={iconBox}
+                info="Percentage of signed-up customers who placed at least one paid order."
                 trend={{
                   value: `${customers.data.signupToPurchase.buyers}/${customers.data.signupToPurchase.customers} buyers`,
                   positive: true,
@@ -680,24 +838,28 @@ export default function AnalyticsClient() {
                 }
                 color="rose"
                 icon={iconBox}
+                info="Median number of days between signup and a customer’s first paid order."
               />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SimpleBarList
                 title="LTV bands"
+                info="How customers are distributed across lifetime-value spend bands."
                 data={customers.data.ltvBands}
                 nameKey="band"
                 valueKey="count"
               />
               <SimpleBarList
                 title="Signup channels"
+                info="Where registered customers came from (attribution / signup channel)."
                 data={customers.data.signupChannels}
                 nameKey="channel"
                 valueKey="count"
               />
               <AnalyticsTable
                 title="VIP customers"
+                info="Highest lifetime-value customers ranked by total paid spend."
                 rows={customers.data.vipList}
                 rowKey={(r) => r.userId}
                 columns={[
@@ -722,6 +884,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="One-and-done (60d+)"
+                info="Customers with exactly one paid order whose last purchase was 60+ days ago — win-back candidates."
                 rows={customers.data.oneAndDone}
                 rowKey={(r) => r.userId}
                 columns={[
@@ -752,6 +915,7 @@ export default function AnalyticsClient() {
               />
               <AnalyticsTable
                 title="Registered, never ordered"
+                info="Signed-up customers who have never placed a paid order."
                 rows={customers.data.neverOrdered}
                 rowKey={(r) => r.userId}
                 columns={[
@@ -774,10 +938,11 @@ export default function AnalyticsClient() {
                   },
                 ]}
               />
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="bg-white rounded-xl border border-slate-200 overflow-visible">
                 <div className="px-5 py-4 border-b border-slate-100">
-                  <h3 className="text-sm font-semibold text-slate-900">
+                  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
                     Cohort retention (% with a paid order)
+                    <InfoTooltip text="Monthly signup cohorts and the share that placed a paid order in month 0, 1, and 2 after signup." />
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
@@ -808,29 +973,29 @@ export default function AnalyticsClient() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs text-slate-500">Callbacks — new</p>
-                <p className="text-xl font-bold text-slate-900">
-                  {customers.data.callbacks.byStatus.new || 0}
-                </p>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs text-slate-500">Contacted</p>
-                <p className="text-xl font-bold text-slate-900">
-                  {customers.data.callbacks.byStatus.contacted || 0}
-                </p>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-4">
-                <p className="text-xs text-slate-500">Median contact latency</p>
-                <p className="text-xl font-bold text-slate-900">
-                  {customers.data.callbacks.contactLatency.medianHours !== null
+              <MetricTile
+                label="Callbacks — new"
+                value={customers.data.callbacks.byStatus.new || 0}
+                info="Customisation / callback requests still marked as new."
+              />
+              <MetricTile
+                label="Contacted"
+                value={customers.data.callbacks.byStatus.contacted || 0}
+                info="Callback requests that have been contacted but are not yet closed."
+              />
+              <MetricTile
+                label="Median contact latency"
+                value={
+                  customers.data.callbacks.contactLatency.medianHours !== null
                     ? `${customers.data.callbacks.contactLatency.medianHours}h`
-                    : "—"}
-                </p>
-              </div>
+                    : "—"
+                }
+                info="Median hours from request creation to first contact."
+              />
             </div>
             <AnalyticsTable
               title="Open callback requests"
+              info="Open customisation leads awaiting follow-up, sorted by age."
               rows={customers.data.callbacks.openRequests}
               rowKey={(r) => r._id}
               columns={[

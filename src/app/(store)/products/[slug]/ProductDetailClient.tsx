@@ -40,6 +40,16 @@ import {
 import { priceInclGst } from "@/lib/pricing";
 import { ProductDetailSkeleton, ReviewCardSkeleton } from "@/components/store/skeletons";
 
+/** Index of the first image tagged with the given color, or 0 when none match. */
+function imageIndexForColor(
+  images: ProductData["images"],
+  color?: string
+): number {
+  if (!color) return 0;
+  const index = images.findIndex((image) => image.color === color);
+  return index === -1 ? 0 : index;
+}
+
 export default function ProductDetailClient({ slug }: { slug: string }) {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -73,6 +83,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
         const activeVariants = p.variants.filter((v) => v.isActive !== false);
         if (activeVariants.length > 0) {
           setSelectedVariant(activeVariants[0]);
+          setSelectedImage(imageIndexForColor(p.images, activeVariants[0].color));
         }
         // Fetch related products
         if (p.category?._id) {
@@ -129,6 +140,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     () => [...new Set(activeVariants.map((v) => v.color).filter(Boolean))],
     [activeVariants]
   );
+
+  const images = useMemo(() => product?.images ?? [], [product]);
 
   const discount = selectedVariant
     ? getDiscountPercent(
@@ -260,13 +273,13 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (!product) {
     return (
       <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <h1 className="text-2xl font-bold text-foreground">Product Not Found</h1>
-        <p className="text-muted mt-2">
+        <h1 className="text-2xl text-foreground">Product Not Found</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">
           The product you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Link
           href="/products"
-          className="mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Browse Products
         </Link>
@@ -276,7 +289,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
-      <nav className="mb-5 flex items-center gap-2 overflow-x-auto text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+      <nav className="eyebrow-xs mb-6 flex items-center gap-2 overflow-x-auto text-muted">
         <Link href="/" className="shrink-0 hover:text-foreground">
           Home
         </Link>
@@ -303,25 +316,26 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
         <section className="space-y-0">
           <div className="relative aspect-[1/1.02] overflow-hidden border border-border bg-card">
             <Image
-              src={getProductImage(product.images, selectedImage)}
-              alt={product.images?.[selectedImage]?.alt || product.title}
+              key={images[selectedImage]?.url || "product-placeholder"}
+              src={getProductImage(images, selectedImage)}
+              alt={images[selectedImage]?.alt || product.title}
               fill
               sizes="(max-width: 1024px) 100vw, 54vw"
               className="object-cover"
               priority
             />
             {discount > 0 && (
-              <div className="absolute left-4 top-4 border border-primary/40 bg-primary/20 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+              <div className="eyebrow-xs tabular absolute left-4 top-4 border border-primary/40 bg-primary/20 px-2 py-1 text-primary">
                 -{discount}%
               </div>
             )}
           </div>
 
-          {product.images.length > 1 && (
+          {images.length > 1 && (
             <div className="grid grid-cols-5 gap-2 border-x border-b border-border bg-black/30 p-2">
-              {product.images.slice(0, 5).map((img, idx) => (
+              {images.map((img, idx) => (
                 <button
-                  key={idx}
+                  key={`${img.publicId || img.url}-${idx}`}
                   onClick={() => setSelectedImage(idx)}
                   className={`relative aspect-square overflow-hidden border transition-colors ${
                     selectedImage === idx
@@ -346,22 +360,23 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           {product.category && (
             <Link
               href={`/categories/${product.category.slug}`}
-              className="text-[11px] font-semibold uppercase tracking-[0.3em] text-primary/90 hover:text-primary"
+              className="eyebrow text-primary/90 hover:text-primary"
             >
               {product.category.name}
             </Link>
           )}
 
-          <h1 className="mt-2 text-xl font-bold uppercase leading-[0.88] text-foreground sm:text-4xl">
+          {/* 1.05 keeps multi-line uppercase titles tight without the lines colliding. */}
+          <h1 className="mt-3 text-2xl uppercase leading-[1.05] text-foreground sm:text-4xl">
             {product.title}
           </h1>
 
-          <p className="mt-3 text-sm text-muted sm:text-base">
+          <p className="body-copy mt-4 text-muted">
             {product.description || "All-black version. Same armor. No compromise."}
           </p>
 
-          <div className="mt-3 flex items-start justify-between gap-4">
-            <div className="text-xs uppercase tracking-[0.14em] text-muted">
+          <div className="mt-5 flex items-start justify-between gap-4">
+            <div className="eyebrow-xs text-muted">
               <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
@@ -371,20 +386,20 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                   />
                 ))}
               </div>
-              <span className="mt-1.5 block">
+              <span className="tabular mt-2 block">
                 {totalReviews > 0 ? `${averageRating.toFixed(1)} / ${totalReviews} Reviews` : "No Reviews Yet"}
               </span>
             </div>
 
             {selectedVariant && (
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold leading-none text-foreground sm:text-5xl">
+                <span className="price text-2xl font-bold leading-none text-foreground sm:text-4xl">
                   {formatPrice(priceInclGst(selectedVariant.price, selectedVariant.gst))}
                 </span>
                 {selectedVariant.compareAtPrice &&
                   priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst) >
                     priceInclGst(selectedVariant.price, selectedVariant.gst) && (
-                    <span className="pb-0.5 text-sm text-muted line-through sm:text-lg">
+                    <span className="price pb-0.5 text-sm text-muted line-through sm:text-base">
                       {formatPrice(
                         priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst)
                       )}
@@ -396,27 +411,35 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
           {uniqueColors.length > 0 && (
             <div className="mt-7">
-              <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">
+              <div className="label-text mb-2.5 flex items-center justify-between text-muted">
                 <span>Colorway</span>
                 <span className="text-foreground">{selectedVariant?.color || "-"}</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {uniqueColors.map((color) => {
-                  const matchingVariant = activeVariants.find(
-                    (v) =>
-                      v.color === color &&
-                      (!selectedVariant?.size || v.size === selectedVariant.size)
+                  const colorVariants = activeVariants.filter(
+                    (variant) => variant.color === color && variant.stock > 0
                   );
+                  const matchingVariant =
+                    colorVariants.find(
+                      (variant) =>
+                        !selectedVariant?.size ||
+                        variant.size === selectedVariant.size
+                    ) ?? colorVariants[0];
                   const isSelected = selectedVariant?.color === color;
                   return (
                     <button
                       key={color}
-                      onClick={() => matchingVariant && setSelectedVariant(matchingVariant)}
-                      disabled={!matchingVariant || matchingVariant.stock === 0}
-                      className={`min-w-20 border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                      onClick={() => {
+                        if (!matchingVariant) return;
+                        setSelectedImage(imageIndexForColor(images, color));
+                        setSelectedVariant(matchingVariant);
+                      }}
+                      disabled={!matchingVariant}
+                      className={`btn-text min-w-20 border px-4 py-2.5 transition-colors ${
                         isSelected
                           ? "border-primary bg-primary text-white"
-                          : matchingVariant && matchingVariant.stock > 0
+                          : matchingVariant
                           ? "border-border bg-black/45 text-foreground hover:border-accent"
                           : "cursor-not-allowed border-border text-muted/45 line-through"
                       }`}
@@ -431,7 +454,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
           {uniqueSizes.length > 0 && (
             <div className="mt-6">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">
+              <div className="label-text mb-2.5 text-muted">
                 <span>Size</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
@@ -447,7 +470,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                       key={size}
                       onClick={() => matchingVariant && setSelectedVariant(matchingVariant)}
                       disabled={!matchingVariant || matchingVariant.stock === 0}
-                      className={`h-11 border text-sm font-semibold uppercase tracking-[0.08em] transition-colors ${
+                      className={`btn-text h-11 border transition-colors ${
                         isSelected
                           ? "border-primary bg-primary text-white"
                           : matchingVariant && matchingVariant.stock > 0
@@ -471,7 +494,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               >
                 <Minus size={16} />
               </button>
-              <span className="w-10 text-center text-sm font-semibold">{quantity}</span>
+              <span className="tabular w-10 text-center text-sm font-semibold">{quantity}</span>
               <button
                 onClick={() =>
                   setQuantity(Math.min(selectedVariant?.stock || 50, quantity + 1))
@@ -509,13 +532,13 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           <button
             onClick={handleBuyNow}
             disabled={!selectedVariant || selectedVariant.stock === 0 || addingToCart}
-            className="mt-3 h-12 w-full bg-primary px-4 text-xs font-semibold uppercase tracking-[0.3em] text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-text mt-4 h-12 w-full bg-primary px-4 text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
             Buy Now
           </button>
 
           {selectedVariant && selectedVariant.stock <= 10 && selectedVariant.stock > 0 && (
-            <p className="mt-2 text-xs font-medium uppercase tracking-[0.1em] text-warning">
+            <p className="eyebrow-xs mt-2.5 text-warning">
               Only {selectedVariant.stock} left in stock
             </p>
           )}
@@ -523,15 +546,15 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           <div className="mt-6 grid grid-cols-3 border-y border-border py-4">
             <div className="text-center">
               <Truck size={16} className="mx-auto mb-1 text-primary/85" />
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Free Shipping</p>
+              <p className="eyebrow-xs text-muted">Free Shipping</p>
             </div>
             <div className="text-center">
               <Shield size={16} className="mx-auto mb-1 text-primary/85" />
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted">CE Certified</p>
+              <p className="eyebrow-xs text-muted">CE Certified</p>
             </div>
             <div className="text-center">
               <RotateCcw size={16} className="mx-auto mb-1 text-primary/85" />
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted">30 Day Returns</p>
+              <p className="eyebrow-xs text-muted">30 Day Returns</p>
             </div>
           </div>
 
@@ -541,7 +564,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                 <Link
                   key={tag}
                   href={`/products?tag=${tag}`}
-                  className="border border-border bg-black/35 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted transition-colors hover:border-accent hover:text-foreground"
+                  className="eyebrow-xs border border-border bg-black/35 px-2.5 py-1.5 text-muted transition-colors hover:border-accent hover:text-foreground"
                 >
                   {tag}
                 </Link>
@@ -557,7 +580,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           <div className="flex gap-8">
             <button
               onClick={() => setActiveTab("description")}
-              className={`pb-3 text-sm font-semibold uppercase tracking-[0.14em] border-b-2 transition-colors ${
+              className={`label-text border-b-2 pb-3 transition-colors ${
                 activeTab === "description"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted hover:text-foreground"
@@ -567,7 +590,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             </button>
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`pb-3 text-sm font-semibold uppercase tracking-[0.14em] border-b-2 transition-colors ${
+              className={`label-text border-b-2 pb-3 transition-colors ${
                 activeTab === "reviews"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted hover:text-foreground"
@@ -580,13 +603,13 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
         <div className="py-6">
           {activeTab === "description" ? (
-            <div className="prose prose-sm max-w-none text-foreground">
-              <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
+            <div className="text-foreground">
+              <p className="body-copy whitespace-pre-line">{product.description}</p>
             </div>
           ) : (
             <div className="space-y-8">
               <section className="border border-border bg-card/50 p-4 sm:p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+                <h3 className="label-text text-foreground">
                   {editingReviewId ? "Edit Your Review" : "Write a Review"}
                 </h3>
                 <div className="mt-3 flex items-center gap-2">
@@ -612,10 +635,10 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                   onChange={(e) => setReviewComment(e.target.value)}
                   placeholder="Share your experience with this product"
                   rows={4}
-                  className="mt-3 w-full border border-border bg-black/35 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary"
+                  className="mt-4 w-full border border-border bg-black/35 px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary"
                 />
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-muted">
+                  <p className="meta-text text-muted">
                     Only delivered purchases can submit reviews.
                   </p>
                   <div className="flex items-center gap-2">
@@ -627,7 +650,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                           setReviewRating(5);
                           setReviewComment("");
                         }}
-                        className="border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition-colors hover:text-foreground"
+                        className="btn-text border border-border px-4 py-2.5 text-muted transition-colors hover:text-foreground"
                       >
                         Cancel
                       </button>
@@ -636,7 +659,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                       type="button"
                       onClick={handleSubmitReview}
                       disabled={submittingReview}
-                      className="border border-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50"
+                      className="btn-text border border-primary px-4 py-2.5 text-primary transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {submittingReview
                         ? editingReviewId
@@ -659,8 +682,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               ) : reviews.length === 0 ? (
                 <div className="py-10 text-center">
                   <Star size={36} className="mx-auto mb-3 text-muted/35" />
-                  <h3 className="text-lg font-semibold text-foreground">No Reviews Yet</h3>
-                  <p className="mt-1 text-sm text-muted">Be the first to review this product.</p>
+                  <h3 className="text-lg text-foreground">No Reviews Yet</h3>
+                  <p className="meta-text mt-2 text-muted">Be the first to review this product.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -669,14 +692,14 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">{review.user.name}</p>
+                            <p className="text-sm font-semibold leading-snug text-foreground">{review.user.name}</p>
                             {review.isVerifiedPurchase && (
-                              <span className="border border-success/40 bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-success">
+                              <span className="eyebrow-xs border border-success/40 bg-success/10 px-2 py-0.5 text-success">
                                 Verified Purchase
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-muted">
+                          <p className="meta-text mt-0.5 text-muted">
                             {new Date(review.createdAt).toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "short",
@@ -696,20 +719,20 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                           ))}
                         </div>
                       </div>
-                      <p className="mt-3 whitespace-pre-line text-sm text-muted">{review.comment}</p>
+                      <p className="body-copy mt-3 whitespace-pre-line text-muted">{review.comment}</p>
                       {user && review.user.id === user.id && (
                         <div className="mt-3 flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => handleEditReview(review)}
-                            className="border border-border px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-muted transition-colors hover:text-foreground"
+                            className="btn-text border border-border px-3 py-1.5 text-muted transition-colors hover:text-foreground"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteReview(review._id)}
-                            className="border border-danger/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-danger transition-colors hover:bg-danger/10"
+                            className="btn-text border border-danger/40 px-3 py-1.5 text-danger transition-colors hover:bg-danger/10"
                           >
                             Delete
                           </button>
@@ -723,7 +746,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                         type="button"
                       onClick={() => loadReviews(reviewsPage + 1, true)}
                         disabled={reviewsLoading || reviewsPage >= reviewsTotalPages}
-                        className="border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                        className="btn-text border border-border px-4 py-2.5 text-muted transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Load More Reviews
                       </button>
@@ -739,7 +762,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <section className="mt-12 sm:mt-16">
-          <h2 className="mb-6 text-xl font-bold uppercase tracking-[0.08em] text-foreground sm:text-2xl">
+          <h2 className="section-title mb-6 text-2xl text-foreground sm:text-3xl">
             Related Products
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-14">

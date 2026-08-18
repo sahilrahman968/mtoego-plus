@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { connectDB } from "@/lib/db/mongoose";
 import { getPeriodWindowFromSearchParams } from "@/lib/analytics/periods";
 import {
@@ -19,7 +19,7 @@ import { round2 } from "@/lib/analytics/format";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "analytics.trust");
     if (auth.error) return auth.error;
 
     await connectDB();

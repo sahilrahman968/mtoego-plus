@@ -77,7 +77,7 @@ export default function ProductCard({
               className="object-cover grayscale"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-              <span className="px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
+              <span className="eyebrow-xs px-3 py-1.5 text-white">
                 Unavailable
               </span>
             </div>
@@ -97,12 +97,12 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex items-start justify-between gap-2 sm:inset-x-2 sm:top-2">
           {formattedTagText ? (
-            <span className="max-w-[68%] truncate bg-primary px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
+            <span className="eyebrow-xs max-w-[68%] truncate bg-primary px-2 py-1 text-white">
               {formattedTagText}
             </span>
           ) : null}
           {discount > 0 && !unavailable && (
-            <span className="border border-border bg-black/60 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
+            <span className="eyebrow-xs tabular border border-border bg-black/60 px-2 py-1 text-foreground">
               -{discount}%
             </span>
           )}
@@ -150,29 +150,29 @@ export default function ProductCard({
       <div className="pt-3 sm:pt-3">
         <div className="min-w-0">
           {unavailable ? (
-            <h3 className="line-clamp-2 text-[10px] font-black uppercase leading-tight tracking-[0.01em] text-muted sm:text-[11px] lg:text-xs">
+            <h3 className="line-clamp-2 text-[13px] font-bold uppercase leading-snug text-muted sm:text-sm">
               {product.title}
             </h3>
           ) : (
             <Link href={href} className="block min-w-0">
-              <h3 className="line-clamp-2 text-[10px] font-black uppercase leading-tight tracking-[0.01em] text-white transition-colors sm:text-[11px] lg:text-xs">
+              <h3 className="line-clamp-2 text-[13px] font-bold uppercase leading-snug text-white transition-colors sm:text-sm">
                 {product.title}
               </h3>
             </Link>
           )}
-          <div className="mt-1.5 flex items-end justify-between gap-6 sm:gap-8">
+          <div className="mt-2 flex items-end justify-between gap-6 sm:gap-8">
             <div className="min-w-0 flex-1">
               {product.category && (
                 <Link
                   href={`/categories/${product.category.slug}`}
-                  className="line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-muted hover:text-foreground"
+                  className="eyebrow-xs line-clamp-1 text-muted hover:text-foreground"
                 >
                   {product.category.name}
                 </Link>
               )}
               {status && (
                 <p
-                  className={`line-clamp-1 text-[9px] font-semibold uppercase tracking-[0.2em] ${
+                  className={`eyebrow-xs line-clamp-1 ${
                     status.tone === "danger" ? "text-danger" : "text-success"
                   }`}
                 >
@@ -180,12 +180,12 @@ export default function ProductCard({
                 </p>
               )}
             </div>
-            <div className="shrink-0 text-right leading-none">
-              <p className="text-xs font-bold text-foreground">
+            <div className="shrink-0 text-right">
+              <p className="price text-sm font-bold text-foreground sm:text-base">
                 {unavailable ? "—" : formatPrice(lowestIncl)}
               </p>
               {!unavailable && highestCompareIncl > lowestIncl && (
-                <p className="mt-1 text-[9px] text-muted line-through">
+                <p className="price mt-0.5 text-[11px] text-muted line-through">
                   {formatPrice(highestCompareIncl)}
                 </p>
               )}

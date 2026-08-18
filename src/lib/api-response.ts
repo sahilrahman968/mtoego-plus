@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiResponse } from "@/types";
+import { flushAdminMutationAudit } from "@/lib/audit/log";
 
 // ─── Standardised API Response Builder ──────────────────────────────────────
 
@@ -8,6 +9,7 @@ export function successResponse<T>(
   message = "Success",
   status = 200
 ): NextResponse<ApiResponse<T>> {
+  flushAdminMutationAudit(status, message);
   return NextResponse.json({ success: true, message, data }, { status });
 }
 
@@ -17,6 +19,7 @@ export function errorResponse<T = unknown>(
   error?: string,
   data?: T
 ): NextResponse<ApiResponse<T>> {
+  flushAdminMutationAudit(status, message);
   return NextResponse.json(
     {
       success: false,

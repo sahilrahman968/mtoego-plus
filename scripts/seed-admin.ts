@@ -46,9 +46,158 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.model("User", userSchema);
 
+const PERMISSIONS = [
+  "dashboard.read",
+  "analytics.pulse",
+  "analytics.curves",
+  "analytics.customers",
+  "analytics.merchandising",
+  "analytics.trust",
+  "products.list",
+  "products.view",
+  "products.create",
+  "products.update",
+  "products.delete",
+  "products.inventory.read",
+  "products.inventory.write",
+  "categories.list",
+  "categories.view",
+  "categories.create",
+  "categories.update",
+  "categories.delete",
+  "orders.list",
+  "orders.view",
+  "orders.update_status",
+  "reviews.list",
+  "reviews.moderate",
+  "reviews.delete",
+  "coupons.list",
+  "coupons.view",
+  "coupons.create",
+  "coupons.update",
+  "coupons.delete",
+  "callback_requests.list",
+  "callback_requests.update",
+  "media.upload",
+  "media.rename",
+  "media.delete",
+];
+
+const STAFF_PERMISSIONS = PERMISSIONS.filter((p) => p !== "reviews.delete");
+
+const LEGACY_MAP: Record<string, string[]> = {
+  "analytics.read": [
+    "analytics.pulse",
+    "analytics.curves",
+    "analytics.customers",
+    "analytics.merchandising",
+    "analytics.trust",
+  ],
+  "products.read": ["products.list", "products.view", "products.inventory.read"],
+  "products.write": [
+    "products.create",
+    "products.update",
+    "products.inventory.write",
+  ],
+  "categories.read": ["categories.list", "categories.view"],
+  "categories.write": ["categories.create", "categories.update"],
+  "orders.read": ["orders.list", "orders.view"],
+  "orders.write": ["orders.update_status"],
+  "reviews.read": ["reviews.list"],
+  "reviews.write": ["reviews.moderate"],
+  "coupons.read": ["coupons.list", "coupons.view"],
+  "coupons.write": ["coupons.create", "coupons.update"],
+  "callback_requests.read": ["callback_requests.list"],
+  "callback_requests.write": ["callback_requests.update"],
+  "upload.write": ["media.upload", "media.rename", "media.delete"],
+};
+
+function expandPermissions(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  const set = new Set<string>();
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    if (PERMISSIONS.includes(value)) set.add(value);
+    else {
+      const expanded = LEGACY_MAP[value];
+      if (expanded) {
+        for (const p of expanded) set.add(p);
+      }
+    }
+  }
+  return Array.from(set);
+}
+
+const roleSchema = new mongoose.Schema(
+  {
+    slug: { type: String, unique: true },
+    name: String,
+    description: String,
+    permissions: [String],
+    isSystem: { type: Boolean, default: false },
+    isAdmin: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+const Role = mongoose.models.Role || mongoose.model("Role", roleSchema);
+
+async function seedRoles() {
+  const defs = [
+    {
+      slug: "super_admin",
+      name: "Super Admin",
+      description: "Full access to the admin panel, staff, and roles",
+      permissions: PERMISSIONS,
+      isSystem: true,
+      isAdmin: true,
+    },
+    {
+      slug: "staff",
+      name: "Staff",
+      description: "Standard store operations access",
+      permissions: STAFF_PERMISSIONS,
+      isSystem: true,
+      isAdmin: true,
+    },
+    {
+      slug: "customer",
+      name: "Customer",
+      description: "Storefront customer (no admin access)",
+      permissions: [],
+      isSystem: true,
+      isAdmin: false,
+    },
+  ];
+
+  for (const def of defs) {
+    const existing = await Role.findOne({ slug: def.slug });
+    if (existing) {
+      existing.name = def.name;
+      existing.description = def.description;
+      existing.isSystem = true;
+      existing.isAdmin = def.isAdmin;
+      if (def.slug === "super_admin" || def.slug === "customer") {
+        existing.permissions = def.permissions;
+      } else if (def.slug === "staff") {
+        existing.permissions = existing.permissions?.length
+          ? expandPermissions(existing.permissions)
+          : def.permissions;
+      }
+      await existing.save();
+      console.log(`Role upserted: ${def.slug}`);
+    } else {
+      await Role.create(def);
+      console.log(`Role created: ${def.slug}`);
+    }
+  }
+}
+
 async function seed() {
   await mongoose.connect(MONGODB_URI as string);
   console.log("Connected to MongoDB");
+
+  await seedRoles();
 
   const email = SUPER_ADMIN_EMAIL.toLowerCase();
   const existing = await User.findOne({ email });

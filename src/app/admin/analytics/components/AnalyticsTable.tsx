@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import InfoTooltip from "@/app/admin/components/InfoTooltip";
 
 export interface AnalyticsColumn<T> {
   key: string;
@@ -11,6 +12,7 @@ export interface AnalyticsColumn<T> {
 
 interface AnalyticsTableProps<T> {
   title: string;
+  info?: string;
   columns: AnalyticsColumn<T>[];
   rows: T[];
   emptyMessage?: string;
@@ -19,15 +21,19 @@ interface AnalyticsTableProps<T> {
 
 export default function AnalyticsTable<T>({
   title,
+  info,
   columns,
   rows,
   emptyMessage = "No data yet",
   rowKey,
 }: AnalyticsTableProps<T>) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100">
-        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+    <div className="bg-white rounded-xl border border-slate-200 overflow-visible">
+      <div className="px-5 py-4 border-b border-slate-100 overflow-visible">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+          {title}
+          {info && <InfoTooltip text={info} />}
+        </h3>
       </div>
       {rows.length === 0 ? (
         <p className="px-5 py-8 text-sm text-slate-500 text-center">{emptyMessage}</p>

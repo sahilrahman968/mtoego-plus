@@ -1,5 +1,8 @@
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/session";
+import { connectDB } from "@/lib/db/mongoose";
+import { getPermissionsForRole } from "@/lib/auth/roles";
+import { isAdminPanelRole } from "@/lib/auth/permissions";
 import AdminShell from "./components/AdminShell";
 
 export const metadata = {
@@ -12,31 +15,38 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Primary: read user info from proxy headers (set by proxy.ts after JWT
-  // verification). This requires NO database call — so the sidebar renders
-  // even when MongoDB is temporarily unreachable.
   const headersList = await headers();
   const userRole = headersList.get("x-user-role") || "";
   const userEmail = headersList.get("x-user-email") || "";
 
-  if (!["super_admin", "staff"].includes(userRole)) {
-    // Not an admin (or on the login page where proxy doesn't set headers).
-    // Render children without the sidebar shell.
+  if (!isAdminPanelRole(userRole)) {
     return <>{children}</>;
   }
 
-  // Try to fetch the user's display name from the DB; fall back to the
-  // email prefix if the DB is unreachable.
   let userName = userEmail.split("@")[0] || "Admin";
+  let permissions: string[] =
+    userRole === "super_admin" ? ["*"] : [];
+
   try {
-    const user = await getCurrentUser();
+    await connectDB();
+    const [user, rolePerms] = await Promise.all([
+      getCurrentUser(),
+      userRole === "super_admin"
+        ? Promise.resolve(["*"])
+        : getPermissionsForRole(userRole),
+    ]);
     if (user) userName = user.name;
+    permissions = rolePerms;
   } catch {
-    // DB unavailable — the sidebar still renders with the fallback name.
+    // DB unavailable — sidebar still renders; permission filter may be empty
   }
 
   return (
-    <AdminShell userName={userName} userRole={userRole}>
+    <AdminShell
+      userName={userName}
+      userRole={userRole}
+      permissions={permissions}
+    >
       {children}
     </AdminShell>
   );

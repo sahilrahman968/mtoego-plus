@@ -40,16 +40,19 @@ export const theme = {
 
   // ── Fonts ──────────────────────────────────────────────────────────────────
   // CSS variable names set by next/font/google in layout.tsx.
-  // sans  = body text    (currently Barlow)
-  // display = headings   (currently Bebas Neue)
+  // body    = body text  (currently Inter — neutral, high x-height, very legible)
+  // display = headings   (currently Space Grotesk — technical grotesk with
+  //           enough character for uppercase headings without going condensed)
   fonts: {
-    sans: "var(--font-barlow)",
-    display: "var(--font-bebas)",
+    body: "var(--font-body)",
+    display: "var(--font-display-face)",
   },
 
   // ── Headings ───────────────────────────────────────────────────────────────
+  // Base tracking for uppercase headings. Optical sizing in globals.css tightens
+  // this further as headings get larger — big type needs less letter spacing.
   headings: {
-    letterSpacing: "0.03em",
+    letterSpacing: "0.015em",
     textTransform: "uppercase" as const,
   },
 

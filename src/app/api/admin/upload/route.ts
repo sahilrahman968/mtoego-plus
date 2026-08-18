@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import {
   uploadImage,
@@ -19,7 +19,7 @@ import {
 export async function POST(request: NextRequest) {
   try {
     // ── Auth: admin only ────────────────────────────────────────────────
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "media.upload");
     if (auth.error) return auth.error;
 
     // ── Parse multipart form data ───────────────────────────────────────
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "media.rename");
     if (auth.error) return auth.error;
 
     const body = await request.json().catch(() => null);
@@ -189,7 +189,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "media.delete");
     if (auth.error) return auth.error;
 
     const body = await request.json().catch(() => null);

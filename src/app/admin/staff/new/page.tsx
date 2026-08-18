@@ -1,16 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "../../components/PageHeader";
+
+interface AdminRoleOption {
+  slug: string;
+  name: string;
+  isSystem: boolean;
+}
 
 export default function NewStaffPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [roles, setRoles] = useState<AdminRoleOption[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"staff" | "super_admin">("staff");
+  const [role, setRole] = useState("staff");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/roles");
+        const json = await res.json();
+        if (json.success) {
+          const list: AdminRoleOption[] = (json.data.roles || []).map(
+            (r: { slug: string; name: string; isSystem: boolean }) => ({
+              slug: r.slug,
+              name: r.name,
+              isSystem: r.isSystem,
+            })
+          );
+          setRoles(list);
+          if (list.some((r) => r.slug === "staff")) {
+            setRole("staff");
+          } else if (list[0]) {
+            setRole(list[0].slug);
+          }
+        }
+      } catch {
+        setError("Failed to load roles");
+      } finally {
+        setRolesLoading(false);
+      }
+    })();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,14 +104,18 @@ export default function NewStaffPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Role</label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value as "staff" | "super_admin")}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+                onChange={(e) => setRole(e.target.value)}
+                disabled={rolesLoading || roles.length === 0}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white disabled:opacity-50"
               >
-                <option value="staff">Staff</option>
-                <option value="super_admin">Super Admin</option>
+                {roles.map((r) => (
+                  <option key={r.slug} value={r.slug}>
+                    {r.name}
+                  </option>
+                ))}
               </select>
               <p className="mt-1.5 text-xs text-slate-400">
-                Staff can manage products, categories, coupons, and orders. Super Admins have full access including staff management.
+                Permissions for each role are managed under Roles &amp; Permissions.
               </p>
             </div>
           </div>
@@ -84,7 +124,7 @@ export default function NewStaffPage() {
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || rolesLoading || !role}
             className="px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 transition-colors"
           >
             {loading ? "Creating..." : "Create Staff Member"}

@@ -110,11 +110,11 @@ export default function CartClient() {
     return (
       <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
         <ShoppingCart size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-2xl font-bold uppercase tracking-[0.06em] text-foreground">Your Cart</h1>
-        <p className="text-muted mt-2">Please login to view your cart</p>
+        <h1 className="text-2xl text-foreground">Your Cart</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Please login to view your cart</p>
         <Link
           href="/login?redirect=/cart"
-          className="mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Login to Continue
         </Link>
@@ -151,15 +151,15 @@ export default function CartClient() {
     return (
       <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
         <ShoppingCart size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-2xl font-bold uppercase tracking-[0.06em] text-foreground">
+        <h1 className="text-2xl text-foreground">
           Your cart is empty
         </h1>
-        <p className="text-muted mt-2">
+        <p className="body-copy mx-auto mt-3 text-muted">
           Looks like you haven&apos;t added any items to your cart yet.
         </p>
         <Link
           href="/products"
-          className="mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
         >
           Start Shopping
           <ArrowRight size={18} />
@@ -171,7 +171,7 @@ export default function CartClient() {
   return (
     <div className="mx-auto max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
       {hasUnavailableItems && (
-        <div className="mb-4 border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="mb-4 border border-danger/40 bg-danger/10 px-4 py-3 text-sm leading-relaxed text-danger">
           Some items in your cart are no longer available. Remove them to continue checkout.
         </div>
       )}
@@ -225,24 +225,24 @@ export default function CartClient() {
                 {/* Details */}
                 <div className="flex-1 min-w-0">
                   {unavailable || !product ? (
-                    <p className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.04em] text-muted">
+                    <p className="line-clamp-2 text-sm font-semibold uppercase leading-snug text-muted">
                       {title}
                     </p>
                   ) : (
                     <Link
                       href={`/products/${product.slug}`}
-                      className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.04em] text-foreground transition-colors hover:text-primary"
+                      className="line-clamp-2 text-sm font-semibold uppercase leading-snug text-foreground transition-colors hover:text-primary"
                     >
                       {title}
                     </Link>
                   )}
                   {unavailable ? (
-                    <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-danger">
+                    <p className="eyebrow-xs mt-1.5 text-danger">
                       Product unavailable
                     </p>
                   ) : (
                     variant && (
-                      <p className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-muted">
+                      <p className="eyebrow-xs mt-1.5 text-muted">
                         {getVariantLabel(variant)}
                       </p>
                     )
@@ -262,7 +262,7 @@ export default function CartClient() {
                         >
                           <Minus size={14} />
                         </button>
-                        <span className="w-8 text-center text-sm font-medium text-foreground">
+                        <span className="tabular w-8 text-center text-sm font-medium text-foreground">
                           {item.quantity}
                         </span>
                         <button
@@ -285,7 +285,7 @@ export default function CartClient() {
                     </button>
                   </div>
                   {!unavailable && (
-                    <p className="mt-2 text-sm font-bold text-foreground sm:hidden">
+                    <p className="price mt-2 text-sm font-bold text-foreground sm:hidden">
                       {formatPrice(displayPrice * item.quantity)}
                     </p>
                   )}
@@ -294,10 +294,10 @@ export default function CartClient() {
                 {/* Line total */}
                 {!unavailable && (
                   <div className="hidden shrink-0 text-right sm:block">
-                    <p className="text-base font-bold text-foreground">
+                    <p className="price text-base font-bold text-foreground">
                       {formatPrice(displayPrice * item.quantity)}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-muted">incl. GST</p>
+                    <p className="eyebrow-xs mt-1 text-muted">incl. GST</p>
                   </div>
                 )}
               </div>
@@ -308,11 +308,12 @@ export default function CartClient() {
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="sticky top-24 border border-border bg-card/85 p-5 sm:p-6">
-            <h2 className="mb-4 text-lg font-bold uppercase tracking-[0.06em] text-foreground">
+            <h2 className="section-title mb-5 text-lg text-foreground">
               Order Summary
             </h2>
 
-            <div className="space-y-3 text-sm">
+            {/* tabular figures keep the price column aligned row to row */}
+            <div className="tabular space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted">Subtotal (excl. GST)</span>
                 <span className="font-medium">{formatPrice(subtotal)}</span>
@@ -348,7 +349,7 @@ export default function CartClient() {
               </div>
 
               {shippingCost > 0 && (
-                <div className="flex items-center gap-2 border border-border bg-black/35 p-2 text-xs text-muted">
+                <div className="meta-text flex items-center gap-2 border border-border bg-black/35 p-2.5 text-muted">
                   <Truck size={14} />
                   Add {formatPrice(999 - subtotal)} more for free shipping
                 </div>
@@ -360,7 +361,7 @@ export default function CartClient() {
                 <span>Estimated Total</span>
                 <span>{formatPrice(estimatedTotal)}</span>
               </div>
-              <p className="text-[11px] text-muted">
+              <p className="eyebrow-xs text-muted">
                 Total includes GST
               </p>
             </div>
@@ -379,7 +380,7 @@ export default function CartClient() {
                   <button
                     onClick={handleApplyCoupon}
                     disabled={couponLoading || !couponCode.trim()}
-                    className="px-4 py-2 text-sm font-medium border border-border bg-black/50 text-foreground transition-colors hover:border-accent disabled:opacity-50"
+                    className="btn-text border border-border bg-black/50 px-4 py-2.5 text-foreground transition-colors hover:border-accent disabled:opacity-50"
                   >
                     {couponLoading ? "..." : "Apply"}
                   </button>
@@ -390,7 +391,7 @@ export default function CartClient() {
             {availableItems.length > 0 && !hasUnavailableItems ? (
               <Link
                 href="/checkout"
-                className="mt-4 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
+                className="btn-text mt-5 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark"
               >
                 Proceed to Checkout
                 <ArrowRight size={18} />
@@ -399,7 +400,7 @@ export default function CartClient() {
               <button
                 type="button"
                 disabled
-                className="mt-4 flex w-full cursor-not-allowed items-center justify-center gap-2 border border-border bg-card-hover px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.12em] text-muted"
+                className="btn-text mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 border border-border bg-card-hover px-6 py-4 text-muted"
               >
                 {availableItems.length === 0
                   ? "No available items"
@@ -409,7 +410,7 @@ export default function CartClient() {
 
             <Link
               href="/products"
-              className="mt-3 block text-center text-xs font-semibold uppercase tracking-[0.12em] text-primary transition-colors hover:text-primary-dark"
+              className="btn-text mt-4 block text-center text-primary transition-colors hover:text-primary-dark"
             >
               Continue Shopping
             </Link>

@@ -16,57 +16,57 @@ export default function OrderSuccessClient() {
           <CheckCircle size={40} className="text-primary" />
         </div>
 
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
+        <h1 className="text-3xl text-foreground sm:text-4xl">
           Order Confirmed!
         </h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-muted sm:text-base">
+        <p className="body-copy mx-auto mt-3 text-muted">
           Thank you for your purchase. Your order has been placed successfully.
         </p>
 
         {orderNumber && (
           <div className="mt-6 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2">
             <Package size={18} className="text-primary" />
-            <span className="text-sm text-muted">Order Number:</span>
-            <span className="text-sm font-bold text-foreground">{orderNumber}</span>
+            <span className="meta-text text-muted">Order Number:</span>
+            <span className="tabular text-sm font-bold text-foreground">{orderNumber}</span>
           </div>
         )}
 
         <div className="mt-8 rounded-xl border border-border bg-card p-6 text-left sm:p-7">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+          <h3 className="label-text mb-5 text-foreground">
             What Happens Next?
           </h3>
           <ol className="space-y-3">
             <li className="flex gap-3">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center tabular rounded-full bg-primary text-xs font-bold leading-none text-white">
                 1
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium leading-snug text-foreground">
                   Order Processing
                 </p>
-                <p className="text-xs text-muted">
+                <p className="meta-text mt-0.5 text-muted">
                   We&apos;re preparing your order for shipment
                 </p>
               </div>
             </li>
             <li className="flex gap-3">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/15 text-xs font-bold text-primary">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center tabular rounded-full border border-primary/35 bg-primary/15 text-xs font-bold leading-none text-primary">
                 2
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">Shipped</p>
-                <p className="text-xs text-muted">
+                <p className="text-sm font-medium leading-snug text-foreground">Shipped</p>
+                <p className="meta-text mt-0.5 text-muted">
                   You&apos;ll receive tracking details via email
                 </p>
               </div>
             </li>
             <li className="flex gap-3">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/35 bg-primary/15 text-xs font-bold text-primary">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center tabular rounded-full border border-primary/35 bg-primary/15 text-xs font-bold leading-none text-primary">
                 3
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">Delivered</p>
-                <p className="text-xs text-muted">
+                <p className="text-sm font-medium leading-snug text-foreground">Delivered</p>
+                <p className="meta-text mt-0.5 text-muted">
                   Expected within 5-7 business days
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function OrderSuccessClient() {
           {orderId && (
             <Link
               href={`/account/orders/${orderId}`}
-              className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary-dark"
+              className="btn-text inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
             >
               <Package size={18} />
               View Order
@@ -86,7 +86,7 @@ export default function OrderSuccessClient() {
           )}
           <Link
             href="/products"
-            className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-medium text-foreground transition-colors hover:bg-card-hover"
+            className="btn-text inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-foreground transition-colors hover:bg-card-hover"
           >
             <ShoppingBag size={18} />
             Continue Shopping

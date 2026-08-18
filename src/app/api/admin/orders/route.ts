@@ -1,14 +1,14 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import Order from "@/models/order.model";
 
 // ─── GET /api/admin/orders — List all orders (admin) ─────────────────────────
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "orders.list");
     if (auth.error) return auth.error;
 
     const { searchParams } = new URL(request.url);

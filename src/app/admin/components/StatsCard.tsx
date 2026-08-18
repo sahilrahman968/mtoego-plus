@@ -1,7 +1,10 @@
+import InfoTooltip from "./InfoTooltip";
+
 interface StatsCardProps {
   title: string;
   value: string | number;
   icon: React.ReactNode;
+  info?: string;
   trend?: {
     value: string;
     positive: boolean;
@@ -32,14 +35,17 @@ const colorMap = {
   },
 };
 
-export default function StatsCard({ title, value, icon, trend, color }: StatsCardProps) {
+export default function StatsCard({ title, value, icon, info, trend, color }: StatsCardProps) {
   const colors = colorMap[color];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow overflow-visible">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-500 truncate">{title}</p>
+          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+            <span className="truncate">{title}</span>
+            {info && <InfoTooltip text={info} />}
+          </p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
           {trend && (
             <p

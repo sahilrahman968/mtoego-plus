@@ -97,13 +97,13 @@ export default function Header() {
           <nav className="ml-10 hidden items-center gap-8 lg:flex">
             <Link
               href="/categories"
-              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors ${isActive("/categories") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
+              className={`eyebrow transition-colors ${isActive("/categories") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
             >
               Categories
             </Link>
             <Link
               href="/products"
-              className={`text-[11px] font-medium uppercase tracking-[0.24em] transition-colors ${isActive("/products") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
+              className={`eyebrow transition-colors ${isActive("/products") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
             >
               Products
             </Link>
@@ -134,7 +134,7 @@ export default function Header() {
               >
                 <ShoppingCart size={16} />
                 {itemCount > 0 && (
-                  <span className="absolute -right-2.5 -top-2.5 text-[10px] font-semibold text-primary">
+                  <span className="tabular absolute -right-2.5 -top-2.5 text-[10px] font-semibold leading-none text-primary">
                     {itemCount > 99 ? "99+" : itemCount}
                   </span>
                 )}
@@ -235,7 +235,7 @@ export default function Header() {
                 </button>
 
                 <nav className="relative px-4 pb-3 pt-14">
-                  <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+                  <p className="eyebrow-xs mb-2 px-3 text-muted/70">
                     Browse
                   </p>
                   {[
@@ -258,14 +258,14 @@ export default function Header() {
                         }`}
                       >
                         <span
-                          className={`text-sm font-medium tracking-[0.03em] ${
+                          className={`text-sm font-medium leading-snug ${
                             active ? "border-b border-primary pb-1" : ""
                           }`}
                         >
                           {label}
                         </span>
                         {count && (
-                          <span className="ml-auto grid min-w-6 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          <span className="tabular ml-auto grid min-w-6 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
                             {count > 99 ? "99+" : count}
                           </span>
                         )}
@@ -275,7 +275,7 @@ export default function Header() {
 
                   {isAuthenticated && (
                     <div className="mt-3 border-t border-white/8 pt-3">
-                      <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-muted/70">
+                      <p className="eyebrow-xs mb-2 px-3 text-muted/70">
                         Account
                       </p>
                       <Link
@@ -288,7 +288,7 @@ export default function Header() {
                         }`}
                       >
                         <span
-                          className={`text-sm font-medium tracking-[0.03em] ${
+                          className={`text-sm font-medium leading-snug ${
                             isActive("/account") ? "border-b border-primary pb-1" : ""
                           }`}
                         >
@@ -304,7 +304,7 @@ export default function Header() {
                     <Link
                       href="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex h-10 items-center justify-center bg-white/[0.06] text-sm font-medium tracking-[0.03em] text-white backdrop-blur-[2px] backdrop-saturate-150 transition-colors hover:bg-white/[0.12]"
+                      className="btn-text flex h-10 items-center justify-center bg-white/[0.06] text-white backdrop-blur-[2px] backdrop-saturate-150 transition-colors hover:bg-white/[0.12]"
                     >
                       Login / register
                     </Link>
@@ -315,7 +315,7 @@ export default function Header() {
                         setMobileMenuOpen(false);
                         void handleLogout();
                       }}
-                      className="flex h-10 w-full items-center justify-center border border-danger/25 bg-danger/8 text-sm font-semibold tracking-[0.03em] text-danger transition-colors hover:bg-danger/15"
+                      className="btn-text flex h-10 w-full items-center justify-center border border-danger/25 bg-danger/8 text-danger transition-colors hover:bg-danger/15"
                     >
                       Logout
                     </button>

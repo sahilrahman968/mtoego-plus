@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requirePermission } from "@/lib/auth/require-auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { connectDB } from "@/lib/db/mongoose";
 import { isValidObjectId, validateUpdateCategory } from "@/lib/validators";
@@ -13,7 +13,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "categories.view");
     if (auth.error) return auth.error;
 
     const { id } = await params;
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "categories.update");
     if (auth.error) return auth.error;
 
     const { id } = await params;
@@ -115,7 +115,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = requireAuth(request, ["super_admin", "staff"]);
+    const auth = await requirePermission(request, "categories.delete");
     if (auth.error) return auth.error;
 
     const { id } = await params;

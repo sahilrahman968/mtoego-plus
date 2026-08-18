@@ -1,8 +1,13 @@
 import { Types } from "mongoose";
 
 // ─── User Roles ─────────────────────────────────────────────────────────────
-export const USER_ROLES = ["super_admin", "staff", "customer"] as const;
-export type UserRole = (typeof USER_ROLES)[number];
+// Built-in system roles. Additional admin roles can be created by super admins.
+export const SYSTEM_ROLES = ["super_admin", "staff", "customer"] as const;
+export type SystemRole = (typeof SYSTEM_ROLES)[number];
+/** Any role slug — system or custom (e.g. "inventory_manager"). */
+export type UserRole = string;
+/** @deprecated Use SYSTEM_ROLES — kept for gradual migration */
+export const USER_ROLES = SYSTEM_ROLES;
 
 // ─── User Document Interface ────────────────────────────────────────────────
 export interface IUser {
@@ -133,6 +138,8 @@ export interface ProductImage {
   url: string;
   publicId: string;
   alt?: string;
+  /** When set, storefront shows this image for the matching colorway. */
+  color?: string;
 }
 
 // ─── Product Variant ────────────────────────────────────────────────────────

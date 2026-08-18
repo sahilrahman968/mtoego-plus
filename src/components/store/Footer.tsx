@@ -21,7 +21,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Quick Links</h3>
+            <h3 className="label-text mb-4 text-foreground">Quick Links</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link href="/products" className="text-sm transition-colors hover:text-primary">
@@ -42,7 +42,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Account</h3>
+            <h3 className="label-text mb-4 text-foreground">Account</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link href="/login" className="text-sm transition-colors hover:text-primary">
@@ -63,7 +63,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.08em] text-foreground">Support</h3>
+            <h3 className="label-text mb-4 text-foreground">Support</h3>
             <ul className="space-y-2.5">
               <li className="text-sm">{theme.brand.supportEmail}</li>
               <li className="text-sm">{theme.brand.supportPhone}</li>
