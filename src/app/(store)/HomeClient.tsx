@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -8,20 +8,150 @@ import {
   ArrowRight,
   Bot,
   CheckCircle2,
+  Clock3,
   PhoneCall,
   RotateCcw,
+  Scissors,
   ShieldCheck,
   Sparkles,
   Truck,
   X,
   Zap,
 } from "lucide-react";
-import { fetchCategories, type CategoryData } from "@/lib/store-api";
+import ProductCard from "@/components/store/ProductCard";
+import { ProductCardSkeleton } from "@/components/store/skeletons";
+import {
+  fetchCategories,
+  fetchProducts,
+  type CategoryData,
+  type ProductData,
+} from "@/lib/store-api";
+import { priceInclGst } from "@/lib/pricing";
+import { getDiscountPercent } from "@/lib/utils";
+import {
+  getRecentlyViewed,
+  type RecentlyViewedProduct,
+} from "@/lib/recently-viewed";
 
 const HERO_BANNER_SRC = "/images/hero-banner.jpg";
 
+function productMaxDiscount(product: ProductData) {
+  const activeVariants = product.variants.filter((v) => v.isActive !== false);
+  if (!activeVariants.length) return 0;
+  return Math.max(
+    ...activeVariants.map((v) =>
+      getDiscountPercent(
+        priceInclGst(v.price, v.gst),
+        v.compareAtPrice ? priceInclGst(v.compareAtPrice, v.gst) : undefined
+      )
+    )
+  );
+}
+
+function getDropEndDate(from = new Date()) {
+  const end = new Date(from);
+  const day = end.getDay();
+  const daysUntilSunday = day === 0 ? 0 : 7 - day;
+  end.setDate(end.getDate() + daysUntilSunday);
+  end.setHours(23, 59, 59, 999);
+  if (end.getTime() <= from.getTime()) {
+    end.setDate(end.getDate() + 7);
+  }
+  return end;
+}
+
+function useCountdown(target: Date) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const remaining = Math.max(0, target.getTime() - now);
+  const totalSeconds = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return { days, hours, minutes, seconds, ended: remaining <= 0 };
+}
+
+function SectionHeader({
+  index,
+  title,
+  href,
+  linkLabel = "View All",
+}: {
+  index: string;
+  title: string;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="mb-8 flex items-start justify-between gap-6">
+      <div>
+        <p className="eyebrow mb-3 text-primary/90">{index}</p>
+        <h2 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
+          {title}
+        </h2>
+      </div>
+      {href ? (
+        <Link
+          href={href}
+          className="eyebrow mt-7 hidden shrink-0 items-center gap-2 text-muted transition-colors hover:text-foreground sm:inline-flex"
+        >
+          {linkLabel} <ArrowRight size={16} />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function ProductGrid({
+  products,
+  loading,
+  emptyLabel,
+}: {
+  products: ProductData[] | RecentlyViewedProduct[];
+  loading?: boolean;
+  emptyLabel?: string;
+}) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ProductCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!products.length) {
+    return emptyLabel ? (
+      <p className="body-copy text-muted">{emptyLabel}</p>
+    ) : null;
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard key={product._id} product={product} borderless />
+      ))}
+    </div>
+  );
+}
+
 export default function HomeClient() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [featured, setFeatured] = useState<ProductData[]>([]);
+  const [newArrivals, setNewArrivals] = useState<ProductData[]>([]);
+  const [flashDeals, setFlashDeals] = useState<ProductData[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>(
+    []
+  );
+  const [productsLoading, setProductsLoading] = useState(true);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isPopupMinimized, setIsPopupMinimized] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -34,18 +164,57 @@ export default function HomeClient() {
     contactHours: "",
   });
 
+  const dropEnd = useMemo(() => getDropEndDate(), []);
+  const countdown = useCountdown(dropEnd);
+
   useEffect(() => {
     async function load() {
       try {
-        const catRes = await fetchCategories(null);
+        const [catRes, featuredRes, newestRes, catalogRes] = await Promise.all([
+          fetchCategories(null),
+          fetchProducts({ featured: true, limit: 8 }),
+          fetchProducts({ sort: "createdAt", order: "desc", limit: 8 }),
+          fetchProducts({ limit: 40, sort: "createdAt", order: "desc" }),
+        ]);
+
         if (catRes.success && catRes.data) {
           setCategories(catRes.data.filter((cat) => (cat.productCount ?? 0) > 0));
         }
+
+        const featuredItems =
+          featuredRes.success && featuredRes.data ? featuredRes.data.items : [];
+        const newestItems =
+          newestRes.success && newestRes.data ? newestRes.data.items : [];
+        const catalogItems =
+          catalogRes.success && catalogRes.data ? catalogRes.data.items : [];
+
+        setFeatured(featuredItems.slice(0, 4));
+        setNewArrivals(newestItems.slice(0, 4));
+
+        const discounted = catalogItems
+          .map((product) => ({ product, discount: productMaxDiscount(product) }))
+          .filter((row) => row.discount > 0)
+          .sort((a, b) => b.discount - a.discount)
+          .map((row) => row.product);
+
+        const flashPool =
+          discounted.length > 0
+            ? discounted
+            : featuredItems.length > 0
+              ? featuredItems
+              : newestItems;
+        setFlashDeals(flashPool.slice(0, 4));
       } catch {
         // silently fail
+      } finally {
+        setProductsLoading(false);
       }
     }
     load();
+  }, []);
+
+  useEffect(() => {
+    setRecentlyViewed(getRecentlyViewed().slice(0, 4));
   }, []);
 
   useEffect(() => {
@@ -63,6 +232,14 @@ export default function HomeClient() {
   };
 
   const handlePopupRestore = () => {
+    setIsPopupMinimized(false);
+    setIsPopupOpen(true);
+  };
+
+  const openCustomOrderForm = () => {
+    setCallbackError("");
+    setShowSuccessState(false);
+    setIsFormOpen(true);
     setIsPopupMinimized(false);
     setIsPopupOpen(true);
   };
@@ -100,6 +277,13 @@ export default function HomeClient() {
       setIsSubmittingCallback(false);
     }
   };
+
+  const countdownParts = [
+    { label: "Days", value: countdown.days },
+    { label: "Hrs", value: countdown.hours },
+    { label: "Min", value: countdown.minutes },
+    { label: "Sec", value: countdown.seconds },
+  ];
 
   return (
     <div>
@@ -150,6 +334,7 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
+
       <section className="border-y border-[#1A1A1D] bg-[#09090B]">
         <div className="ticker-wrap flex h-14 w-full items-center">
           <div className="ticker-track flex items-center">
@@ -180,22 +365,11 @@ export default function HomeClient() {
       {categories.length > 0 && (
         <section className="bg-black py-16 sm:py-20">
           <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <div className="mb-8 flex items-start justify-between gap-6">
-              <div>
-                <p className="eyebrow mb-3 text-primary/90">
-                  01 / Categories
-                </p>
-                <h2 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
-                  Gear Up
-                </h2>
-              </div>
-              <Link
-                href="/categories"
-                className="eyebrow mt-7 hidden shrink-0 items-center gap-2 text-muted transition-colors hover:text-foreground sm:inline-flex"
-              >
-                View All <ArrowRight size={16} />
-              </Link>
-            </div>
+            <SectionHeader
+              index="01 / Categories"
+              title="Gear Up"
+              href="/categories"
+            />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {categories.slice(0, 4).map((cat) => (
                 <div key={cat._id}>
@@ -248,12 +422,151 @@ export default function HomeClient() {
         </section>
       )}
 
+      {(productsLoading || featured.length > 0) && (
+        <section className="border-t border-border/70 bg-black py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+            <SectionHeader
+              index="02 / Featured"
+              title="Best Sellers"
+              href="/products?featured=true"
+            />
+            <ProductGrid products={featured} loading={productsLoading} />
+            <div className="mt-6 flex justify-end sm:hidden">
+              <Link
+                href="/products?featured=true"
+                className="eyebrow inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
+              >
+                View All <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {(productsLoading || flashDeals.length > 0) && (
+        <section className="border-t border-border/70 bg-[#09090B] py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+            <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="eyebrow mb-3 text-primary/90">03 / Limited Drop</p>
+                <h2 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
+                  Flash Cut
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="eyebrow-xs inline-flex items-center gap-1.5 text-primary/90">
+                  <Clock3 size={14} />
+                  {countdown.ended ? "Drop reset pending" : "Ends in"}
+                </span>
+                <div className="flex items-center gap-2">
+                  {countdownParts.map((part) => (
+                    <div
+                      key={part.label}
+                      className="min-w-[3.5rem] border border-border/80 bg-black/60 px-2.5 py-2 text-center"
+                    >
+                      <p className="tabular text-lg font-bold text-foreground sm:text-xl">
+                        {String(part.value).padStart(2, "0")}
+                      </p>
+                      <p className="eyebrow-xs mt-0.5 text-muted">{part.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <ProductGrid products={flashDeals} loading={productsLoading} />
+          </div>
+        </section>
+      )}
+
+      <section className="border-t border-border/70 bg-black py-16 sm:py-20">
+        <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+          <div className="relative overflow-hidden bg-black px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
+            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+              <svg
+                className="absolute inset-0 h-full w-full text-primary/50"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                fill="none"
+              >
+                <path
+                  d="M3.5 85 Q26 79 35.5 58 T66.5 31 T98 5"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 6"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              <Scissors
+                size={30}
+                className="absolute bottom-[9%] left-0 -rotate-[24deg] text-primary/70"
+              />
+            </div>
+            <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+              <div>
+                <p className="eyebrow mb-3 text-primary/90">04 / Custom & Bulk</p>
+                <h2 className="hero-title text-4xl uppercase text-foreground sm:text-5xl lg:text-6xl">
+                  <span className="block">Built To Spec.</span>
+                  <span className="block text-primary">Shipped In Volume.</span>
+                </h2>
+                <p className="body-copy mt-4 max-w-xl text-foreground/80">
+                  Need custom colours, branding, or event-volume kits? Share your
+                  brief and our team will call you back in your preferred hours.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
+                <button
+                  type="button"
+                  onClick={openCustomOrderForm}
+                  className="btn-text inline-flex items-center justify-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+                >
+                  <PhoneCall size={15} />
+                  Request Callback
+                </button>
+                <div className="border border-border/70 bg-black/35 px-4 py-3">
+                  <p className="label-text text-foreground">Custom builds</p>
+                  <p className="meta-text mt-0.5 text-muted">
+                    Colourways, patches, and fitment tweaks
+                  </p>
+                </div>
+                <div className="border border-border/70 bg-black/35 px-4 py-3">
+                  <p className="label-text text-foreground">Event bulk orders</p>
+                  <p className="meta-text mt-0.5 text-muted">
+                    Club rides, launches, and track days
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {(productsLoading || newArrivals.length > 0) && (
+        <section className="border-t border-border/70 bg-black py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+            <SectionHeader
+              index="05 / New Arrivals"
+              title="Latest Drop"
+              href="/products"
+              linkLabel="Shop New"
+            />
+            <ProductGrid products={newArrivals} loading={productsLoading} />
+            <div className="mt-6 flex justify-end sm:hidden">
+              <Link
+                href="/products"
+                className="eyebrow inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
+              >
+                Shop New <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="border-t border-border/70 bg-black py-16 sm:py-20">
         <div className="mx-auto grid w-full max-w-[92rem] items-center gap-8 px-3 sm:px-4 lg:grid-cols-[1fr_1.2fr] lg:gap-12 lg:px-6">
           <div>
-            <p className="eyebrow mb-3 text-primary/90">
-              03 / Manifesto
-            </p>
+            <p className="eyebrow mb-3 text-primary/90">06 / Manifesto</p>
             <h2 className="hero-title text-4xl uppercase text-foreground sm:text-5xl lg:text-6xl">
               <span className="block">Built For The</span>
               <span className="block text-primary">Moment</span>
@@ -277,9 +590,7 @@ export default function HomeClient() {
                     <item.icon size={22} />
                   </div>
                   <div className="min-w-0">
-                    <p className="label-text text-foreground">
-                      {item.label}
-                    </p>
+                    <p className="label-text text-foreground">{item.label}</p>
                     <p className="meta-text mt-0.5 text-muted">{item.sublabel}</p>
                   </div>
                 </div>
@@ -288,6 +599,15 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
+
+      {recentlyViewed.length > 0 && (
+        <section className="border-t border-border/70 bg-[#09090B] py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+            <SectionHeader index="07 / Continue" title="Recently Viewed" />
+            <ProductGrid products={recentlyViewed} />
+          </div>
+        </section>
+      )}
 
       <div className="pointer-events-none fixed inset-0 z-[70]">
         {isPopupOpen && (
@@ -306,9 +626,7 @@ export default function HomeClient() {
                     <Bot size={17} />
                   </div>
                   <div>
-                    <p className="eyebrow-xs text-primary/90">
-                      Neo Commerce Signal
-                    </p>
+                    <p className="eyebrow-xs text-primary/90">Neo Commerce Signal</p>
                     <p className="mt-1.5 text-sm font-medium leading-snug text-foreground/90">
                       Need custom builds or event-volume orders?
                     </p>
@@ -425,9 +743,7 @@ export default function HomeClient() {
                     >
                       <CheckCircle2 size={22} />
                     </motion.div>
-                    <p className="label-text text-success">
-                      Callback Requested
-                    </p>
+                    <p className="label-text text-success">Callback Requested</p>
                     <p className="meta-text mt-1.5 text-foreground/80">
                       Our team will connect with you in your preferred hours.
                     </p>
@@ -455,7 +771,6 @@ export default function HomeClient() {
           </motion.button>
         )}
       </div>
-
     </div>
   );
 }

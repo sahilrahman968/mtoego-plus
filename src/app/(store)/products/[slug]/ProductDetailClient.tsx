@@ -38,6 +38,7 @@ import {
   getDiscountPercent,
 } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
+import { trackRecentlyViewed } from "@/lib/recently-viewed";
 import { ProductDetailSkeleton, ReviewCardSkeleton } from "@/components/store/skeletons";
 
 /** Index of the first image tagged with the given color, or 0 when none match. */
@@ -80,6 +81,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       if (res.success && res.data) {
         const p = res.data;
         setProduct(p);
+        trackRecentlyViewed(p);
         const activeVariants = p.variants.filter((v) => v.isActive !== false);
         if (activeVariants.length > 0) {
           setSelectedVariant(activeVariants[0]);

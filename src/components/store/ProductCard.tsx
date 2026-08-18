@@ -23,6 +23,8 @@ interface ProductCardProps {
   unavailable?: boolean;
   busy?: boolean;
   status?: { label: string; tone: "success" | "danger" };
+  /** When true, drops the image frame border (home merchandising sections). */
+  borderless?: boolean;
 }
 
 export default function ProductCard({
@@ -34,6 +36,7 @@ export default function ProductCard({
   unavailable = false,
   busy = false,
   status,
+  borderless = false,
 }: ProductCardProps) {
   const activeVariants = product.variants.filter((v) => v.isActive !== false);
   const lowestIncl = activeVariants.length
@@ -66,7 +69,11 @@ export default function ProductCard({
         busy ? "pointer-events-none opacity-50" : ""
       }`}
     >
-      <div className="relative aspect-[1/1.02] overflow-hidden border border-border bg-black/65">
+      <div
+        className={`relative aspect-[1/1.02] overflow-hidden bg-black/65 ${
+          borderless ? "" : "border border-border"
+        }`}
+      >
         {unavailable ? (
           <div className="absolute inset-0">
             <Image

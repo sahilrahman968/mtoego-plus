@@ -59,6 +59,7 @@ export default function ProductsClient() {
   const sortParam = searchParams.get("sort");
   const orderParam = searchParams.get("order");
   const search = searchParams.get("search") || "";
+  const featured = searchParams.get("featured") === "true";
 
   const sortValue =
     sortParam === "price" && (orderParam === "asc" || orderParam === "desc")
@@ -114,6 +115,7 @@ export default function ProductsClient() {
         : undefined,
       category: category || undefined,
       search: search || undefined,
+      featured: featured || undefined,
     }).then((res) => {
       if (res.success && res.data) {
         setProducts(res.data.items);
@@ -121,7 +123,7 @@ export default function ProductsClient() {
       }
       setLoading(false);
     });
-  }, [page, category, sortValue, search]);
+  }, [page, category, sortValue, search, featured, orderParam]);
 
   const activeCategory = category
     ? categories.find((c) => c._id === category)?.name
@@ -281,14 +283,24 @@ export default function ProductsClient() {
       )}
 
       {/* Active filters */}
-      {activeCategory && (
+      {(activeCategory || featured) && (
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className="eyebrow-xs inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-primary">
-            {activeCategory}
-            <button onClick={() => updateParams({ category: "" })}>
-              <X size={12} />
-            </button>
-          </span>
+          {activeCategory && (
+            <span className="eyebrow-xs inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-primary">
+              {activeCategory}
+              <button onClick={() => updateParams({ category: "" })}>
+                <X size={12} />
+              </button>
+            </span>
+          )}
+          {featured && (
+            <span className="eyebrow-xs inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-primary">
+              Featured
+              <button onClick={() => updateParams({ featured: "" })}>
+                <X size={12} />
+              </button>
+            </span>
+          )}
           <button
             onClick={() => router.push("/products")}
             className="meta-text text-muted hover:text-foreground"
