@@ -11,19 +11,14 @@ export function ProductCardSkeleton() {
     <div className="group relative overflow-hidden bg-transparent">
       <div className="relative aspect-[1/1.02] overflow-hidden bg-card/75">
         <div className="absolute inset-0 animate-pulse-slow bg-card-hover/80" />
-        <div className="absolute left-2 top-2 z-10 h-5 w-20 animate-pulse-slow bg-card-hover" />
-        <div className="absolute right-2 top-2 z-10 h-5 w-12 animate-pulse-slow bg-card-hover/80" />
+        <div className="absolute right-2 top-2 z-10 h-8 w-8 animate-pulse-slow bg-card-hover/80" />
+        <div className="absolute bottom-2 right-2 z-10 h-8 w-8 animate-pulse-slow bg-card-hover/80" />
       </div>
-      <div className="pt-3">
+      <div className="pt-3 space-y-2">
+        <SkeletonLine className="h-5 w-11/12" />
         <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-2">
-            <SkeletonLine className="h-3 w-24" />
-            <SkeletonLine className="h-5 w-11/12" />
-          </div>
-          <div className="w-20 shrink-0 space-y-2 text-right">
-            <SkeletonLine className="ml-auto h-5 w-16" />
-            <SkeletonLine className="ml-auto h-3 w-12" />
-          </div>
+          <SkeletonLine className="h-5 w-16" />
+          <SkeletonLine className="h-3 w-10" />
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -10,15 +10,12 @@ import {
   CheckCircle2,
   Clock3,
   PhoneCall,
-  RotateCcw,
   Scissors,
-  ShieldCheck,
   Sparkles,
-  Truck,
   X,
-  Zap,
 } from "lucide-react";
 import ProductCard from "@/components/store/ProductCard";
+import TabbedShowcase from "@/components/store/TabbedShowcase";
 import { ProductCardSkeleton } from "@/components/store/skeletons";
 import {
   fetchCategories,
@@ -90,10 +87,10 @@ function SectionHeader({
   linkLabel?: string;
 }) {
   return (
-    <div className="mb-8 flex items-start justify-between gap-6">
+    <div className="mb-3 flex items-start justify-between gap-6">
       <div>
         <p className="eyebrow mb-3 text-primary/90">{index}</p>
-        <h2 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
+        <h2 className="section-title text-xl text-foreground sm:text-2xl lg:text-3xl">
           {title}
         </h2>
       </div>
@@ -118,12 +115,52 @@ function ProductGrid({
   loading?: boolean;
   emptyLabel?: string;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [showPeekHint, setShowPeekHint] = useState(true);
+
+  const trackClassName =
+    "no-scrollbar flex gap-5 overflow-x-auto snap-x snap-mandatory pb-1 lg:grid lg:grid-cols-5 lg:gap-5 lg:overflow-visible lg:pb-0 lg:snap-none";
+  // 1 full card + 0.5 peek on small screens; 2 + 0.5 from sm; 5-up grid from lg
+  const itemClassName =
+    "w-[calc((100%-1.25rem)/1.5)] shrink-0 snap-start sm:w-[calc((100%-2.5rem)/2.5)] lg:w-auto";
+
+  const updatePeekHint = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const remaining = el.scrollWidth - el.scrollLeft - el.clientWidth;
+    setShowPeekHint(remaining > 12);
+  };
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    updatePeekHint();
+    el.addEventListener("scroll", updatePeekHint, { passive: true });
+    window.addEventListener("resize", updatePeekHint);
+    return () => {
+      el.removeEventListener("scroll", updatePeekHint);
+      window.removeEventListener("resize", updatePeekHint);
+    };
+  }, [products, loading]);
+
+  const peekBlur = showPeekHint ? (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[34%] bg-gradient-to-l from-black/55 via-black/20 to-transparent backdrop-blur-[2px] [mask-image:linear-gradient(to_right,transparent,black_45%)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_45%)] sm:w-[22%] lg:hidden"
+    />
+  ) : null;
+
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <ProductCardSkeleton key={i} />
-        ))}
+      <div className="relative">
+        <div ref={trackRef} className={trackClassName}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className={itemClassName}>
+              <ProductCardSkeleton />
+            </div>
+          ))}
+        </div>
+        {peekBlur}
       </div>
     );
   }
@@ -135,16 +172,29 @@ function ProductGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-      {products.map((product) => (
-        <ProductCard key={product._id} product={product} borderless />
-      ))}
+    <div className="relative">
+      <div ref={trackRef} className={trackClassName}>
+        {products.map((product) => (
+          <div key={product._id} className={itemClassName}>
+            <ProductCard product={product} borderless />
+          </div>
+        ))}
+      </div>
+      {peekBlur}
     </div>
   );
 }
 
+const CATEGORY_TAB_LIMIT = 6;
+const CATEGORY_PRODUCT_LIMIT = 5;
+const HOME_PRODUCT_LIMIT = 5;
+
 export default function HomeClient() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [activeCategoryId, setActiveCategoryId] = useState("");
+  const [categoryProducts, setCategoryProducts] = useState<
+    Record<string, ProductData[]>
+  >({});
   const [featured, setFeatured] = useState<ProductData[]>([]);
   const [newArrivals, setNewArrivals] = useState<ProductData[]>([]);
   const [flashDeals, setFlashDeals] = useState<ProductData[]>([]);
@@ -178,7 +228,11 @@ export default function HomeClient() {
         ]);
 
         if (catRes.success && catRes.data) {
-          setCategories(catRes.data.filter((cat) => (cat.productCount ?? 0) > 0));
+          const stocked = catRes.data.filter(
+            (cat) => (cat.productCount ?? 0) > 0
+          );
+          setCategories(stocked.slice(0, CATEGORY_TAB_LIMIT));
+          setActiveCategoryId((current) => current || stocked[0]?._id || "");
         }
 
         const featuredItems =
@@ -188,8 +242,8 @@ export default function HomeClient() {
         const catalogItems =
           catalogRes.success && catalogRes.data ? catalogRes.data.items : [];
 
-        setFeatured(featuredItems.slice(0, 4));
-        setNewArrivals(newestItems.slice(0, 4));
+        setFeatured(featuredItems.slice(0, HOME_PRODUCT_LIMIT));
+        setNewArrivals(newestItems.slice(0, HOME_PRODUCT_LIMIT));
 
         const discounted = catalogItems
           .map((product) => ({ product, discount: productMaxDiscount(product) }))
@@ -203,7 +257,7 @@ export default function HomeClient() {
             : featuredItems.length > 0
               ? featuredItems
               : newestItems;
-        setFlashDeals(flashPool.slice(0, 4));
+        setFlashDeals(flashPool.slice(0, HOME_PRODUCT_LIMIT));
       } catch {
         // silently fail
       } finally {
@@ -214,16 +268,28 @@ export default function HomeClient() {
   }, []);
 
   useEffect(() => {
-    setRecentlyViewed(getRecentlyViewed().slice(0, 4));
-  }, []);
+    if (!activeCategoryId || categoryProducts[activeCategoryId]) return;
+    let cancelled = false;
+    fetchProducts({ category: activeCategoryId, limit: CATEGORY_PRODUCT_LIMIT })
+      .then((res) => {
+        if (cancelled) return;
+        setCategoryProducts((prev) => ({
+          ...prev,
+          [activeCategoryId]: res.success && res.data ? res.data.items : [],
+        }));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCategoryProducts((prev) => ({ ...prev, [activeCategoryId]: [] }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategoryId, categoryProducts]);
 
   useEffect(() => {
-    const popupTimer = window.setTimeout(() => {
-      setIsPopupOpen(true);
-      setIsPopupMinimized(false);
-    }, 1000);
-
-    return () => window.clearTimeout(popupTimer);
+    setRecentlyViewed(getRecentlyViewed().slice(0, HOME_PRODUCT_LIMIT));
   }, []);
 
   const handlePopupClose = () => {
@@ -363,67 +429,36 @@ export default function HomeClient() {
       </section>
 
       {categories.length > 0 && (
-        <section className="bg-black py-16 sm:py-20">
+        <section className="bg-black py-[30px]">
           <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
             <SectionHeader
               index="01 / Categories"
               title="Gear Up"
               href="/categories"
             />
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {categories.slice(0, 4).map((cat) => (
-                <div key={cat._id}>
-                  <Link
-                    href={`/categories/${cat.slug}`}
-                    className="group relative block overflow-hidden bg-black focus:outline-none"
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-black/55">
-                      {cat.image?.url ? (
-                        <Image
-                          src={cat.image.url}
-                          alt={cat.name}
-                          fill
-                          sizes="(max-width: 1024px) 50vw, 25vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-card to-black">
-                          <span className="text-5xl font-bold text-primary/60">
-                            {cat.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/42 to-transparent" />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                      <p className="eyebrow-xs tabular text-primary/85">
-                        {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
-                      </p>
-                      <h3 className="section-title mt-1.5 text-base text-foreground transition-colors group-hover:text-primary sm:text-2xl">
-                        {cat.name}
-                      </h3>
-                    </div>
-                    <div className="absolute bottom-4 right-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <ArrowRight size={18} className="text-foreground" />
-                    </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 flex justify-end sm:hidden">
-              <Link
-                href="/categories"
-                className="eyebrow inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
-              >
-                View All <ArrowRight size={16} />
-              </Link>
-            </div>
+            <TabbedShowcase
+              tabs={categories.map((cat) => ({
+                id: cat._id,
+                label: cat.name,
+                imageUrl: cat.image?.url,
+                href: `/categories/${cat.slug}`,
+              }))}
+              activeTabId={activeCategoryId}
+              onTabChange={(tab) => setActiveCategoryId(tab.id)}
+              renderPanel={(tab) => (
+                <ProductGrid
+                  products={categoryProducts[tab.id] ?? []}
+                  loading={!categoryProducts[tab.id]}
+                  emptyLabel="No products in this category yet."
+                />
+              )}
+            />
           </div>
         </section>
       )}
 
       {(productsLoading || featured.length > 0) && (
-        <section className="border-t border-border/70 bg-black py-16 sm:py-20">
+        <section className="border-t border-border/70 bg-black py-[30px]">
           <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
             <SectionHeader
               index="02 / Featured"
@@ -444,12 +479,12 @@ export default function HomeClient() {
       )}
 
       {(productsLoading || flashDeals.length > 0) && (
-        <section className="border-t border-border/70 bg-[#09090B] py-16 sm:py-20">
+        <section className="border-t border-border/70 bg-[#09090B] py-[30px]">
           <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
             <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="eyebrow mb-3 text-primary/90">03 / Limited Drop</p>
-                <h2 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
+                <h2 className="section-title text-xl text-foreground sm:text-2xl lg:text-3xl">
                   Flash Cut
                 </h2>
               </div>
@@ -478,7 +513,34 @@ export default function HomeClient() {
         </section>
       )}
 
-      <section className="border-t border-border/70 bg-black py-16 sm:py-20">
+      {(productsLoading || newArrivals.length > 0) && (
+        <section className="border-t border-border/70 bg-black py-[30px]">
+          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+            <SectionHeader index="04 / New Arrivals" title="Latest Drop" />
+            <ProductGrid products={newArrivals} loading={productsLoading} />
+            <div className="mt-8 flex justify-center">
+              <Link
+                href="/products"
+                className="btn-text inline-flex items-center gap-2 border border-border/80 bg-black/40 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
+              >
+                Shop New
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {recentlyViewed.length > 0 && (
+        <section className="border-t border-border/70 bg-[#09090B] py-[30px]">
+          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
+            <SectionHeader index="05 / Continue" title="Recently Viewed" />
+            <ProductGrid products={recentlyViewed} />
+          </div>
+        </section>
+      )}
+
+      <section className="border-t border-border/70 bg-black py-[30px]">
         <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
           <div className="relative overflow-hidden bg-black px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -504,7 +566,7 @@ export default function HomeClient() {
             </div>
             <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
               <div>
-                <p className="eyebrow mb-3 text-primary/90">04 / Custom & Bulk</p>
+                <p className="eyebrow mb-3 text-primary/90">06 / Custom & Bulk</p>
                 <h2 className="hero-title text-4xl uppercase text-foreground sm:text-5xl lg:text-6xl">
                   <span className="block">Built To Spec.</span>
                   <span className="block text-primary">Shipped In Volume.</span>
@@ -540,74 +602,6 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
-
-      {(productsLoading || newArrivals.length > 0) && (
-        <section className="border-t border-border/70 bg-black py-16 sm:py-20">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <SectionHeader
-              index="05 / New Arrivals"
-              title="Latest Drop"
-              href="/products"
-              linkLabel="Shop New"
-            />
-            <ProductGrid products={newArrivals} loading={productsLoading} />
-            <div className="mt-6 flex justify-end sm:hidden">
-              <Link
-                href="/products"
-                className="eyebrow inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
-              >
-                Shop New <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="border-t border-border/70 bg-black py-16 sm:py-20">
-        <div className="mx-auto grid w-full max-w-[92rem] items-center gap-8 px-3 sm:px-4 lg:grid-cols-[1fr_1.2fr] lg:gap-12 lg:px-6">
-          <div>
-            <p className="eyebrow mb-3 text-primary/90">06 / Manifesto</p>
-            <h2 className="hero-title text-4xl uppercase text-foreground sm:text-5xl lg:text-6xl">
-              <span className="block">Built For The</span>
-              <span className="block text-primary">Moment</span>
-              <span className="block">Between Rides.</span>
-            </h2>
-          </div>
-
-          <div className="pt-1">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {[
-                { icon: Truck, label: "Free Shipping", sublabel: "On orders above ₹999" },
-                { icon: ShieldCheck, label: "Secure Payment", sublabel: "100% secure checkout" },
-                { icon: RotateCcw, label: "Easy Returns", sublabel: "7-day return policy" },
-                { icon: Zap, label: "Multiple Payment", sublabel: "UPI, Cards, Net Banking" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 bg-card/40 px-4 py-3"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center text-primary">
-                    <item.icon size={22} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="label-text text-foreground">{item.label}</p>
-                    <p className="meta-text mt-0.5 text-muted">{item.sublabel}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {recentlyViewed.length > 0 && (
-        <section className="border-t border-border/70 bg-[#09090B] py-16 sm:py-20">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <SectionHeader index="07 / Continue" title="Recently Viewed" />
-            <ProductGrid products={recentlyViewed} />
-          </div>
-        </section>
-      )}
 
       <div className="pointer-events-none fixed inset-0 z-[70]">
         {isPopupOpen && (

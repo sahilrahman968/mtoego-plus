@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Heart, ShoppingCart } from "lucide-react";
 import { formatPrice, getProductImage, getDiscountPercent } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
-import type { ProductData } from "@/lib/store-api";
+import { addToWishlist, type ProductData } from "@/lib/store-api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/components/store/Toast";
 
 /** Products coming from the wishlist carry only a subset of the catalog fields. */
 export type ProductCardProduct = Pick<
@@ -38,6 +43,13 @@ export default function ProductCard({
   status,
   borderless = false,
 }: ProductCardProps) {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [wishlisted, setWishlisted] = useState(isWishlisted);
+  const [actionBusy, setActionBusy] = useState(false);
+
   const activeVariants = product.variants.filter((v) => v.isActive !== false);
   const lowestIncl = activeVariants.length
     ? Math.min(...activeVariants.map((v) => priceInclGst(v.price, v.gst)))
@@ -61,7 +73,61 @@ export default function ProductCard({
   const href = `/products/${product.slug}`;
   const imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw";
   const imageAlt = product.images?.[0]?.alt || product.title;
-  const hasActions = Boolean(onWishlistToggle || onAddToCart);
+  const firstInStockVariant = activeVariants.find((v) => v.stock > 0);
+  const cartDisabled =
+    addToCartDisabled || unavailable || !firstInStockVariant || actionBusy;
+  const showFilledHeart = onWishlistToggle ? isWishlisted : wishlisted;
+
+  const redirectToLogin = () => {
+    const redirect = product.slug ? `/products/${product.slug}` : "/wishlist";
+    router.push(`/login?redirect=${encodeURIComponent(redirect)}`);
+  };
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onWishlistToggle) {
+      onWishlistToggle(product._id);
+      return;
+    }
+    if (!isAuthenticated) {
+      redirectToLogin();
+      return;
+    }
+    if (actionBusy) return;
+    setActionBusy(true);
+    const res = await addToWishlist(product._id, firstInStockVariant?._id);
+    if (res.success) {
+      setWishlisted(true);
+      toast("Added to wishlist!", "success");
+    } else {
+      toast(res.message || "Already in wishlist", "info");
+      setWishlisted(true);
+    }
+    setActionBusy(false);
+  };
+
+  const handleCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(product._id);
+      return;
+    }
+    if (!isAuthenticated) {
+      redirectToLogin();
+      return;
+    }
+    if (!firstInStockVariant || cartDisabled) return;
+    setActionBusy(true);
+    const res = await addToCart(product._id, firstInStockVariant._id, 1);
+    if (res.success) {
+      toast("Added to cart!", "success");
+    } else {
+      toast(res.message, "error");
+    }
+    setActionBusy(false);
+  };
 
   return (
     <div
@@ -102,102 +168,82 @@ export default function ProductCard({
           </Link>
         )}
 
-        <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex items-start justify-between gap-2 sm:inset-x-2 sm:top-2">
-          {formattedTagText ? (
-            <span className="eyebrow-xs max-w-[68%] truncate bg-primary px-2 py-1 text-white">
-              {formattedTagText}
-            </span>
-          ) : null}
-          {discount > 0 && !unavailable && (
-            <span className="eyebrow-xs tabular border border-border bg-black/60 px-2 py-1 text-foreground">
-              -{discount}%
-            </span>
-          )}
-        </div>
+        {formattedTagText ? (
+          <span className="pointer-events-none absolute left-2 top-2 z-10 eyebrow-xs max-w-[60%] truncate bg-primary px-2 py-1 text-white sm:left-3 sm:top-3">
+            {formattedTagText}
+          </span>
+        ) : null}
 
-        {hasActions && (
-          <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 sm:bottom-2 sm:right-2">
-            {onAddToCart && (
-              <button
-                type="button"
-                onClick={() => onAddToCart(product._id)}
-                disabled={addToCartDisabled || unavailable}
-                className="flex h-7 w-7 items-center justify-center border border-border bg-black/60 text-foreground/80 transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:text-muted disabled:hover:border-border"
-                aria-label={`Move ${product.title} to cart`}
-              >
-                <ShoppingCart size={14} />
-              </button>
-            )}
-            {onWishlistToggle && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onWishlistToggle(product._id);
-                }}
-                className="flex h-7 w-7 items-center justify-center border border-border bg-black/60 transition-colors hover:border-primary"
-                aria-label={
-                  isWishlisted ? "Remove from wishlist" : "Add to wishlist"
-                }
-              >
-                <Heart
-                  size={14}
-                  className={
-                    isWishlisted
-                      ? "fill-primary text-primary"
-                      : "text-foreground/80 group-hover:text-primary"
-                  }
-                />
-              </button>
-            )}
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={handleWishlist}
+          disabled={actionBusy}
+          className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center border border-border/80 bg-black/55 text-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-60 sm:right-3 sm:top-3"
+          aria-label={
+            showFilledHeart ? "Remove from wishlist" : "Add to wishlist"
+          }
+        >
+          <Heart
+            size={15}
+            className={
+              showFilledHeart
+                ? "fill-primary text-primary"
+                : "text-foreground/90"
+            }
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleCart}
+          disabled={cartDisabled}
+          className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center border border-border/80 bg-black/55 text-foreground/90 transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border/80 disabled:hover:text-foreground/90 sm:bottom-3 sm:right-3"
+          aria-label={`Add ${product.title} to cart`}
+        >
+          <ShoppingCart size={15} />
+        </button>
       </div>
 
-      <div className="pt-3 sm:pt-3">
-        <div className="min-w-0">
-          {unavailable ? (
-            <h3 className="line-clamp-2 text-[13px] font-bold uppercase leading-snug text-muted sm:text-sm">
+      <div className="pt-3">
+        {unavailable ? (
+          <h3 className="line-clamp-2 text-xs font-bold uppercase leading-snug text-muted sm:text-[13px]">
+            {product.title}
+          </h3>
+        ) : (
+          <Link href={href} className="block min-w-0">
+            <h3 className="line-clamp-2 text-xs font-bold uppercase leading-snug text-white transition-colors sm:text-[13px]">
               {product.title}
             </h3>
-          ) : (
-            <Link href={href} className="block min-w-0">
-              <h3 className="line-clamp-2 text-[13px] font-bold uppercase leading-snug text-white transition-colors sm:text-sm">
-                {product.title}
-              </h3>
-            </Link>
-          )}
-          <div className="mt-2 flex items-end justify-between gap-6 sm:gap-8">
-            <div className="min-w-0 flex-1">
-              {product.category && (
-                <Link
-                  href={`/categories/${product.category.slug}`}
-                  className="eyebrow-xs line-clamp-1 text-muted hover:text-foreground"
-                >
-                  {product.category.name}
-                </Link>
-              )}
-              {status && (
-                <p
-                  className={`eyebrow-xs line-clamp-1 ${
-                    status.tone === "danger" ? "text-danger" : "text-success"
-                  }`}
-                >
-                  {status.label}
-                </p>
-              )}
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="price text-sm font-bold text-foreground sm:text-base">
+          </Link>
+        )}
+
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p className="price text-sm font-bold text-foreground">
                 {unavailable ? "—" : formatPrice(lowestIncl)}
               </p>
               {!unavailable && highestCompareIncl > lowestIncl && (
-                <p className="price mt-0.5 text-[11px] text-muted line-through">
+                <p className="price text-sm text-muted line-through">
                   {formatPrice(highestCompareIncl)}
                 </p>
               )}
             </div>
+            {status && (
+              <p
+                className={`eyebrow-xs mt-1 line-clamp-1 ${
+                  status.tone === "danger" ? "text-danger" : "text-success"
+                }`}
+              >
+                {status.label}
+              </p>
+            )}
           </div>
+          {!unavailable && discount > 0 && (
+            <p className="price shrink-0 text-sm tabular text-primary">
+              -{discount}%
+            </p>
+          )}
         </div>
       </div>
     </div>
