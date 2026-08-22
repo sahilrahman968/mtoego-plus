@@ -84,8 +84,10 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
         trackRecentlyViewed(p);
         const activeVariants = p.variants.filter((v) => v.isActive !== false);
         if (activeVariants.length > 0) {
-          setSelectedVariant(activeVariants[0]);
-          setSelectedImage(imageIndexForColor(p.images, activeVariants[0].color));
+          const initialVariant =
+            activeVariants.find((variant) => variant.stock > 0) ?? activeVariants[0];
+          setSelectedVariant(initialVariant);
+          setSelectedImage(imageIndexForColor(p.images, initialVariant.color));
         }
         // Fetch related products
         if (p.category?._id) {
@@ -326,7 +328,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               className="object-cover"
               priority
             />
-            {discount > 0 && (
+            {selectedVariant && selectedVariant.stock > 0 && discount > 0 && (
               <div className="eyebrow-xs tabular absolute left-4 top-4 border border-primary/40 bg-primary/20 px-2 py-1 text-primary">
                 -{discount}%
               </div>
@@ -373,17 +375,13 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             {product.title}
           </h1>
 
-          <p className="body-copy mt-4 text-muted">
-            {product.description || "All-black version. Same armor. No compromise."}
-          </p>
-
           <div className="mt-5 flex items-start justify-between gap-4">
             <div className="eyebrow-xs text-muted">
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
-                    size={14}
+                    size={18}
                     className={s <= Math.round(averageRating) ? "fill-primary text-primary" : "text-muted/35"}
                   />
                 ))}
@@ -395,13 +393,22 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
             {selectedVariant && (
               <div className="flex items-end gap-2">
-                <span className="price text-2xl font-bold leading-none text-foreground sm:text-4xl">
-                  {formatPrice(priceInclGst(selectedVariant.price, selectedVariant.gst))}
+                <span
+                  className={`eyebrow leading-none ${
+                    selectedVariant.stock > 0 ? "text-foreground" : "text-danger"
+                  }`}
+                >
+                  {selectedVariant.stock > 0
+                    ? formatPrice(
+                        priceInclGst(selectedVariant.price, selectedVariant.gst)
+                      )
+                    : "Out of stock"}
                 </span>
-                {selectedVariant.compareAtPrice &&
+                {selectedVariant.stock > 0 &&
+                  selectedVariant.compareAtPrice &&
                   priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst) >
                     priceInclGst(selectedVariant.price, selectedVariant.gst) && (
-                    <span className="price pb-0.5 text-sm text-muted line-through sm:text-base">
+                    <span className="eyebrow pb-0.5 text-muted line-through">
                       {formatPrice(
                         priceInclGst(selectedVariant.compareAtPrice, selectedVariant.gst)
                       )}
@@ -459,7 +466,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               <div className="label-text mb-2.5 text-muted">
                 <span>Size</span>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex gap-2 overflow-x-auto">
                 {uniqueSizes.map((size) => {
                   const matchingVariant = activeVariants.find(
                     (v) =>
@@ -472,7 +479,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                       key={size}
                       onClick={() => matchingVariant && setSelectedVariant(matchingVariant)}
                       disabled={!matchingVariant || matchingVariant.stock === 0}
-                      className={`btn-text h-11 border transition-colors ${
+                      className={`btn-text shrink-0 whitespace-nowrap border px-4 py-2.5 transition-colors ${
                         isSelected
                           ? "border-primary bg-primary text-white"
                           : matchingVariant && matchingVariant.stock > 0

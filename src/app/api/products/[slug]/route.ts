@@ -27,7 +27,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       return errorResponse("Product not found", 404);
     }
 
-    return successResponse(product);
+    const { applySaleToProduct, loadLiveSaleIndex } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+
+    return successResponse(applySaleToProduct(product as never, saleIndex));
   } catch (err) {
     console.error("[Products] Public get error:", err);
     return errorResponse("Failed to fetch product", 500);

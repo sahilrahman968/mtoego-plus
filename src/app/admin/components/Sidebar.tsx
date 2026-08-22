@@ -100,6 +100,16 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    label: "Sales",
+    href: "/admin/sales",
+    permission: NAV_PERMISSIONS["/admin/sales"],
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+  {
     label: "Staff",
     href: "/admin/staff",
     superAdminOnly: true,
@@ -168,17 +178,17 @@ export default function Sidebar({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-admin-heading/25 backdrop-blur-[1px] lg:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-slate-900 text-white transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
+        className={`fixed top-0 left-0 z-50 flex h-full w-64 flex-col bg-admin-surface border-r border-admin-line shadow-xl transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto lg:shadow-none ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-700/50">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-admin-line">
           <Link href="/admin" onClick={onClose} aria-label="Motoego Admin">
             <span className="relative block h-9 w-[9.75rem] overflow-hidden">
               <Image
@@ -190,11 +200,11 @@ export default function Sidebar({
                 priority
               />
             </span>
-            <span className="block text-xs text-slate-400">Admin Panel</span>
+            <span className="block text-xs text-admin-muted">Admin Panel</span>
           </Link>
           <button
             onClick={onClose}
-            className="ml-auto lg:hidden p-1 rounded hover:bg-slate-700"
+            className="ml-auto lg:hidden p-1 rounded text-admin-muted hover:bg-admin-hover hover:text-admin-heading"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -208,10 +218,10 @@ export default function Sidebar({
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 isActive(item.href)
-                  ? "bg-gray-900 text-white"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-admin-subtle font-semibold text-admin-heading before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-admin-primary"
+                  : "font-medium text-admin-muted hover:bg-admin-hover hover:text-admin-heading"
               }`}
             >
               {item.icon}
@@ -220,8 +230,8 @@ export default function Sidebar({
           ))}
         </nav>
 
-        <div className="px-4 py-4 border-t border-slate-700/50">
-          <p className="text-xs text-slate-500 text-center capitalize">
+        <div className="px-4 py-4 border-t border-admin-line">
+          <p className="text-xs text-admin-faint text-center capitalize">
             {roleLabel} Access
           </p>
         </div>

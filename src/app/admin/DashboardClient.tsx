@@ -34,8 +34,8 @@ export default function DashboardClient({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Orders by Status */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="text-base font-semibold text-slate-900 mb-4">Orders by Status</h3>
+        <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+          <h3 className="text-base font-semibold text-admin-heading mb-4">Orders by Status</h3>
           <div className="space-y-3">
             {statusOrder.map((status) => {
               const count = ordersByStatus[status] || 0;
@@ -45,14 +45,14 @@ export default function DashboardClient({
                 <div key={status} className="flex items-center gap-3">
                   <StatusBadge status={status} className="w-24 justify-center" />
                   <div className="flex-1">
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-admin-subtle rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gray-800 rounded-full transition-all"
+                        className="h-full bg-admin-primary rounded-full transition-all"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-slate-600 w-10 text-right">{count}</span>
+                  <span className="text-sm font-medium text-admin-muted w-10 text-right">{count}</span>
                 </div>
               );
             })}
@@ -60,29 +60,29 @@ export default function DashboardClient({
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-slate-900">Recent Orders</h3>
-            <Link href="/admin/orders" className="text-sm text-gray-900 hover:text-black font-medium">
+            <h3 className="text-base font-semibold text-admin-heading">Recent Orders</h3>
+            <Link href="/admin/orders" className="text-sm text-admin-muted hover:text-admin-heading font-medium transition-colors">
               View all
             </Link>
           </div>
           {recentOrders.length === 0 ? (
-            <p className="text-sm text-slate-500 py-8 text-center">No orders yet</p>
+            <p className="text-sm text-admin-muted py-8 text-center">No orders yet</p>
           ) : (
             <div className="space-y-3">
               {recentOrders.map((order) => (
                 <Link
                   key={order._id}
                   href={`/admin/orders/${order._id}`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors -mx-1"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-admin-hover transition-colors -mx-1"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900">{order.orderNumber}</p>
-                    <p className="text-xs text-slate-500 truncate">{order.user.name}</p>
+                    <p className="text-sm font-medium text-admin-heading">{order.orderNumber}</p>
+                    <p className="text-xs text-admin-muted truncate">{order.user.name}</p>
                   </div>
                   <div className="text-right flex-shrink-0 ml-3">
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-admin-heading">
                       ₹{order.grandTotal.toLocaleString("en-IN")}
                     </p>
                     <StatusBadge status={order.status} />

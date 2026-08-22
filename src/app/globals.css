@@ -22,6 +22,63 @@
   --danger: #e23a56;
   --warning: #d49a2a;
   --success: #57b97d;
+
+  /* Admin panel scale — see theme.ts `adminColors`. Light and low-chroma:
+     the storefront palette is built for a dark page and is unreadable on the
+     white work surfaces the admin panel is made of. */
+  --admin-canvas: #f7f8fa;
+  --admin-surface: #ffffff;
+  --admin-subtle: #f4f5f7;
+  --admin-hover: #eff1f4;
+  --admin-line: #e7e9ee;
+  --admin-line-strong: #d6dae1;
+  --admin-heading: #16181d;
+  --admin-body: #3d4350;
+  --admin-muted: #6c7280;
+  --admin-faint: #8b919c;
+  --admin-primary: #1a1d23;
+  --admin-primary-hover: #0b0d10;
+  --admin-focus: #a9b2c0;
+  --admin-success: #1f7a55;
+  --admin-success-soft: #edf7f2;
+  --admin-success-line: #c9e7d8;
+  --admin-warning: #8a6114;
+  --admin-warning-soft: #fdf6e8;
+  --admin-warning-line: #f0e1bb;
+  --admin-danger: #b32d1d;
+  --admin-danger-soft: #fcf1ef;
+  --admin-danger-line: #f2d2cc;
+  --admin-info: #2f5fa8;
+  --admin-info-soft: #eff4fc;
+  --admin-info-line: #d3e0f5;
+}
+
+@theme inline {
+  --color-admin-canvas: var(--admin-canvas);
+  --color-admin-surface: var(--admin-surface);
+  --color-admin-subtle: var(--admin-subtle);
+  --color-admin-hover: var(--admin-hover);
+  --color-admin-line: var(--admin-line);
+  --color-admin-line-strong: var(--admin-line-strong);
+  --color-admin-heading: var(--admin-heading);
+  --color-admin-body: var(--admin-body);
+  --color-admin-muted: var(--admin-muted);
+  --color-admin-faint: var(--admin-faint);
+  --color-admin-primary: var(--admin-primary);
+  --color-admin-primary-hover: var(--admin-primary-hover);
+  --color-admin-focus: var(--admin-focus);
+  --color-admin-success: var(--admin-success);
+  --color-admin-success-soft: var(--admin-success-soft);
+  --color-admin-success-line: var(--admin-success-line);
+  --color-admin-warning: var(--admin-warning);
+  --color-admin-warning-soft: var(--admin-warning-soft);
+  --color-admin-warning-line: var(--admin-warning-line);
+  --color-admin-danger: var(--admin-danger);
+  --color-admin-danger-soft: var(--admin-danger-soft);
+  --color-admin-danger-line: var(--admin-danger-line);
+  --color-admin-info: var(--admin-info);
+  --color-admin-info-soft: var(--admin-info-soft);
+  --color-admin-info-line: var(--admin-info-line);
 }
 
 @theme inline {
@@ -304,19 +361,69 @@
   will-change: transform;
 }
 
-/* Form field styling */
-input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]),
-select,
-textarea {
+/* Form field styling.
+   Unlayered, so it outranks every Tailwind utility — hence the `.admin-theme`
+   exclusions: the admin panel is light and styles its own fields (see the
+   admin block in @layer base) rather than inheriting these dark defaults. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not(.admin-theme *),
+select:not(.admin-theme *),
+textarea:not(.admin-theme *) {
   color: var(--foreground);
   background-color: color-mix(in srgb, var(--card) 80%, black 20%);
   border-color: var(--border);
 }
 
-input::placeholder,
-textarea::placeholder {
+input:not(.admin-theme *)::placeholder,
+textarea:not(.admin-theme *)::placeholder {
   color: color-mix(in srgb, var(--muted) 85%, white 15%) !important;
   opacity: 1;
+}
+
+/*
+ * ─── Admin panel surface ────────────────────────────────────────────────────
+ * The panel is a light island inside the dark store shell. Everything is scoped
+ * to `.admin-theme` (set on the admin shell root) and kept in `base` so a
+ * one-off Tailwind utility still wins.
+ */
+@layer base {
+  .admin-theme {
+    color: var(--admin-body);
+    background-color: var(--admin-canvas);
+  }
+
+  /* Store headings are uppercase display type — too loud for dense admin UI. */
+  .admin-theme :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    line-height: var(--leading-snug);
+    color: var(--admin-heading);
+  }
+
+  .admin-theme
+    :is(
+      input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]),
+      select,
+      textarea
+    ) {
+    color: var(--admin-heading);
+    background-color: var(--admin-surface);
+    border-color: var(--admin-line-strong);
+  }
+
+  .admin-theme :is(input, textarea)::placeholder {
+    color: var(--admin-faint);
+    opacity: 1;
+  }
+
+  .admin-theme :is(input[type="checkbox"], input[type="radio"], progress) {
+    accent-color: var(--admin-primary);
+  }
+
+  .admin-theme ::selection {
+    background: color-mix(in srgb, var(--admin-primary) 16%, transparent);
+    color: var(--admin-heading);
+  }
 }
 
 /* Auth forms sit directly on the dark page background. */

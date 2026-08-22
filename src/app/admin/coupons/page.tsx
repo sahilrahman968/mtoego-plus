@@ -83,7 +83,7 @@ export default function CouponsPage() {
         action={{ label: "Add Coupon", href: "/admin/coupons/new" }}
       />
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -97,45 +97,45 @@ export default function CouponsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Code</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Type</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden sm:table-cell">Value</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">Usage</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden lg:table-cell">Expires</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Status</th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Actions</th>
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Code</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Type</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden sm:table-cell">Value</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">Usage</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden lg:table-cell">Expires</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Status</th>
+                    <th className="text-right font-medium text-admin-muted px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((coupon) => (
-                    <tr key={coupon._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={coupon._id} className="hover:bg-admin-hover transition-colors">
                       <td className="px-4 py-3">
-                        <code className="text-sm font-semibold text-slate-900 bg-slate-50 px-2 py-0.5 rounded">
+                        <code className="text-sm font-semibold text-admin-heading bg-admin-subtle px-2 py-0.5 rounded">
                           {coupon.code}
                         </code>
                         {coupon.description && (
-                          <p className="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{coupon.description}</p>
+                          <p className="text-xs text-admin-faint mt-0.5 truncate max-w-xs">{coupon.description}</p>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={coupon.type} />
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-admin-heading">
                           {coupon.type === "percentage" ? `${coupon.value}%` : `₹${coupon.value}`}
                         </span>
                         {coupon.minOrderValue > 0 && (
-                          <p className="text-xs text-slate-400">Min: ₹{coupon.minOrderValue}</p>
+                          <p className="text-xs text-admin-faint">Min: ₹{coupon.minOrderValue}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-600">
+                        <span className="text-admin-muted">
                           {coupon.usedCount} / {coupon.usageLimit}
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className={isExpired(coupon.expiresAt) ? "text-gray-500" : "text-slate-600"}>
+                        <span className={isExpired(coupon.expiresAt) ? "text-admin-muted" : "text-admin-muted"}>
                           {new Date(coupon.expiresAt).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
@@ -153,13 +153,13 @@ export default function CouponsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/admin/coupons/${coupon._id}`}
-                            className="px-2.5 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-heading hover:bg-admin-hover rounded-md transition-colors"
                           >
                             Edit
                           </Link>
                           <button
                             onClick={() => setDeleteTarget(coupon)}
-                            className="px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md transition-colors"
                           >
                             Delete
                           </button>
@@ -170,7 +170,7 @@ export default function CouponsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
             </div>
           </>

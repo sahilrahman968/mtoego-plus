@@ -99,7 +99,7 @@ export default function AdminCallbackRequestsPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full sm:w-96 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+          className="w-full sm:w-96 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus focus:border-transparent"
         />
         <div className="flex flex-wrap gap-1.5">
           {statusFilters.map((filter) => (
@@ -112,8 +112,8 @@ export default function AdminCallbackRequestsPage() {
               }}
               className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                 status === filter.value
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  ? "bg-admin-primary text-white"
+                  : "bg-admin-surface text-admin-muted border border-admin-line hover:bg-admin-hover"
               }`}
             >
               {filter.label}
@@ -122,7 +122,7 @@ export default function AdminCallbackRequestsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -135,51 +135,51 @@ export default function AdminCallbackRequestsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Submitted</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Phone</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Submitted</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Phone</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">
                       Preferred Hours
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Requirement</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden lg:table-cell">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Requirement</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden lg:table-cell">
                       Status
                     </th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Actions</th>
+                    <th className="text-right font-medium text-admin-muted px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((requestItem) => (
-                    <tr key={requestItem._id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 min-w-40 text-slate-600">
+                    <tr key={requestItem._id} className="hover:bg-admin-hover transition-colors">
+                      <td className="px-4 py-3 min-w-40 text-admin-muted">
                         {formatDateTime(requestItem.createdAt)}
                       </td>
-                      <td className="px-4 py-3 min-w-32 font-medium text-slate-900">
+                      <td className="px-4 py-3 min-w-32 font-medium text-admin-heading">
                         {requestItem.phone}
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-slate-700 min-w-40">
+                      <td className="px-4 py-3 hidden md:table-cell text-admin-body min-w-40">
                         {requestItem.contactHours}
                       </td>
                       <td className="px-4 py-3 min-w-72">
-                        <p className="line-clamp-2 text-slate-700">{requestItem.requirement}</p>
+                        <p className="line-clamp-2 text-admin-body">{requestItem.requirement}</p>
                         {requestItem.adminNote ? (
-                          <p className="mt-1 text-xs text-slate-500">Note: {requestItem.adminNote}</p>
+                          <p className="mt-1 text-xs text-admin-muted">Note: {requestItem.adminNote}</p>
                         ) : null}
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
                         <span
                           className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
                             requestItem.status === "new"
-                              ? "bg-blue-100 text-blue-700"
+                              ? "bg-admin-info-soft text-admin-info"
                               : requestItem.status === "contacted"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-emerald-100 text-emerald-700"
+                                ? "bg-admin-warning-soft text-admin-warning"
+                                : "bg-admin-success-soft text-admin-success"
                           }`}
                         >
                           {requestItem.status}
                         </span>
                         {requestItem.contactedAt ? (
-                          <p className="mt-1 text-[11px] text-slate-500">
+                          <p className="mt-1 text-[11px] text-admin-muted">
                             Contacted: {formatDateTime(requestItem.contactedAt)}
                           </p>
                         ) : null}
@@ -196,8 +196,8 @@ export default function AdminCallbackRequestsPage() {
                               onClick={() => updateStatus(requestItem, nextStatus)}
                               className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors disabled:opacity-50 ${
                                 requestItem.status === nextStatus
-                                  ? "bg-slate-900 text-white"
-                                  : "text-slate-700 hover:bg-slate-100"
+                                  ? "bg-admin-primary text-white"
+                                  : "text-admin-body hover:bg-admin-hover"
                               }`}
                             >
                               {nextStatus}
@@ -210,7 +210,7 @@ export default function AdminCallbackRequestsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
             </div>
           </>

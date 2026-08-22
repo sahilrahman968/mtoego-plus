@@ -123,6 +123,10 @@ export default function CheckoutClient() {
     [items]
   );
   const hasUnavailableItems = availableItems.length < items.length;
+  const hasOutOfStockItems = availableItems.some((item) => {
+    const variant = item.product?.variants?.find((v) => v._id === item.variant);
+    return !!variant && variant.stock <= 0;
+  });
 
   const summary = useMemo(() => {
     const lineItems = availableItems.map((item) => {
@@ -160,8 +164,8 @@ export default function CheckoutClient() {
   };
 
   const handleProceedToReview = () => {
-    if (hasUnavailableItems) {
-      toast("Remove unavailable products from your cart before checkout", "error");
+    if (hasUnavailableItems || hasOutOfStockItems) {
+      toast("Remove unavailable or out-of-stock products before checkout", "error");
       return;
     }
     if (availableItems.length === 0) {
@@ -172,8 +176,12 @@ export default function CheckoutClient() {
   };
 
   const handlePayment = async () => {
-    if (hasUnavailableItems || availableItems.length === 0) {
-      toast("Remove unavailable products from your cart before payment", "error");
+    if (
+      hasUnavailableItems ||
+      hasOutOfStockItems ||
+      availableItems.length === 0
+    ) {
+      toast("Remove unavailable or out-of-stock products before payment", "error");
       return;
     }
 
@@ -491,9 +499,9 @@ export default function CheckoutClient() {
                   <h3 className="section-title mb-4 text-base text-foreground">
                     Order Items ({items.length})
                   </h3>
-                  {hasUnavailableItems && (
+                  {(hasUnavailableItems || hasOutOfStockItems) && (
                     <div className="meta-text mb-3 border border-danger/40 bg-danger/10 px-3 py-2.5 text-danger">
-                      Some items are no longer available.{" "}
+                      Some items are unavailable or out of stock.{" "}
                       <Link href="/cart" className="underline hover:text-danger">
                         Return to cart
                       </Link>{" "}
@@ -507,6 +515,8 @@ export default function CheckoutClient() {
                       const variant = product?.variants?.find(
                         (v) => v._id === item.variant
                       );
+                      const outOfStock =
+                        !unavailable && !!variant && variant.stock <= 0;
                       const price = variant?.price || item.priceAtAdd;
                       const displayPrice = priceInclGst(price, variant?.gst);
                       const title = product?.title || "Product unavailable";
@@ -539,8 +549,14 @@ export default function CheckoutClient() {
                             )}
                           </div>
                           {!unavailable && (
-                            <p className="price shrink-0 text-sm font-medium text-foreground">
-                              {formatPrice(displayPrice * item.quantity)}
+                            <p
+                              className={`price shrink-0 text-sm ${
+                                outOfStock ? "font-normal text-danger" : "font-medium text-foreground"
+                              }`}
+                            >
+                              {outOfStock
+                                ? "Out of stock"
+                                : formatPrice(displayPrice * item.quantity)}
                             </p>
                           )}
                         </div>
@@ -552,7 +568,12 @@ export default function CheckoutClient() {
                 {/* Payment button */}
                 <button
                   onClick={handlePayment}
-                  disabled={loading || hasUnavailableItems || availableItems.length === 0}
+                  disabled={
+                    loading ||
+                    hasUnavailableItems ||
+                    hasOutOfStockItems ||
+                    availableItems.length === 0
+                  }
                   className="btn-text flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
                 >
                   {loading ? (

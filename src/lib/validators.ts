@@ -2,6 +2,8 @@
 // Lightweight validation without pulling in a heavy schema library.
 // Swap out with zod / yup later if the project grows.
 
+import { isBannerCtaPosition } from "@/lib/banner-cta";
+
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -580,4 +582,155 @@ export function validatePaymentVerification(body: Record<string, unknown>): Vali
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+// ─── Sale campaign validators ────────────────────────────────────────────────
+
+function isSaleDiscountType(value: unknown): value is "percentage" | "amount" {
+  return value === "percentage" || value === "amount";
+}
+
+function validateSaleDiscount(
+  type: unknown,
+  value: unknown,
+  field: string,
+  errors: string[]
+) {
+  if (!isSaleDiscountType(type)) {
+    errors.push(`${field} type must be "percentage" or "amount"`);
+    return;
+  }
+  if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+    errors.push(`${field} value must be a positive number`);
+    return;
+  }
+  if (type === "percentage" && value > 90) {
+    errors.push(`${field} percentage cannot exceed 90%`);
+  }
+}
+
+function validateSalePayload(
+  body: Record<string, unknown>,
+  { partial }: { partial: boolean }
+): ValidationResult {
+  const errors: string[] = [];
+  const required = (key: string) => !partial || body[key] !== undefined;
+
+  if (required("title")) {
+    if (typeof body.title !== "string" || body.title.trim().length < 2) {
+      errors.push("Title must be at least 2 characters");
+    }
+  }
+  if (required("slug")) {
+    if (typeof body.slug !== "string" || !isValidSlug(body.slug.trim().toLowerCase())) {
+      errors.push("A valid URL slug is required");
+    }
+  }
+  if (body.subtitle !== undefined && body.subtitle !== "" && typeof body.subtitle !== "string") {
+    errors.push("Subtitle must be a string");
+  }
+  if (body.description !== undefined && body.description !== "" && typeof body.description !== "string") {
+    errors.push("Description must be a string");
+  }
+  if (
+    body.bannerCtaLabel !== undefined &&
+    (typeof body.bannerCtaLabel !== "string" || body.bannerCtaLabel.trim().length > 40)
+  ) {
+    errors.push("Banner CTA label must be at most 40 characters");
+  }
+  if (body.bannerCtaHref !== undefined) {
+    if (
+      typeof body.bannerCtaHref !== "string" ||
+      body.bannerCtaHref.trim().length > 300 ||
+      (body.bannerCtaHref.trim() !== "" &&
+        !body.bannerCtaHref.trim().startsWith("/") &&
+        !/^https?:\/\//i.test(body.bannerCtaHref.trim()))
+    ) {
+      errors.push("Banner CTA link must be an internal path or an http(s) URL");
+    }
+  }
+  if (body.bannerCtaPosition !== undefined && !isBannerCtaPosition(body.bannerCtaPosition)) {
+    errors.push("Banner CTA position is invalid");
+  }
+  if (required("startsAt")) {
+    if (!body.startsAt || Number.isNaN(Date.parse(String(body.startsAt)))) {
+      errors.push("A valid start date is required");
+    }
+  }
+  if (required("endsAt")) {
+    if (!body.endsAt || Number.isNaN(Date.parse(String(body.endsAt)))) {
+      errors.push("A valid end date is required");
+    }
+  }
+  if (body.startsAt && body.endsAt) {
+    const start = Date.parse(String(body.startsAt));
+    const end = Date.parse(String(body.endsAt));
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end <= start) {
+      errors.push("End date must be after the start date");
+    }
+  }
+  if (required("defaultDiscountType") || required("defaultDiscountValue")) {
+    validateSaleDiscount(
+      body.defaultDiscountType,
+      body.defaultDiscountValue,
+      "Default discount",
+      errors
+    );
+  }
+  if (required("items")) {
+    if (!Array.isArray(body.items) || body.items.length < 1) {
+      errors.push("Select at least one product for the sale");
+    } else if (body.items.length > 80) {
+      errors.push("A sale can include at most 80 products");
+    } else {
+      const seen = new Set<string>();
+      for (const raw of body.items) {
+        if (!raw || typeof raw !== "object") {
+          errors.push("Each sale item must be an object");
+          continue;
+        }
+        const item = raw as Record<string, unknown>;
+        if (typeof item.product !== "string" || !isValidObjectId(item.product)) {
+          errors.push("Each sale item needs a valid product id");
+          continue;
+        }
+        if (seen.has(item.product)) {
+          errors.push("Duplicate products are not allowed in a sale");
+          continue;
+        }
+        seen.add(item.product);
+        validateSaleDiscount(item.discountType, item.value, "Item discount", errors);
+      }
+    }
+  }
+  if (body.homeLimit !== undefined) {
+    if (typeof body.homeLimit !== "number" || body.homeLimit < 1 || body.homeLimit > 12) {
+      errors.push("Home product limit must be between 1 and 12");
+    }
+  }
+  if (body.priority !== undefined) {
+    if (typeof body.priority !== "number" || body.priority < 0 || body.priority > 1000) {
+      errors.push("Priority must be between 0 and 1000");
+    }
+  }
+  if (body.banner !== undefined && body.banner !== null) {
+    if (typeof body.banner !== "object") {
+      errors.push("Banner must be an image object");
+    } else {
+      const banner = body.banner as Record<string, unknown>;
+      if (typeof banner.url !== "string" || typeof banner.publicId !== "string") {
+        errors.push("Banner must include url and publicId");
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateCreateSale(body: Record<string, unknown>): ValidationResult {
+  return validateSalePayload(body, { partial: false });
+}
+
+export function validateUpdateSale(body: Record<string, unknown>): ValidationResult {
+  return validateSalePayload(body, { partial: true });
 }

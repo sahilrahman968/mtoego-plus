@@ -138,7 +138,7 @@ export default function StaffPage() {
       />
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
           {error}
         </div>
       )}
@@ -149,11 +149,11 @@ export default function StaffPage() {
           placeholder="Search staff..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus focus:border-transparent"
         />
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -167,38 +167,38 @@ export default function StaffPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Name</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden sm:table-cell">Email</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Role</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Status</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">Joined</th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Actions</th>
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Name</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden sm:table-cell">Email</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Role</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Status</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">Joined</th>
+                    <th className="text-right font-medium text-admin-muted px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((member) => (
-                    <tr key={member._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={member._id} className="hover:bg-admin-hover transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-900 text-xs font-semibold flex-shrink-0">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-admin-subtle text-admin-heading text-xs font-semibold flex-shrink-0">
                             {member.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-slate-900 truncate">{member.name}</p>
-                            <p className="text-xs text-slate-400 sm:hidden truncate">{member.email}</p>
+                            <p className="font-medium text-admin-heading truncate">{member.name}</p>
+                            <p className="text-xs text-admin-faint sm:hidden truncate">{member.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-slate-600">{member.email}</span>
+                        <span className="text-admin-muted">{member.email}</span>
                       </td>
                       <td className="px-4 py-3">
                         <select
                           value={member.role}
                           disabled={updatingRole === member._id}
                           onChange={(e) => changeRole(member, e.target.value)}
-                          className="max-w-[11rem] px-2 py-1.5 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
+                          className="max-w-[11rem] px-2 py-1.5 text-xs border border-admin-line rounded-md bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus disabled:opacity-50"
                           title={roleLabel(member.role)}
                         >
                           {data.roles.map((role) => (
@@ -212,7 +212,7 @@ export default function StaffPage() {
                         <StatusBadge status={member.isActive ? "active" : "inactive"} />
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-500">
+                        <span className="text-admin-muted">
                           {new Date(member.createdAt).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
@@ -225,13 +225,13 @@ export default function StaffPage() {
                           <button
                             onClick={() => toggleActive(member)}
                             disabled={toggling === member._id}
-                            className="px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md transition-colors disabled:opacity-50"
                           >
                             {member.isActive ? "Deactivate" : "Activate"}
                           </button>
                           <button
                             onClick={() => setDeleteTarget(member)}
-                            className="px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md transition-colors"
                           >
                             Delete
                           </button>
@@ -242,7 +242,7 @@ export default function StaffPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
             </div>
           </>

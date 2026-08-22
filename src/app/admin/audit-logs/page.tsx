@@ -79,7 +79,7 @@ export default function AuditLogsPage() {
       />
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
           {error}
         </div>
       )}
@@ -91,7 +91,7 @@ export default function AuditLogsPage() {
             setMethod(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="px-3 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
         >
           <option value="">All methods</option>
           {METHODS.filter(Boolean).map((m) => (
@@ -108,7 +108,7 @@ export default function AuditLogsPage() {
             setResource(e.target.value);
             setPage(1);
           }}
-          className="w-full sm:w-48 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full sm:w-48 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
         />
         <input
           type="text"
@@ -118,7 +118,7 @@ export default function AuditLogsPage() {
             setActor(e.target.value);
             setPage(1);
           }}
-          className="w-full sm:w-56 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full sm:w-56 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
         />
         <select
           value={successFilter}
@@ -126,7 +126,7 @@ export default function AuditLogsPage() {
             setSuccessFilter(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="px-3 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
         >
           <option value="">All outcomes</option>
           <option value="true">Success</option>
@@ -134,7 +134,7 @@ export default function AuditLogsPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -147,31 +147,31 @@ export default function AuditLogsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       When
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       Actor
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       Action
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">
                       Path
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       Result
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((entry) => (
                     <tr
                       key={entry._id}
-                      className="hover:bg-slate-50/50 transition-colors"
+                      className="hover:bg-admin-hover transition-colors"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-admin-muted">
                         {new Date(entry.createdAt).toLocaleString("en-IN", {
                           day: "numeric",
                           month: "short",
@@ -182,33 +182,33 @@ export default function AuditLogsPage() {
                         })}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900 truncate max-w-[12rem]">
+                        <p className="font-medium text-admin-heading truncate max-w-[12rem]">
                           {entry.actorEmail || entry.actorUserId}
                         </p>
-                        <p className="text-xs text-slate-400 capitalize">
+                        <p className="text-xs text-admin-faint capitalize">
                           {entry.actorRole.replace(/_/g, " ")}
                         </p>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-slate-700 font-mono">
+                          <span className="inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded bg-admin-subtle text-admin-body font-mono">
                             {entry.method}
                           </span>
-                          <span className="text-slate-800">{entry.resource}</span>
+                          <span className="text-admin-body">{entry.resource}</span>
                           {entry.resourceId && (
-                            <span className="text-xs font-mono text-slate-400 truncate max-w-[8rem]">
+                            <span className="text-xs font-mono text-admin-faint truncate max-w-[8rem]">
                               {entry.resourceId}
                             </span>
                           )}
                         </div>
                         {entry.message && (
-                          <p className="text-xs text-slate-500 mt-1 truncate max-w-xs">
+                          <p className="text-xs text-admin-muted mt-1 truncate max-w-xs">
                             {entry.message}
                           </p>
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-xs font-mono text-slate-500 break-all">
+                        <span className="text-xs font-mono text-admin-muted break-all">
                           {entry.path}
                         </span>
                       </td>
@@ -217,7 +217,7 @@ export default function AuditLogsPage() {
                           <StatusBadge
                             status={entry.success ? "active" : "cancelled"}
                           />
-                          <span className="text-xs text-slate-400 font-mono">
+                          <span className="text-xs text-admin-faint font-mono">
                             {entry.statusCode}
                           </span>
                         </div>
@@ -227,7 +227,7 @@ export default function AuditLogsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination
                 page={data.page}
                 totalPages={data.totalPages}

@@ -244,7 +244,7 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
   if (fetching) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-slate-200 border-t-gray-900 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-admin-line border-t-gray-900 rounded-full animate-spin" />
       </div>
     );
   }
@@ -252,50 +252,50 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       {error && (
-        <div className="p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">{error}</div>
+        <div className="p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-4">Category Details</h2>
+      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+        <h2 className="text-base font-semibold text-admin-heading mb-4">Category Details</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Name</label>
+            <label className="block text-sm font-medium text-admin-body mb-1.5">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
               placeholder="Category name"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Slug</label>
+            <label className="block text-sm font-medium text-admin-body mb-1.5">Slug</label>
             <input
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
               placeholder="category-slug"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
+            <label className="block text-sm font-medium text-admin-body mb-1.5">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-y"
+              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus resize-y"
               placeholder="Optional description..."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Parent Category</label>
+            <label className="block text-sm font-medium text-admin-body mb-1.5">Parent Category</label>
             <select
               value={parent}
               onChange={(e) => setParent(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface"
             >
               <option value="">None (Top-level)</option>
               {categories.map((c) => (
@@ -308,19 +308,19 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
               type="checkbox"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-gray-900 focus:ring-gray-400"
+              className="w-4 h-4 rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
             />
-            <span className="text-sm text-slate-700">Active</span>
+            <span className="text-sm text-admin-body">Active</span>
           </label>
         </div>
       </div>
 
       {/* Category Image */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-4">Category Image</h2>
+      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+        <h2 className="text-base font-semibold text-admin-heading mb-4">Category Image</h2>
         <div className="flex items-start gap-4">
           {image ? (
-            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 group">
+            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-admin-line group">
               <Image
                 src={image.url}
                 alt={name || "Category image"}
@@ -331,7 +331,7 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-slate-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 w-6 h-6 bg-admin-surface/90 rounded-full flex items-center justify-center text-admin-muted hover:text-admin-danger opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -339,7 +339,7 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
               </button>
             </div>
           ) : (
-            <label className="w-32 h-32 rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-slate-300 transition-colors">
+            <label className="w-32 h-32 rounded-lg border-2 border-dashed border-admin-line flex flex-col items-center justify-center cursor-pointer hover:border-admin-line-strong transition-colors">
               <input
                 type="file"
                 accept="image/*"
@@ -348,33 +348,33 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
                 disabled={uploading}
               />
               {uploading ? (
-                <div className="w-5 h-5 border-2 border-slate-200 border-t-gray-900 rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-admin-line border-t-gray-900 rounded-full animate-spin" />
               ) : (
                 <>
-                  <svg className="w-6 h-6 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-admin-faint mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="text-xs text-slate-400">Upload</span>
+                  <span className="text-xs text-admin-faint">Upload</span>
                 </>
               )}
             </label>
           )}
         </div>
-        <p className="text-xs text-slate-400 mt-2">Recommended: square image, at least 256x256px</p>
+        <p className="text-xs text-admin-faint mt-2">Recommended: square image, at least 256x256px</p>
       </div>
 
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={loading}
-          className="px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 transition-colors"
+          className="px-5 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
         >
           {loading ? "Saving..." : isEdit ? "Update Category" : "Create Category"}
         </button>
         <button
           type="button"
           onClick={handleCancel}
-          className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+          className="px-5 py-2.5 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover transition-colors"
         >
           Cancel
         </button>

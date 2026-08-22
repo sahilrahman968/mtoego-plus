@@ -40,7 +40,7 @@ export const UPLOAD_CONFIG = {
 // Clients send a folder *key*, never a raw path, so uploads can't escape the
 // folders we manage. Resolved at call time so the root follows NODE_ENV.
 
-export type UploadFolderKey = "products" | "categories";
+export type UploadFolderKey = "products" | "categories" | "sales";
 
 export function resolveUploadFolder(
   key?: string | null,
@@ -49,6 +49,8 @@ export function resolveUploadFolder(
   switch (key) {
     case "categories":
       return `${env.CLOUDINARY_ROOT_FOLDER}/categories`;
+    case "sales":
+      return `${env.CLOUDINARY_ROOT_FOLDER}/sales`;
     case "products": {
       const safeSlug = productSlug ? sanitizePublicId(productSlug) : "";
       return safeSlug

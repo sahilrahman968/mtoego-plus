@@ -28,24 +28,24 @@ export default function AnalyticsTable<T>({
   rowKey,
 }: AnalyticsTableProps<T>) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-visible">
-      <div className="px-5 py-4 border-b border-slate-100 overflow-visible">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+    <div className="bg-admin-surface rounded-xl border border-admin-line overflow-visible">
+      <div className="px-5 py-4 border-b border-admin-line overflow-visible">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-admin-heading">
           {title}
           {info && <InfoTooltip text={info} />}
         </h3>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-sm text-slate-500 text-center">{emptyMessage}</p>
+        <p className="px-5 py-8 text-sm text-admin-muted text-center">{emptyMessage}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/80">
+              <tr className="border-b border-admin-line bg-admin-subtle/80">
                 {columns.map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-2.5 font-medium text-slate-500 ${
+                    className={`px-4 py-2.5 font-medium text-admin-muted ${
                       col.align === "right" ? "text-right" : "text-left"
                     }`}
                   >
@@ -56,11 +56,11 @@ export default function AnalyticsTable<T>({
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={rowKey(row)} className="border-b border-slate-50 last:border-0">
+                <tr key={rowKey(row)} className="border-b border-admin-line last:border-0">
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`px-4 py-2.5 text-slate-800 ${
+                      className={`px-4 py-2.5 text-admin-body ${
                         col.align === "right" ? "text-right" : "text-left"
                       }`}
                     >
@@ -87,7 +87,7 @@ export function ProductLink({
   return (
     <Link
       href={`/admin/products/${id}`}
-      className="text-slate-900 hover:underline font-medium"
+      className="text-admin-heading hover:underline font-medium"
     >
       {label}
     </Link>
@@ -104,7 +104,7 @@ export function OrderLink({
   return (
     <Link
       href={`/admin/orders/${id}`}
-      className="text-slate-900 hover:underline font-medium"
+      className="text-admin-heading hover:underline font-medium"
     >
       {label}
     </Link>

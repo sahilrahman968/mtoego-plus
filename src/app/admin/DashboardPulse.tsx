@@ -70,19 +70,19 @@ export default function DashboardPulse() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <PeriodToggle value={selection} onChange={setSelection} />
           {loading && (
-            <span className="text-xs text-slate-400">Updating…</span>
+            <span className="text-xs text-admin-faint">Updating…</span>
           )}
         </div>
         <Link
           href="/admin/analytics"
-          className="text-sm font-medium text-slate-900 hover:underline"
+          className="text-sm font-medium text-admin-heading hover:underline"
         >
           View full analytics →
         </Link>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">
+        <div className="mb-4 p-3 bg-admin-subtle border border-admin-line rounded-lg text-sm text-admin-muted">
           {error}
         </div>
       )}
@@ -91,7 +91,6 @@ export default function DashboardPulse() {
         <StatsCard
           title="Revenue"
           value={metrics ? formatCurrency(metrics.revenue.value) : "—"}
-          color="emerald"
           trend={metrics ? trendFromDelta(metrics.revenue.deltaPct) : undefined}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +101,6 @@ export default function DashboardPulse() {
         <StatsCard
           title="Orders"
           value={metrics ? metrics.orders.value.toLocaleString() : "—"}
-          color="indigo"
           trend={metrics ? trendFromDelta(metrics.orders.deltaPct) : undefined}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +111,6 @@ export default function DashboardPulse() {
         <StatsCard
           title="AOV"
           value={metrics ? formatCurrency(metrics.aov.value) : "—"}
-          color="amber"
           trend={metrics ? trendFromDelta(metrics.aov.deltaPct) : undefined}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +121,6 @@ export default function DashboardPulse() {
         <StatsCard
           title="Payment success"
           value={metrics ? `${metrics.paymentSuccessPct.value.toFixed(1)}%` : "—"}
-          color="rose"
           trend={
             metrics
               ? trendFromDelta(metrics.paymentSuccessPct.deltaPct)
@@ -139,7 +135,6 @@ export default function DashboardPulse() {
         <StatsCard
           title="Abandoned carts"
           value={metrics ? formatCurrency(metrics.abandonedCart.value) : "—"}
-          color="rose"
           trend={
             metrics
               ? {
@@ -157,7 +152,6 @@ export default function DashboardPulse() {
         <StatsCard
           title="Low-stock SKUs"
           value={metrics ? metrics.lowStockCount : "—"}
-          color="amber"
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

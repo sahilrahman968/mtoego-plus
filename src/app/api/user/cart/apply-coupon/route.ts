@@ -55,8 +55,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Check minimum order value ────────────────────────────────────────
-    // Calculate current cart subtotal
+    const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
     let subtotal = 0;
+    let saleBlocksCoupons = false;
     for (const item of cart.items) {
       const product = await Product.findById(item.product);
       if (product && product.isActive) {
@@ -64,9 +66,21 @@ export async function POST(request: NextRequest) {
           (v) => v._id.toString() === item.variant.toString() && v.isActive
         );
         if (variant) {
-          subtotal += variant.price * item.quantity;
+          const priced = resolveUnitPrice(
+            saleIndex,
+            product._id.toString(),
+            variant.price
+          );
+          subtotal += priced.price * item.quantity;
+          if (priced.offer && !priced.offer.campaign.allowCoupons) {
+            saleBlocksCoupons = true;
+          }
         }
       }
+    }
+
+    if (saleBlocksCoupons) {
+      return errorResponse("This sale cannot be combined with a coupon", 400);
     }
 
     if (subtotal < coupon.minOrderValue) {

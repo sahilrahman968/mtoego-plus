@@ -39,6 +39,10 @@ export default function CartClient() {
     [items]
   );
   const hasUnavailableItems = availableItems.length < items.length;
+  const hasOutOfStockItems = availableItems.some((item) => {
+    const variant = item.product?.variants?.find((v) => v._id === item.variant);
+    return !!variant && variant.stock <= 0;
+  });
 
   const summary = useMemo(() => {
     const lineItems = availableItems.map((item) => {
@@ -170,9 +174,10 @@ export default function CartClient() {
 
   return (
     <div className="mx-auto max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
-      {hasUnavailableItems && (
+      {(hasUnavailableItems || hasOutOfStockItems) && (
         <div className="mb-4 border border-danger/40 bg-danger/10 px-4 py-3 text-sm leading-relaxed text-danger">
-          Some items in your cart are no longer available. Remove them to continue checkout.
+          Some items in your cart are unavailable or out of stock. Remove them to
+          continue checkout.
         </div>
       )}
 
@@ -183,6 +188,7 @@ export default function CartClient() {
             const unavailable = isProductUnavailable(item.product);
             const product = item.product;
             const variant = product?.variants?.find((v) => v._id === item.variant);
+            const outOfStock = !unavailable && !!variant && variant.stock <= 0;
             const price = variant?.price || item.priceAtAdd;
             const displayPrice = priceInclGst(price, variant?.gst);
             const isUpdating = updatingItems.has(item._id);
@@ -249,7 +255,7 @@ export default function CartClient() {
                   )}
                   {/* Quantity + Remove */}
                   <div className="mt-2 flex items-center gap-4">
-                    {!unavailable && (
+                    {!unavailable && !outOfStock && (
                       <div className="inline-flex items-center border border-border bg-black/35">
                         <button
                           onClick={() =>
@@ -285,8 +291,14 @@ export default function CartClient() {
                     </button>
                   </div>
                   {!unavailable && (
-                    <p className="price mt-2 text-sm font-bold text-foreground sm:hidden">
-                      {formatPrice(displayPrice * item.quantity)}
+                    <p
+                      className={`price mt-2 text-sm sm:hidden ${
+                        outOfStock ? "font-normal text-danger" : "font-bold text-foreground"
+                      }`}
+                    >
+                      {outOfStock
+                        ? "Out of stock"
+                        : formatPrice(displayPrice * item.quantity)}
                     </p>
                   )}
                 </div>
@@ -294,10 +306,18 @@ export default function CartClient() {
                 {/* Line total */}
                 {!unavailable && (
                   <div className="hidden shrink-0 text-right sm:block">
-                    <p className="price text-base font-bold text-foreground">
-                      {formatPrice(displayPrice * item.quantity)}
+                    <p
+                      className={`price text-base ${
+                        outOfStock ? "font-normal text-danger" : "font-bold text-foreground"
+                      }`}
+                    >
+                      {outOfStock
+                        ? "Out of stock"
+                        : formatPrice(displayPrice * item.quantity)}
                     </p>
-                    <p className="eyebrow-xs mt-1 text-muted">incl. GST</p>
+                    {!outOfStock && (
+                      <p className="eyebrow-xs mt-1 text-muted">incl. GST</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -388,7 +408,9 @@ export default function CartClient() {
               </div>
             )}
 
-            {availableItems.length > 0 && !hasUnavailableItems ? (
+            {availableItems.length > 0 &&
+            !hasUnavailableItems &&
+            !hasOutOfStockItems ? (
               <Link
                 href="/checkout"
                 className="btn-text mt-5 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark"

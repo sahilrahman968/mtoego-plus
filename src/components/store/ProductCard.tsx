@@ -5,7 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart, ShoppingCart } from "lucide-react";
-import { formatPrice, getProductImage, getDiscountPercent } from "@/lib/utils";
+import {
+  formatPrice,
+  getProductImage,
+  getDiscountPercent,
+  isProductOutOfStock,
+} from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
 import { addToWishlist, type ProductData } from "@/lib/store-api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +22,7 @@ export type ProductCardProduct = Pick<
   ProductData,
   "_id" | "title" | "slug" | "images" | "variants"
 > &
-  Partial<Pick<ProductData, "category" | "tags" | "isFeatured" | "createdAt">>;
+  Partial<Pick<ProductData, "category" | "tags" | "isFeatured" | "createdAt" | "sale">>;
 
 interface ProductCardProps {
   product: ProductCardProduct;
@@ -28,8 +33,10 @@ interface ProductCardProps {
   unavailable?: boolean;
   busy?: boolean;
   status?: { label: string; tone: "success" | "danger" };
-  /** When true, drops the image frame border (home merchandising sections). */
+  /** When true, drops the card border. */
   borderless?: boolean;
+  /** Overrides the auto-derived corner badge. Pass `null` to hide it. */
+  badgeLabel?: string | null;
 }
 
 export default function ProductCard({
@@ -42,6 +49,7 @@ export default function ProductCard({
   busy = false,
   status,
   borderless = false,
+  badgeLabel,
 }: ProductCardProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
@@ -66,14 +74,17 @@ export default function ProductCard({
   const isNewDrop =
     Number.isFinite(createdAtTs) &&
     Date.now() - createdAtTs < 1000 * 60 * 60 * 24 * 21;
-  const tagText =
+  const derivedTagText =
+    product.sale?.badgeLabel ||
     product.tags?.find((t) => /best|seller|new/i.test(t)) ||
     (product.isFeatured ? "Best Seller" : isNewDrop ? "New" : "");
+  const tagText = badgeLabel === undefined ? derivedTagText : badgeLabel || "";
   const formattedTagText = tagText ? tagText.toUpperCase() : "";
   const href = `/products/${product.slug}`;
   const imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw";
   const imageAlt = product.images?.[0]?.alt || product.title;
   const firstInStockVariant = activeVariants.find((v) => v.stock > 0);
+  const outOfStock = isProductOutOfStock(product);
   const cartDisabled =
     addToCartDisabled || unavailable || !firstInStockVariant || actionBusy;
   const showFilledHeart = onWishlistToggle ? isWishlisted : wishlisted;
@@ -132,14 +143,10 @@ export default function ProductCard({
   return (
     <div
       className={`group relative overflow-hidden bg-transparent ${
-        busy ? "pointer-events-none opacity-50" : ""
-      }`}
+        borderless ? "" : "border border-border"
+      } ${busy ? "pointer-events-none opacity-50" : ""}`}
     >
-      <div
-        className={`relative aspect-[1/1.02] overflow-hidden bg-black/65 ${
-          borderless ? "" : "border border-border"
-        }`}
-      >
+      <div className="relative aspect-[1/1.02] overflow-hidden border-b border-border bg-black/65">
         {unavailable ? (
           <div className="absolute inset-0">
             <Image
@@ -204,7 +211,7 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="pt-3">
+      <div className="px-3 pb-3 pt-3">
         {unavailable ? (
           <h3 className="line-clamp-2 text-xs font-bold uppercase leading-snug text-muted sm:text-[13px]">
             {product.title}
@@ -220,16 +227,24 @@ export default function ProductCard({
         <div className="mt-2 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <p className="price text-sm font-bold text-foreground">
-                {unavailable ? "—" : formatPrice(lowestIncl)}
+              <p
+                className={`price text-sm ${
+                  outOfStock ? "font-normal text-danger" : "font-bold text-foreground"
+                }`}
+              >
+                {unavailable
+                  ? "—"
+                  : outOfStock
+                    ? "Out of stock"
+                    : formatPrice(lowestIncl)}
               </p>
-              {!unavailable && highestCompareIncl > lowestIncl && (
+              {!unavailable && !outOfStock && highestCompareIncl > lowestIncl && (
                 <p className="price text-sm text-muted line-through">
                   {formatPrice(highestCompareIncl)}
                 </p>
               )}
             </div>
-            {status && (
+            {status && !(outOfStock && status.label.toLowerCase() === "out of stock") && (
               <p
                 className={`eyebrow-xs mt-1 line-clamp-1 ${
                   status.tone === "danger" ? "text-danger" : "text-success"
@@ -239,7 +254,7 @@ export default function ProductCard({
               </p>
             )}
           </div>
-          {!unavailable && discount > 0 && (
+          {!unavailable && !outOfStock && discount > 0 && (
             <p className="price shrink-0 text-sm tabular text-primary">
               -{discount}%
             </p>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { fetchNavSales } from "@/lib/store-api";
 
 export default function Header() {
   const { isAuthenticated, logout } = useAuth();
@@ -25,7 +26,18 @@ export default function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [navSale, setNavSale] = useState<{ title: string; slug: string } | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchNavSales()
+      .then((res) => {
+        if (res.success && res.data?.items?.length) {
+          setNavSale(res.data.items[0]);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -64,7 +76,8 @@ export default function Header() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   // Pages with a full-bleed background image let content run under the header.
-  const isFullBleed = pathname === "/" || pathname === "/login";
+  const isFullBleed =
+    pathname === "/" || pathname === "/login" || /^\/sale\/[^/]+$/.test(pathname);
 
   return (
     <header
@@ -107,6 +120,14 @@ export default function Header() {
             >
               Products
             </Link>
+            {navSale ? (
+              <Link
+                href={`/sale/${navSale.slug}`}
+                className={`eyebrow transition-colors ${isActive("/sale") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
+              >
+                Sale
+              </Link>
+            ) : null}
           </nav>
 
           <div className="flex items-center gap-3 sm:gap-4">
@@ -241,6 +262,7 @@ export default function Header() {
                   {[
                     { href: "/categories", label: "Categories" },
                     { href: "/products", label: "Products" },
+                    ...(navSale ? [{ href: `/sale/${navSale.slug}`, label: "Sale" }] : []),
                     { href: "/wishlist", label: "Wishlist" },
                     { href: "/search", label: "Search" },
                     { href: "/cart", label: "Cart" },

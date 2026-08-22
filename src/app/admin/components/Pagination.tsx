@@ -24,28 +24,28 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
 
   return (
     <div className="flex items-center justify-between px-1 py-3">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-admin-muted">
         Page {page} of {totalPages}
       </p>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-2.5 py-1.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1.5 text-sm text-admin-muted bg-admin-surface border border-admin-line rounded-lg hover:bg-admin-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Prev
         </button>
         {pages.map((p, i) =>
           p === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-slate-400">...</span>
+            <span key={`ellipsis-${i}`} className="px-2 text-admin-faint">...</span>
           ) : (
             <button
               key={p}
               onClick={() => onPageChange(p)}
               className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                 p === page
-                  ? "bg-gray-900 text-white font-medium"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-admin-primary text-white font-medium"
+                  : "text-admin-muted hover:bg-admin-hover"
               }`}
             >
               {p}
@@ -55,7 +55,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-2.5 py-1.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1.5 text-sm text-admin-muted bg-admin-surface border border-admin-line rounded-lg hover:bg-admin-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Next
         </button>

@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { chart, chartTooltipStyle } from "./chartTheme";
 
 interface ChartData {
   month: string;
@@ -28,11 +29,11 @@ function formatCurrency(value: number): string {
 
 export default function RevenueChart({ data }: RevenueChartProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
+    <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">Revenue Overview</h3>
-          <p className="text-sm text-slate-500">Monthly revenue for the last 12 months</p>
+          <h3 className="text-base font-semibold text-admin-heading">Revenue Overview</h3>
+          <p className="text-sm text-admin-muted">Monthly revenue for the last 12 months</p>
         </div>
       </div>
       <div className="h-72">
@@ -40,43 +41,37 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#374151" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#374151" stopOpacity={0} />
+                <stop offset="0%" stopColor={chart.series} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={chart.series} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              tick={{ fill: chart.axis, fontSize: 12 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              tick={{ fill: chart.axis, fontSize: 12 }}
               tickFormatter={formatCurrency}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#fff",
-                border: "1px solid #E5E7EB",
-                borderRadius: "0.5rem",
-                boxShadow: "0 4px 6px -1px rgba(0,0,0,.1)",
-                fontSize: "0.875rem",
-              }}
+              contentStyle={chartTooltipStyle}
               formatter={(value) => {
                 const numericValue = Array.isArray(value)
                   ? Number(value[0] ?? 0)
                   : Number(value ?? 0);
                 return [`₹${numericValue.toLocaleString("en-IN")}`, "Revenue"];
               }}
-              labelStyle={{ color: "#4B5563", fontWeight: 600 }}
+              labelStyle={{ color: chart.series, fontWeight: 600 }}
             />
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="#374151"
+              stroke={chart.series}
               strokeWidth={2}
               fill="url(#revenueGradient)"
             />

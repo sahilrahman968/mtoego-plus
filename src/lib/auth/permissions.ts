@@ -46,6 +46,13 @@ export const PERMISSIONS = [
   "coupons.update",
   "coupons.delete",
 
+  // Sales
+  "sales.list",
+  "sales.view",
+  "sales.create",
+  "sales.update",
+  "sales.delete",
+
   // Customisation requests
   "callback_requests.list",
   "callback_requests.update",
@@ -248,6 +255,37 @@ export const PERMISSION_CATALOG: PermissionMeta[] = [
   },
 
   {
+    key: "sales.list",
+    label: "List sales",
+    description: "Browse sale campaigns",
+    group: "Sales",
+  },
+  {
+    key: "sales.view",
+    label: "View sale details",
+    description: "Open a sale campaign and its performance",
+    group: "Sales",
+  },
+  {
+    key: "sales.create",
+    label: "Create sales",
+    description: "Launch new sale campaigns",
+    group: "Sales",
+  },
+  {
+    key: "sales.update",
+    label: "Update sales",
+    description: "Edit sale campaigns, products, and schedule",
+    group: "Sales",
+  },
+  {
+    key: "sales.delete",
+    label: "Delete sales",
+    description: "Permanently remove sale campaigns",
+    group: "Sales",
+  },
+
+  {
     key: "callback_requests.list",
     label: "List requests",
     description: "Browse customisation requests",
@@ -307,6 +345,8 @@ export const LEGACY_PERMISSION_MAP: Record<string, Permission[]> = {
   "reviews.write": ["reviews.moderate"],
   "coupons.read": ["coupons.list", "coupons.view"],
   "coupons.write": ["coupons.create", "coupons.update"],
+  "sales.read": ["sales.list", "sales.view"],
+  "sales.write": ["sales.create", "sales.update"],
   "callback_requests.read": ["callback_requests.list"],
   "callback_requests.write": ["callback_requests.update"],
   "upload.write": ["media.upload", "media.rename", "media.delete"],
@@ -378,6 +418,7 @@ export const NAV_PERMISSIONS: Record<string, Permission | Permission[]> = {
   "/admin/reviews": "reviews.list",
   "/admin/callback-requests": "callback_requests.list",
   "/admin/coupons": "coupons.list",
+  "/admin/sales": "sales.list",
 };
 
 /** Any role other than customer can access the admin panel (subject to ACL). */

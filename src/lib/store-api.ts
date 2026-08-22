@@ -1,3 +1,5 @@
+import { type BannerCtaPosition } from "@/lib/banner-cta";
+
 // Client-side API helpers for the storefront
 
 interface ApiResponse<T = unknown> {
@@ -58,6 +60,59 @@ export async function fetchProducts(params: ProductListParams = {}) {
 
 export async function fetchProduct(slug: string) {
   return apiFetch<ProductData>(`/api/products/${slug}`);
+}
+
+export interface SaleCampaignPublic {
+  _id: string;
+  title: string;
+  slug: string;
+  subtitle?: string;
+  description?: string;
+  badgeLabel: string;
+  homeHeadline: string;
+  bannerCtaLabel: string;
+  bannerCtaHref: string;
+  bannerCtaPosition: BannerCtaPosition;
+  seoTitle?: string;
+  seoDescription?: string;
+  banner: { url: string; publicId: string; alt?: string } | null;
+  startsAt: string;
+  endsAt: string;
+  showOnHome: boolean;
+  showInNav: boolean;
+  allowCoupons: boolean;
+  itemCount: number;
+  status: "paused" | "scheduled" | "live" | "ended";
+}
+
+export async function fetchHomeSale() {
+  return apiFetch<{
+    campaign: SaleCampaignPublic;
+    products: ProductData[];
+  } | null>("/api/sales?view=home");
+}
+
+export async function fetchNavSales() {
+  return apiFetch<{ items: { title: string; slug: string; badgeLabel: string; endsAt: string }[] }>(
+    "/api/sales?view=nav"
+  );
+}
+
+export async function fetchSales() {
+  return apiFetch<{ items: SaleCampaignPublic[] }>("/api/sales");
+}
+
+export async function fetchSale(slug: string) {
+  return apiFetch<{ campaign: SaleCampaignPublic; products: ProductData[] }>(
+    `/api/sales/${slug}`
+  );
+}
+
+export async function trackSaleView(slug: string) {
+  return apiFetch<null>(`/api/sales/${slug}/track`, {
+    method: "POST",
+    body: JSON.stringify({ event: "view" }),
+  });
 }
 
 export async function fetchProductReviews(
@@ -362,6 +417,13 @@ export interface ProductData {
   priceRange?: { min: number; max: number } | null;
   createdAt: string;
   updatedAt: string;
+  sale?: {
+    campaignId: string;
+    slug: string;
+    title: string;
+    endsAt: string;
+    badgeLabel: string;
+  };
 }
 
 export interface ProductReviewData {

@@ -219,8 +219,8 @@ export default function OrderDetailPage({
   if (!order) {
     return (
       <div className="text-center py-20">
-        <p className="text-slate-500">Order not found</p>
-        <button onClick={() => router.push("/admin/orders")} className="mt-4 text-gray-900 hover:underline text-sm">
+        <p className="text-admin-muted">Order not found</p>
+        <button onClick={() => router.push("/admin/orders")} className="mt-4 text-admin-heading hover:underline text-sm">
           Back to orders
         </button>
       </div>
@@ -237,18 +237,18 @@ export default function OrderDetailPage({
       />
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">{error}</div>
+        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Items */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-900">Order Items</h3>
+          <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
+            <div className="px-5 py-4 border-b border-admin-line">
+              <h3 className="text-sm font-semibold text-admin-heading">Order Items</h3>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-admin-line">
               {order.items.map((item, i) => {
                 const gst = typeof item.gst === "number" ? item.gst : 18;
                 const unitIncl = Math.round(item.price * (1 + gst / 100) * 100) / 100;
@@ -256,7 +256,7 @@ export default function OrderDetailPage({
                 return (
                 <div key={i} className="px-5 py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-admin-line bg-admin-subtle">
                       <Image
                         src={getProductImage(item.product?.images)}
                         alt={item.title}
@@ -266,19 +266,19 @@ export default function OrderDetailPage({
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{item.title}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm font-medium text-admin-heading truncate">{item.title}</p>
+                      <p className="text-xs text-admin-muted">
                         {item.variantLabel && <span>{item.variantLabel} · </span>}
                         SKU: {item.sku} · Qty: {item.quantity} · GST: {gst}%
                       </p>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-medium text-slate-900">₹{lineIncl.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-sm font-medium text-admin-heading">₹{lineIncl.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-admin-faint">
                       ₹{unitIncl.toLocaleString("en-IN")} each (incl. GST)
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-admin-faint">
                       Base ₹{item.price.toLocaleString("en-IN")} + GST
                     </p>
                   </div>
@@ -287,61 +287,61 @@ export default function OrderDetailPage({
               })}
             </div>
             {/* Pricing summary */}
-            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 space-y-1.5">
+            <div className="px-5 py-4 border-t border-admin-line bg-admin-subtle/50 space-y-1.5">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Subtotal (excl. GST)</span>
-                <span className="text-slate-700">₹{order.pricing.subtotal.toLocaleString("en-IN")}</span>
+                <span className="text-admin-muted">Subtotal (excl. GST)</span>
+                <span className="text-admin-body">₹{order.pricing.subtotal.toLocaleString("en-IN")}</span>
               </div>
               {order.pricing.discount > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Discount</span>
-                  <span className="text-gray-700">-₹{order.pricing.discount.toLocaleString("en-IN")}</span>
+                  <span className="text-admin-muted">Discount</span>
+                  <span className="text-admin-body">-₹{order.pricing.discount.toLocaleString("en-IN")}</span>
                 </div>
               )}
               {order.pricing.discount > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Taxable amount</span>
-                  <span className="text-slate-700">₹{order.pricing.subtotalAfterDiscount.toLocaleString("en-IN")}</span>
+                  <span className="text-admin-muted">Taxable amount</span>
+                  <span className="text-admin-body">₹{order.pricing.subtotalAfterDiscount.toLocaleString("en-IN")}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">GST</span>
-                <span className="text-slate-700">₹{order.pricing.totalTax.toLocaleString("en-IN")}</span>
+                <span className="text-admin-muted">GST</span>
+                <span className="text-admin-body">₹{order.pricing.totalTax.toLocaleString("en-IN")}</span>
               </div>
               {order.pricing.cgst > 0 && (
-                <div className="flex justify-between text-xs text-slate-400 pl-2">
+                <div className="flex justify-between text-xs text-admin-faint pl-2">
                   <span>CGST</span>
                   <span>₹{order.pricing.cgst.toLocaleString("en-IN")}</span>
                 </div>
               )}
               {order.pricing.sgst > 0 && (
-                <div className="flex justify-between text-xs text-slate-400 pl-2">
+                <div className="flex justify-between text-xs text-admin-faint pl-2">
                   <span>SGST</span>
                   <span>₹{order.pricing.sgst.toLocaleString("en-IN")}</span>
                 </div>
               )}
               {order.pricing.igst > 0 && (
-                <div className="flex justify-between text-xs text-slate-400 pl-2">
+                <div className="flex justify-between text-xs text-admin-faint pl-2">
                   <span>IGST</span>
                   <span>₹{order.pricing.igst.toLocaleString("en-IN")}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Shipping</span>
-                <span className="text-slate-700">
+                <span className="text-admin-muted">Shipping</span>
+                <span className="text-admin-body">
                   {order.pricing.shippingCost === 0 ? "Free" : `₹${order.pricing.shippingCost.toLocaleString("en-IN")}`}
                 </span>
               </div>
-              <div className="flex justify-between text-sm font-semibold pt-1.5 border-t border-slate-200">
-                <span className="text-slate-900">Grand Total (incl. GST)</span>
-                <span className="text-slate-900">₹{order.pricing.grandTotal.toLocaleString("en-IN")}</span>
+              <div className="flex justify-between text-sm font-semibold pt-1.5 border-t border-admin-line">
+                <span className="text-admin-heading">Grand Total (incl. GST)</span>
+                <span className="text-admin-heading">₹{order.pricing.grandTotal.toLocaleString("en-IN")}</span>
               </div>
             </div>
           </div>
 
           {/* Status History */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-4">Status History</h3>
+          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+            <h3 className="text-sm font-semibold text-admin-heading mb-4">Status History</h3>
             <div className="space-y-3">
               {order.statusHistory.map((entry, i) => {
                 const awb =
@@ -354,32 +354,32 @@ export default function OrderDetailPage({
                 return (
                   <div key={i} className="flex items-start gap-3">
                     <div className="mt-0.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gray-800" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-admin-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={entry.status} />
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-admin-faint">
                           {new Date(entry.timestamp).toLocaleString("en-IN")}
                         </span>
                       </div>
-                      {entry.note && <p className="text-xs text-slate-500 mt-0.5">{entry.note}</p>}
+                      {entry.note && <p className="text-xs text-admin-muted mt-0.5">{entry.note}</p>}
                       {entry.status === "shipped" && (awb || trackUrl) && (
-                        <div className="mt-2 space-y-1.5 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                        <div className="mt-2 space-y-1.5 rounded-lg border border-admin-line bg-admin-subtle px-3 py-2">
                           {awb && (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500 shrink-0">AWB / Tracking</span>
-                              <code className="text-xs font-medium text-slate-800 truncate">
+                              <span className="text-xs text-admin-muted shrink-0">AWB / Tracking</span>
+                              <code className="text-xs font-medium text-admin-body truncate">
                                 {awb}
                               </code>
                               <button
                                 type="button"
                                 onClick={() => copyTrackingNumber(awb)}
-                                className="shrink-0 p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors"
+                                className="shrink-0 p-1 rounded text-admin-faint hover:text-admin-body hover:bg-admin-hover transition-colors"
                                 title="Copy tracking number"
                               >
                                 {copiedTracking === awb ? (
-                                  <Check size={12} className="text-green-600" />
+                                  <Check size={12} className="text-admin-success" />
                                 ) : (
                                   <Copy size={12} />
                                 )}
@@ -388,12 +388,12 @@ export default function OrderDetailPage({
                           )}
                           {trackUrl && (
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-xs text-slate-500 shrink-0">Track</span>
+                              <span className="text-xs text-admin-muted shrink-0">Track</span>
                               <a
                                 href={trackUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-gray-900 hover:underline truncate min-w-0"
+                                className="inline-flex items-center gap-1 text-xs text-admin-heading hover:underline truncate min-w-0"
                               >
                                 <span className="truncate">{trackUrl}</span>
                                 <ExternalLink size={11} className="shrink-0" />
@@ -413,8 +413,8 @@ export default function OrderDetailPage({
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Status + Actions */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Order Status</h3>
+          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+            <h3 className="text-sm font-semibold text-admin-heading mb-3">Order Status</h3>
             <div className="mb-4">
               <StatusBadge status={order.status} className="text-sm" />
             </div>
@@ -422,39 +422,39 @@ export default function OrderDetailPage({
             {allowedTransitions.length > 0 && (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Note (optional)</label>
+                  <label className="block text-xs text-admin-muted mb-1">Note (optional)</label>
                   <input
                     type="text"
                     value={statusNote}
                     onChange={(e) => setStatusNote(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
                     placeholder="Add a note..."
                   />
                 </div>
                 {allowedTransitions.includes("shipped") && (
-                  <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
-                    <p className="text-xs font-medium text-slate-700">
+                  <div className="space-y-2 rounded-lg border border-admin-line bg-admin-subtle/80 p-3">
+                    <p className="text-xs font-medium text-admin-body">
                       Shipping details required to mark as shipped
                     </p>
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">
+                      <label className="block text-xs text-admin-muted mb-1">
                         AWB / Tracking number
                       </label>
                       <input
                         type="text"
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+                        className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
                         placeholder="e.g. BLUEDART123456"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Tracking URL</label>
+                      <label className="block text-xs text-admin-muted mb-1">Tracking URL</label>
                       <input
                         type="url"
                         value={trackingUrl}
                         onChange={(e) => setTrackingUrl(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+                        className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
                         placeholder="https://..."
                       />
                     </div>
@@ -462,12 +462,12 @@ export default function OrderDetailPage({
                 )}
                 {allowedTransitions.includes("cancelled") && (
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Cancel reason</label>
+                    <label className="block text-xs text-admin-muted mb-1">Cancel reason</label>
                     <input
                       type="text"
                       value={cancelReason}
                       onChange={(e) => setCancelReason(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
                       placeholder="Reason for cancellation..."
                     />
                   </div>
@@ -480,8 +480,8 @@ export default function OrderDetailPage({
                       disabled={updating}
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors capitalize ${
                         s === "cancelled" || s === "refunded"
-                          ? "text-gray-600 border border-gray-200 hover:bg-gray-50"
-                          : "text-white bg-gray-900 hover:bg-black"
+                          ? "text-admin-muted border border-admin-line hover:bg-admin-hover"
+                          : "text-white bg-admin-primary hover:bg-admin-primary-hover"
                       }`}
                     >
                       {s === "cancelled" ? "Cancel" : s === "refunded" ? "Refund" : `Mark ${s}`}
@@ -492,32 +492,32 @@ export default function OrderDetailPage({
             )}
 
             {order.cancelReason && (
-              <div className="mt-3 p-2.5 bg-gray-50 rounded-lg">
-                <p className="text-xs font-medium text-gray-700">Cancel Reason</p>
-                <p className="text-xs text-gray-600">{order.cancelReason}</p>
+              <div className="mt-3 p-2.5 bg-admin-subtle rounded-lg">
+                <p className="text-xs font-medium text-admin-body">Cancel Reason</p>
+                <p className="text-xs text-admin-muted">{order.cancelReason}</p>
               </div>
             )}
           </div>
 
           {/* Tracking (shipped / delivered orders) */}
           {(order.status === "shipped" || order.status === "delivered") && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Tracking</h3>
+            <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+              <h3 className="text-sm font-semibold text-admin-heading mb-3">Tracking</h3>
 
               {order.trackingNumber ? (
                 <div className="mb-3 space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <code className="text-sm font-medium text-slate-800 truncate">
+                    <code className="text-sm font-medium text-admin-body truncate">
                       {order.trackingNumber}
                     </code>
                     <button
                       type="button"
                       onClick={() => copyTrackingNumber(order.trackingNumber!)}
-                      className="shrink-0 p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="shrink-0 p-1 rounded text-admin-faint hover:text-admin-body hover:bg-admin-hover transition-colors"
                       title="Copy tracking number"
                     >
                       {copiedTracking === order.trackingNumber ? (
-                        <Check size={13} className="text-green-600" />
+                        <Check size={13} className="text-admin-success" />
                       ) : (
                         <Copy size={13} />
                       )}
@@ -528,7 +528,7 @@ export default function OrderDetailPage({
                       href={order.trackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-gray-900 hover:underline"
+                      className="inline-flex items-center gap-1 text-xs text-admin-heading hover:underline"
                     >
                       Open tracking page
                       <ExternalLink size={11} />
@@ -536,31 +536,31 @@ export default function OrderDetailPage({
                   )}
                 </div>
               ) : (
-                <p className="mb-3 text-xs text-gray-600">
+                <p className="mb-3 text-xs text-admin-muted">
                   No tracking details saved for this order yet.
                 </p>
               )}
 
-              <div className="space-y-2 border-t border-slate-100 pt-3">
+              <div className="space-y-2 border-t border-admin-line pt-3">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">
+                  <label className="block text-xs text-admin-muted mb-1">
                     AWB / Tracking number
                   </label>
                   <input
                     type="text"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
                     placeholder="e.g. BLUEDART123456"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Tracking URL</label>
+                  <label className="block text-xs text-admin-muted mb-1">Tracking URL</label>
                   <input
                     type="url"
                     value={trackingUrl}
                     onChange={(e) => setTrackingUrl(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
                     placeholder="https://..."
                   />
                 </div>
@@ -568,7 +568,7 @@ export default function OrderDetailPage({
                   type="button"
                   onClick={saveTracking}
                   disabled={updating}
-                  className="w-full px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 transition-colors"
+                  className="w-full px-3 py-1.5 text-xs font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
                 >
                   {order.trackingNumber ? "Update tracking" : "Save tracking"}
                 </button>
@@ -577,66 +577,66 @@ export default function OrderDetailPage({
           )}
 
           {/* Customer */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Customer</h3>
-            <p className="text-sm text-slate-700">{order.user?.name || "N/A"}</p>
-            <p className="text-xs text-slate-400">{order.user?.email || ""}</p>
+          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+            <h3 className="text-sm font-semibold text-admin-heading mb-3">Customer</h3>
+            <p className="text-sm text-admin-body">{order.user?.name || "N/A"}</p>
+            <p className="text-xs text-admin-faint">{order.user?.email || ""}</p>
           </div>
 
           {/* Shipping Address */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Shipping Address</h3>
-            <div className="text-sm text-slate-600 space-y-0.5">
-              <p className="font-medium text-slate-700">{order.shippingAddress.name}</p>
+          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+            <h3 className="text-sm font-semibold text-admin-heading mb-3">Shipping Address</h3>
+            <div className="text-sm text-admin-muted space-y-0.5">
+              <p className="font-medium text-admin-body">{order.shippingAddress.name}</p>
               <p>{order.shippingAddress.line1}</p>
               {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
               <p>
                 {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.pincode}
               </p>
-              <p className="text-slate-400">{order.shippingAddress.phone}</p>
+              <p className="text-admin-faint">{order.shippingAddress.phone}</p>
             </div>
           </div>
 
           {/* Payment */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Payment</h3>
+          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+            <h3 className="text-sm font-semibold text-admin-heading mb-3">Payment</h3>
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">Method</span>
-                <span className="text-slate-700 capitalize">{order.payment.method || "N/A"}</span>
+                <span className="text-admin-muted">Method</span>
+                <span className="text-admin-body capitalize">{order.payment.method || "N/A"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Amount</span>
-                <span className="text-slate-700">
+                <span className="text-admin-muted">Amount</span>
+                <span className="text-admin-body">
                   {order.payment.currency} {(order.payment.amountPaid / 100).toLocaleString("en-IN")}
                 </span>
               </div>
               {order.payment.paidAt && (
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Paid at</span>
-                  <span className="text-slate-700 text-xs">
+                  <span className="text-admin-muted">Paid at</span>
+                  <span className="text-admin-body text-xs">
                     {new Date(order.payment.paidAt).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
-              <div className="pt-1.5 mt-1.5 border-t border-slate-100">
-                <p className="text-xs text-slate-400 break-all">ID: {order.payment.razorpayPaymentId || "—"}</p>
+              <div className="pt-1.5 mt-1.5 border-t border-admin-line">
+                <p className="text-xs text-admin-faint break-all">ID: {order.payment.razorpayPaymentId || "—"}</p>
               </div>
             </div>
           </div>
 
           {/* Coupon */}
           {order.coupon && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Coupon Applied</h3>
+            <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+              <h3 className="text-sm font-semibold text-admin-heading mb-3">Coupon Applied</h3>
               <div className="space-y-1 text-sm">
-                <code className="text-sm font-semibold text-gray-900 bg-gray-50 px-2 py-0.5 rounded">
+                <code className="text-sm font-semibold text-admin-heading bg-admin-subtle px-2 py-0.5 rounded">
                   {order.coupon.code}
                 </code>
-                <p className="text-slate-500">
+                <p className="text-admin-muted">
                   {order.coupon.type === "percentage" ? `${order.coupon.value}%` : `₹${order.coupon.value}`} off
                 </p>
-                <p className="text-gray-700 font-medium">
+                <p className="text-admin-body font-medium">
                   -₹{order.coupon.discountAmount.toLocaleString("en-IN")}
                 </p>
               </div>
@@ -644,9 +644,9 @@ export default function OrderDetailPage({
           )}
 
           {order.notes && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-900 mb-2">Notes</h3>
-              <p className="text-sm text-slate-600">{order.notes}</p>
+            <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
+              <h3 className="text-sm font-semibold text-admin-heading mb-2">Notes</h3>
+              <p className="text-sm text-admin-muted">{order.notes}</p>
             </div>
           )}
         </div>

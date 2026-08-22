@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { deductInventoryForOrder } from "@/lib/inventory";
 import { notifyOrderPaid } from "@/lib/order-emails";
+import { recordSalePaymentStats } from "@/lib/sales";
 import Order from "@/models/order.model";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
@@ -177,6 +178,15 @@ async function handlePaymentSuccess(event: RazorpayWebhookEvent) {
           err
         );
       }
+    }
+
+    try {
+      await recordSalePaymentStats(order);
+    } catch (err) {
+      console.error(
+        `[Webhook] Sale stats failed for order ${order.orderNumber}:`,
+        err
+      );
     }
 
     // Clear cart

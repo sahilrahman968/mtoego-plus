@@ -9,55 +9,31 @@ interface StatsCardProps {
     value: string;
     positive: boolean;
   };
-  color: "indigo" | "emerald" | "amber" | "rose";
 }
 
-const colorMap = {
-  indigo: {
-    bg: "bg-gray-100",
-    icon: "text-gray-900",
-    ring: "ring-gray-200",
-  },
-  emerald: {
-    bg: "bg-gray-50",
-    icon: "text-gray-700",
-    ring: "ring-gray-200",
-  },
-  amber: {
-    bg: "bg-gray-100",
-    icon: "text-gray-600",
-    ring: "ring-gray-200",
-  },
-  rose: {
-    bg: "bg-gray-50",
-    icon: "text-gray-500",
-    ring: "ring-gray-200",
-  },
-};
-
-export default function StatsCard({ title, value, icon, info, trend, color }: StatsCardProps) {
-  const colors = colorMap[color];
-
+// The icon chip is deliberately neutral: in a KPI grid, colour should mark the
+// one thing that needs attention (the trend delta), not every tile.
+export default function StatsCard({ title, value, icon, info, trend }: StatsCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow overflow-visible">
+    <div className="bg-admin-surface rounded-xl border border-admin-line p-5 transition-shadow hover:shadow-[0_1px_2px_rgba(22,24,29,0.06),0_8px_24px_-12px_rgba(22,24,29,0.18)] overflow-visible">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-admin-muted">
             <span className="truncate">{title}</span>
             {info && <InfoTooltip text={info} />}
           </p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
+          <p className="mt-2 text-2xl font-bold text-admin-heading">{value}</p>
           {trend && (
             <p
               className={`mt-1 text-xs font-medium ${
-                trend.positive ? "text-emerald-700" : "text-rose-600"
+                trend.positive ? "text-admin-success" : "text-admin-danger"
               }`}
             >
               {trend.value}
             </p>
           )}
         </div>
-        <div className={`flex-shrink-0 p-2.5 rounded-lg ring-1 ${colors.bg} ${colors.icon} ${colors.ring}`}>
+        <div className="flex-shrink-0 p-2.5 rounded-lg ring-1 bg-admin-subtle text-admin-body ring-admin-line">
           {icon}
         </div>
       </div>

@@ -87,7 +87,7 @@ export default function AdminReviewsPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus focus:border-transparent"
         />
         <div className="flex flex-wrap gap-1.5">
           {moderationFilters.map((filter) => (
@@ -100,8 +100,8 @@ export default function AdminReviewsPage() {
               }}
               className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                 status === filter.value
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  ? "bg-admin-primary text-white"
+                  : "bg-admin-surface text-admin-muted border border-admin-line hover:bg-admin-hover"
               }`}
             >
               {filter.label}
@@ -110,7 +110,7 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -123,47 +123,47 @@ export default function AdminReviewsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Product</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">Customer</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Rating</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Comment</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden lg:table-cell">Status</th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Actions</th>
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Product</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">Customer</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Rating</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Comment</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden lg:table-cell">Status</th>
+                    <th className="text-right font-medium text-admin-muted px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((review) => (
-                    <tr key={review._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={review._id} className="hover:bg-admin-hover transition-colors">
                       <td className="px-4 py-3 min-w-44">
                         {review.product?.slug ? (
                           <Link
                             href={`/products/${review.product.slug}`}
-                            className="font-medium text-slate-900 hover:underline"
+                            className="font-medium text-admin-heading hover:underline"
                           >
                             {review.product.title}
                           </Link>
                         ) : (
-                          <span className="font-medium text-slate-900">Deleted product</span>
+                          <span className="font-medium text-admin-heading">Deleted product</span>
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <div className="min-w-0">
-                          <p className="text-slate-700 truncate">{review.user?.name || "Deleted user"}</p>
-                          <p className="text-xs text-slate-400 truncate">{review.user?.email || ""}</p>
+                          <p className="text-admin-body truncate">{review.user?.name || "Deleted user"}</p>
+                          <p className="text-xs text-admin-faint truncate">{review.user?.email || ""}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-800">{review.rating}/5</td>
+                      <td className="px-4 py-3 text-admin-body">{review.rating}/5</td>
                       <td className="px-4 py-3 max-w-md">
-                        <p className="line-clamp-2 text-slate-600">{review.comment}</p>
+                        <p className="line-clamp-2 text-admin-muted">{review.comment}</p>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
                         {review.isHidden ? (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-rose-100 text-rose-700">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-admin-danger-soft text-admin-danger">
                             Hidden
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-admin-success-soft text-admin-success">
                             Visible
                           </span>
                         )}
@@ -174,7 +174,7 @@ export default function AdminReviewsPage() {
                             type="button"
                             disabled={processingId === review._id}
                             onClick={() => handleToggleVisibility(review)}
-                            className="px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-body hover:bg-admin-hover rounded-md transition-colors disabled:opacity-50"
                           >
                             {review.isHidden ? "Unhide" : "Hide"}
                           </button>
@@ -182,7 +182,7 @@ export default function AdminReviewsPage() {
                             type="button"
                             disabled={processingId === review._id}
                             onClick={() => handleDelete(review)}
-                            className="px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded-md transition-colors disabled:opacity-50"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-danger hover:bg-admin-danger-soft rounded-md transition-colors disabled:opacity-50"
                           >
                             Delete
                           </button>
@@ -193,7 +193,7 @@ export default function AdminReviewsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
             </div>
           </>

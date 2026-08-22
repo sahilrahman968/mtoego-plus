@@ -41,12 +41,12 @@ function MetricTile({
   hint?: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4 overflow-visible">
-      <p className="flex items-center gap-1.5 text-xs text-slate-500">
+    <div className="bg-admin-surface rounded-xl border border-admin-line p-4 overflow-visible">
+      <p className="flex items-center gap-1.5 text-xs text-admin-muted">
         {label}
         <InfoTooltip text={info} />
       </p>
-      <p className="text-xl font-bold text-slate-900">{value}</p>
+      <p className="text-xl font-bold text-admin-heading">{value}</p>
       {hint}
     </div>
   );
@@ -282,8 +282,8 @@ export default function AnalyticsClient() {
     <div className="space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-admin-heading">Analytics</h1>
+          <p className="mt-1 text-sm text-admin-muted">
             Growth, intent, ops, and customer insights
           </p>
         </div>
@@ -302,7 +302,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Revenue"
               value={formatCurrency(m.revenue.value)}
-              color="emerald"
               icon={iconBox}
               trend={trendFromDelta(m.revenue.deltaPct)}
               info="Total paid order revenue in the selected period, compared with the previous equal period."
@@ -310,7 +309,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Orders"
               value={m.orders.value.toLocaleString()}
-              color="indigo"
               icon={iconBox}
               trend={trendFromDelta(m.orders.deltaPct)}
               info="Count of paid orders placed in the selected period."
@@ -318,7 +316,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="AOV"
               value={formatCurrency(m.aov.value)}
-              color="amber"
               icon={iconBox}
               trend={trendFromDelta(m.aov.deltaPct)}
               info="Average order value — revenue divided by paid orders in the selected period."
@@ -326,7 +323,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Payment success"
               value={`${m.paymentSuccessPct.value.toFixed(1)}%`}
-              color="rose"
               icon={iconBox}
               trend={trendFromDelta(m.paymentSuccessPct.deltaPct)}
               info="Share of checkout attempts that completed payment successfully (paid vs cancelled unpaid)."
@@ -334,7 +330,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Net after discount"
               value={formatCurrency(m.netAfterDiscount.value)}
-              color="emerald"
               icon={iconBox}
               trend={trendFromDelta(m.netAfterDiscount.deltaPct)}
               info="Merchandise subtotal after discounts on paid orders (before shipping/tax adjustments)."
@@ -342,7 +337,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Pending payment"
               value={formatCurrency(m.pendingRevenue.value)}
-              color="amber"
               icon={iconBox}
               trend={{ value: `${m.pendingRevenue.count} orders`, positive: true }}
               info="Value of orders that are still awaiting payment and have not been cancelled."
@@ -350,7 +344,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Abandoned carts"
               value={formatCurrency(m.abandonedCart.value)}
-              color="rose"
               icon={iconBox}
               trend={{ value: `${m.abandonedCart.count} carts`, positive: false }}
               info="Estimated value of non-empty carts that never converted to a paid order."
@@ -358,14 +351,12 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Low-stock SKUs"
               value={m.lowStockCount}
-              color="amber"
               icon={iconBox}
               info="Number of product variants currently at or below the low-stock threshold."
             />
             <StatsCard
               title="Cancel rate"
               value={`${m.cancelRatePct.value.toFixed(1)}%`}
-              color="rose"
               icon={iconBox}
               trend={trendFromDelta(m.cancelRatePct.deltaPct)}
               info="Percentage of orders that were cancelled during the selected period."
@@ -373,7 +364,6 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Refund rate"
               value={`${m.refundRatePct.value.toFixed(1)}%`}
-              color="rose"
               icon={iconBox}
               trend={trendFromDelta(m.refundRatePct.deltaPct)}
               info="Percentage of paid orders that were refunded during the selected period."
@@ -381,14 +371,12 @@ export default function AnalyticsClient() {
             <StatsCard
               title="Open callbacks"
               value={m.openCallbacks}
-              color="indigo"
               icon={iconBox}
               info="Customisation / callback requests that are still open and need follow-up."
             />
             <StatsCard
               title="Active products"
               value={`${m.products.active} / ${m.products.total}`}
-              color="indigo"
               icon={iconBox}
               info="Active catalog products versus the total product count (active + inactive)."
             />
@@ -505,7 +493,7 @@ export default function AnalyticsClient() {
                     render: (r) => (
                       <div>
                         <p className="font-medium">{r.user.name}</p>
-                        <p className="text-xs text-slate-500">{r.user.email}</p>
+                        <p className="text-xs text-admin-muted">{r.user.email}</p>
                       </div>
                     ),
                   },
@@ -645,7 +633,7 @@ export default function AnalyticsClient() {
                   value={s.medianHours !== null ? `${s.medianHours}h` : "—"}
                   info={info}
                   hint={
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-admin-muted mt-1">
                       median · avg {s.avgHours ?? "—"}h · n={s.sampleSize}
                     </p>
                   }
@@ -656,28 +644,24 @@ export default function AnalyticsClient() {
               <StatsCard
                 title="Cancel rate"
                 value={`${trust.data.cancels.ratePct}%`}
-                color="rose"
                 icon={iconBox}
                 info="Share of orders cancelled in the selected period."
               />
               <StatsCard
                 title="Cancel ₹"
                 value={formatCurrency(trust.data.cancels.revenue)}
-                color="rose"
                 icon={iconBox}
                 info="Estimated revenue lost from cancelled orders in the selected period."
               />
               <StatsCard
                 title="Refund rate"
                 value={`${trust.data.refunds.ratePct}%`}
-                color="amber"
                 icon={iconBox}
                 info="Share of paid orders that were refunded in the selected period."
               />
               <StatsCard
                 title="Avg rating"
                 value={trust.data.reviews.avgRating ?? "—"}
-                color="emerald"
                 icon={iconBox}
                 info="Average product review rating across reviews submitted in the selected period."
                 trend={{
@@ -801,7 +785,6 @@ export default function AnalyticsClient() {
               <StatsCard
                 title="New customer revenue"
                 value={formatCurrency(customers.data.newVsReturning.newCustomers.revenue)}
-                color="emerald"
                 icon={iconBox}
                 info="Revenue from customers whose first paid order falls in the selected period."
                 trend={{
@@ -812,7 +795,6 @@ export default function AnalyticsClient() {
               <StatsCard
                 title="Returning revenue"
                 value={formatCurrency(customers.data.newVsReturning.returningCustomers.revenue)}
-                color="indigo"
                 icon={iconBox}
                 info="Revenue from customers who had at least one prior paid order before this period."
                 trend={{
@@ -823,7 +805,6 @@ export default function AnalyticsClient() {
               <StatsCard
                 title="Signup → purchase"
                 value={`${customers.data.signupToPurchase.conversionPct}%`}
-                color="amber"
                 icon={iconBox}
                 info="Percentage of signed-up customers who placed at least one paid order."
                 trend={{
@@ -836,7 +817,6 @@ export default function AnalyticsClient() {
                 value={
                   customers.data.signupToPurchase.medianDaysToFirstPurchase ?? "—"
                 }
-                color="rose"
                 icon={iconBox}
                 info="Median number of days between signup and a customer’s first paid order."
               />
@@ -869,7 +849,7 @@ export default function AnalyticsClient() {
                     render: (r) => (
                       <div>
                         <p className="font-medium">{r.name}</p>
-                        <p className="text-xs text-slate-500">{r.email}</p>
+                        <p className="text-xs text-admin-muted">{r.email}</p>
                       </div>
                     ),
                   },
@@ -894,7 +874,7 @@ export default function AnalyticsClient() {
                     render: (r) => (
                       <div>
                         <p className="font-medium">{r.name}</p>
-                        <p className="text-xs text-slate-500">{r.email}</p>
+                        <p className="text-xs text-admin-muted">{r.email}</p>
                       </div>
                     ),
                   },
@@ -925,7 +905,7 @@ export default function AnalyticsClient() {
                     render: (r) => (
                       <div>
                         <p className="font-medium">{r.name}</p>
-                        <p className="text-xs text-slate-500">{r.email}</p>
+                        <p className="text-xs text-admin-muted">{r.email}</p>
                       </div>
                     ),
                   },
@@ -938,9 +918,9 @@ export default function AnalyticsClient() {
                   },
                 ]}
               />
-              <div className="bg-white rounded-xl border border-slate-200 overflow-visible">
-                <div className="px-5 py-4 border-b border-slate-100">
-                  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <div className="bg-admin-surface rounded-xl border border-admin-line overflow-visible">
+                <div className="px-5 py-4 border-b border-admin-line">
+                  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-admin-heading">
                     Cohort retention (% with a paid order)
                     <InfoTooltip text="Monthly signup cohorts and the share that placed a paid order in month 0, 1, and 2 after signup." />
                   </h3>
@@ -948,17 +928,17 @@ export default function AnalyticsClient() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/80">
-                        <th className="px-4 py-2.5 text-left font-medium text-slate-500">Cohort</th>
-                        <th className="px-4 py-2.5 text-right font-medium text-slate-500">Size</th>
-                        <th className="px-4 py-2.5 text-right font-medium text-slate-500">M0</th>
-                        <th className="px-4 py-2.5 text-right font-medium text-slate-500">M1</th>
-                        <th className="px-4 py-2.5 text-right font-medium text-slate-500">M2</th>
+                      <tr className="border-b border-admin-line bg-admin-subtle/80">
+                        <th className="px-4 py-2.5 text-left font-medium text-admin-muted">Cohort</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-admin-muted">Size</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-admin-muted">M0</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-admin-muted">M1</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-admin-muted">M2</th>
                       </tr>
                     </thead>
                     <tbody>
                       {customers.data.cohorts.map((c) => (
-                        <tr key={c.cohort} className="border-b border-slate-50 last:border-0">
+                        <tr key={c.cohort} className="border-b border-admin-line last:border-0">
                           <td className="px-4 py-2.5">{c.cohort}</td>
                           <td className="px-4 py-2.5 text-right">{c.size}</td>
                           <td className="px-4 py-2.5 text-right">{c.m0 ?? "—"}{c.m0 !== null ? "%" : ""}</td>

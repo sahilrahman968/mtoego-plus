@@ -31,6 +31,21 @@ export function isProductUnavailable(
   return !product || product.isActive === false;
 }
 
+/** True when none of a product's active variants can be purchased */
+export function isProductOutOfStock(
+  product:
+    | { variants?: { stock: number; isActive?: boolean }[] }
+    | null
+    | undefined
+): boolean {
+  return (
+    !!product &&
+    !product.variants?.some(
+      (variant) => variant.isActive !== false && variant.stock > 0
+    )
+  );
+}
+
 /** Truncate text with ellipsis */
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;

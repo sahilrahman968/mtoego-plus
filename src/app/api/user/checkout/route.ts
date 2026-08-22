@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
       return errorResponse("Cart is empty", 400);
     }
 
+    const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+
     const validLineItems: {
       product: IProductDocument;
       variantId: string;
@@ -65,6 +68,8 @@ export async function POST(request: NextRequest) {
       title: string;
       variantLabel: string;
       sku: string;
+      saleCampaign?: string;
+      allowCoupons: boolean;
     }[] = [];
 
     for (const item of cart.items) {
@@ -95,16 +100,23 @@ export async function POST(request: NextRequest) {
       }
 
       const label = [variant.color, variant.size].filter(Boolean).join(" / ") || "Default";
+      const priced = resolveUnitPrice(
+        saleIndex,
+        product._id.toString(),
+        variant.price
+      );
 
       validLineItems.push({
         product,
         variantId: variant._id.toString(),
-        price: variant.price,
+        price: priced.price,
         gst: typeof variant.gst === "number" ? variant.gst : 18,
         quantity: item.quantity,
         title: product.title,
         variantLabel: label,
         sku: variant.sku,
+        saleCampaign: priced.offer?.campaign.id,
+        allowCoupons: priced.offer ? priced.offer.campaign.allowCoupons : true,
       });
     }
 
@@ -115,6 +127,14 @@ export async function POST(request: NextRequest) {
       maxDiscount: number | null;
       code: string;
     } | null = null;
+
+    if (cart.coupon) {
+      const saleBlocksCoupons = validLineItems.some((li) => !li.allowCoupons);
+      if (saleBlocksCoupons) {
+        cart.coupon = null;
+        await cart.save();
+      }
+    }
 
     if (cart.coupon) {
       const coupon = await Coupon.findById(cart.coupon);
@@ -191,6 +211,7 @@ export async function POST(request: NextRequest) {
         gst: li.gst,
         quantity: li.quantity,
         total: li.price * li.quantity,
+        saleCampaign: li.saleCampaign,
       })),
       shippingAddress: {
         name: shippingAddress.name.trim(),

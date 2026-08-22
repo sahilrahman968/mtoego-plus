@@ -31,7 +31,20 @@ export async function GET(request: NextRequest) {
       return successResponse({ items: [], coupon: null }, "Cart is empty");
     }
 
-    return successResponse(cart, "Cart retrieved");
+    const { applySaleToProduct, loadLiveSaleIndex } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+    const items = (cart.items || []).map((item) => {
+      const product = item.product as unknown;
+      if (product && typeof product === "object" && "_id" in (product as object)) {
+        return {
+          ...item,
+          product: applySaleToProduct(product as never, saleIndex),
+        };
+      }
+      return item;
+    });
+
+    return successResponse({ ...cart, items }, "Cart retrieved");
   } catch (err) {
     console.error("GET /api/user/cart error:", err);
     return errorResponse("Failed to retrieve cart", 500);
@@ -76,6 +89,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { applySaleToProduct, bumpSaleStat, loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+    const priced = resolveUnitPrice(saleIndex, productId, variant.price);
+
     // ── Upsert cart & item ───────────────────────────────────────────────
     let cart = await Cart.findOne({ user: auth.userId });
 
@@ -87,7 +104,7 @@ export async function POST(request: NextRequest) {
             product: productId,
             variant: variantId,
             quantity,
-            priceAtAdd: variant.price,
+            priceAtAdd: priced.price,
           },
         ],
       });
@@ -111,7 +128,7 @@ export async function POST(request: NextRequest) {
           return errorResponse("Quantity cannot exceed 50 per item", 400);
         }
         cart.items[existingIndex].quantity = newQty;
-        cart.items[existingIndex].priceAtAdd = variant.price;
+        cart.items[existingIndex].priceAtAdd = priced.price;
       } else {
         if (cart.items.length >= 100) {
           return errorResponse("Cart cannot have more than 100 items", 400);
@@ -120,12 +137,16 @@ export async function POST(request: NextRequest) {
           product: productId,
           variant: variantId,
           quantity,
-          priceAtAdd: variant.price,
+          priceAtAdd: priced.price,
         } as never);
       }
     }
 
     await cart.save();
+
+    if (priced.offer) {
+      void bumpSaleStat(priced.offer.campaign.id, "addToCarts");
+    }
 
     const populated = await Cart.findById(cart._id)
       .populate({
@@ -138,7 +159,22 @@ export async function POST(request: NextRequest) {
       })
       .lean();
 
-    return successResponse(populated, "Item added to cart", 200);
+    const items = (populated?.items || []).map((item) => {
+      const product = item.product as unknown;
+      if (product && typeof product === "object" && "_id" in (product as object)) {
+        return {
+          ...item,
+          product: applySaleToProduct(product as never, saleIndex),
+        };
+      }
+      return item;
+    });
+
+    return successResponse(
+      populated ? { ...populated, items } : populated,
+      "Item added to cart",
+      200
+    );
   } catch (err) {
     console.error("POST /api/user/cart error:", err);
     return errorResponse("Failed to add item to cart", 500);

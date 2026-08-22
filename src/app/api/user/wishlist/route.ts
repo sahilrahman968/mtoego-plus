@@ -26,7 +26,20 @@ export async function GET(request: NextRequest) {
       return successResponse({ items: [] }, "Wishlist is empty");
     }
 
-    return successResponse(wishlist, "Wishlist retrieved");
+    const { applySaleToProduct, loadLiveSaleIndex } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+    const items = (wishlist.items || []).map((item) => {
+      const product = item.product as unknown;
+      if (product && typeof product === "object" && "_id" in (product as object)) {
+        return {
+          ...item,
+          product: applySaleToProduct(product as never, saleIndex),
+        };
+      }
+      return item;
+    });
+
+    return successResponse({ ...wishlist, items }, "Wishlist retrieved");
   } catch (err) {
     console.error("GET /api/user/wishlist error:", err);
     return errorResponse("Failed to retrieve wishlist", 500);

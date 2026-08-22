@@ -70,8 +70,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     // ── Update quantity & refresh price snapshot ──────────────────────────
+    const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+    const priced = resolveUnitPrice(
+      saleIndex,
+      cartItem.product.toString(),
+      variant.price
+    );
     cart.items[itemIndex].quantity = quantity;
-    cart.items[itemIndex].priceAtAdd = variant.price;
+    cart.items[itemIndex].priceAtAdd = priced.price;
     await cart.save();
 
     const populated = await Cart.findById(cart._id)

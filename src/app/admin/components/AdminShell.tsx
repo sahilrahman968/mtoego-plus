@@ -20,7 +20,7 @@ export default function AdminShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="admin-theme flex h-screen overflow-hidden bg-admin-canvas">
       <Sidebar
         userRole={userRole}
         permissions={permissions}

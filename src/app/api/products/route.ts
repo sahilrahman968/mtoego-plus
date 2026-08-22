@@ -132,8 +132,11 @@ export async function GET(request: NextRequest) {
       Product.countDocuments(filter),
     ]);
 
+    const { applySaleToProducts, loadLiveSaleIndex } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
+
     return successResponse({
-      items: products,
+      items: applySaleToProducts(products as never[], saleIndex),
       total,
       page,
       limit,

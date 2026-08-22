@@ -76,7 +76,7 @@ export default function PeriodToggle({ value, onChange }: PeriodToggleProps) {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-      <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
+      <div className="inline-flex rounded-lg border border-admin-line bg-admin-surface p-0.5">
         {PRESETS.map((opt) => (
           <button
             key={opt.value}
@@ -84,8 +84,8 @@ export default function PeriodToggle({ value, onChange }: PeriodToggleProps) {
             onClick={() => selectPreset(opt.value)}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
               value.period === opt.value
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-admin-primary text-white"
+                : "text-admin-muted hover:text-admin-heading"
             }`}
           >
             {opt.label}
@@ -96,8 +96,8 @@ export default function PeriodToggle({ value, onChange }: PeriodToggleProps) {
           onClick={selectCustom}
           className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
             isCustom
-              ? "bg-slate-900 text-white"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-admin-primary text-white"
+              : "text-admin-muted hover:text-admin-heading"
           }`}
         >
           Custom
@@ -106,7 +106,7 @@ export default function PeriodToggle({ value, onChange }: PeriodToggleProps) {
 
       {isCustom && (
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <label className="flex items-center gap-1.5 text-sm text-admin-muted">
             <span className="sr-only">From</span>
             <input
               type="date"
@@ -114,11 +114,11 @@ export default function PeriodToggle({ value, onChange }: PeriodToggleProps) {
               min={minFrom}
               max={to || maxTo}
               onChange={(e) => updateCustom(e.target.value, to)}
-              className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900"
+              className="rounded-md border border-admin-line bg-admin-surface px-2 py-1.5 text-sm text-admin-heading"
             />
           </label>
-          <span className="text-xs text-slate-400">to</span>
-          <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <span className="text-xs text-admin-faint">to</span>
+          <label className="flex items-center gap-1.5 text-sm text-admin-muted">
             <span className="sr-only">To</span>
             <input
               type="date"
@@ -126,10 +126,10 @@ export default function PeriodToggle({ value, onChange }: PeriodToggleProps) {
               min={from || minFrom}
               max={maxTo}
               onChange={(e) => updateCustom(from, e.target.value)}
-              className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900"
+              className="rounded-md border border-admin-line bg-admin-surface px-2 py-1.5 text-sm text-admin-heading"
             />
           </label>
-          <span className="text-xs text-slate-400">Max {MAX_CUSTOM_DAYS} days</span>
+          <span className="text-xs text-admin-faint">Max {MAX_CUSTOM_DAYS} days</span>
         </div>
       )}
     </div>

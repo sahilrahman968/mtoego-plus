@@ -169,12 +169,12 @@ export default function ProductsPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus focus:border-transparent"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -196,32 +196,32 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       Product
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">
                       Category
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       Price
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden sm:table-cell">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden sm:table-cell">
                       Stock
                     </th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">
                       Status
                     </th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">
+                    <th className="text-right font-medium text-admin-muted px-4 py-3">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((product) => (
                     <tr
                       key={product._id}
-                      className="hover:bg-slate-50/50 transition-colors"
+                      className="hover:bg-admin-hover transition-colors"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -229,12 +229,12 @@ export default function ProductsPage() {
                             <img
                               src={product.images[0].url}
                               alt={product.images[0].alt || product.title}
-                              className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0"
+                              className="w-10 h-10 rounded-lg object-cover bg-admin-subtle flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <div className="w-10 h-10 rounded-lg bg-admin-subtle flex items-center justify-center flex-shrink-0">
                               <svg
-                                className="w-5 h-5 text-slate-300"
+                                className="w-5 h-5 text-admin-faint"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -249,22 +249,22 @@ export default function ProductsPage() {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-slate-900 truncate">
+                            <p className="font-medium text-admin-heading truncate">
                               {product.title}
                             </p>
-                            <p className="text-xs text-slate-400 truncate">
+                            <p className="text-xs text-admin-faint truncate">
                               {product.slug}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-600">
+                        <span className="text-admin-muted">
                           {product.category?.name || "—"}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-slate-900 font-medium">
+                        <span className="text-admin-heading font-medium">
                           {getPriceRange(product.variants)}
                         </span>
                       </td>
@@ -272,8 +272,8 @@ export default function ProductsPage() {
                         <span
                           className={`font-medium ${
                             getTotalStock(product.variants) === 0
-                              ? "text-gray-600"
-                              : "text-slate-600"
+                              ? "text-admin-muted"
+                              : "text-admin-muted"
                           }`}
                         >
                           {getTotalStock(product.variants)}
@@ -288,7 +288,7 @@ export default function ProductsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/admin/products/${product._id}`}
-                            className="px-2.5 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-heading hover:bg-admin-hover rounded-md transition-colors"
                           >
                             Edit
                           </Link>
@@ -299,7 +299,7 @@ export default function ProductsPage() {
                                 setDialogMode("enable");
                                 setErrorMessage(null);
                               }}
-                              className="px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
+                              className="px-2.5 py-1.5 text-xs font-medium text-admin-success hover:bg-admin-success-soft rounded-md transition-colors"
                             >
                               Enable
                             </button>
@@ -310,7 +310,7 @@ export default function ProductsPage() {
                               setDialogMode("delete");
                               setErrorMessage(null);
                             }}
-                            className="px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
+                            className="px-2.5 py-1.5 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md transition-colors"
                           >
                             Delete
                           </button>
@@ -321,7 +321,7 @@ export default function ProductsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination
                 page={data.page}
                 totalPages={data.totalPages}

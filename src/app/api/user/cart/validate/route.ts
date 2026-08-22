@@ -38,8 +38,15 @@ export async function POST(request: NextRequest) {
 
     const errors: string[] = [];
     const warnings: string[] = [];
-    const validLineItems: { price: number; quantity: number; gst: number }[] = [];
+    const validLineItems: {
+      price: number;
+      quantity: number;
+      gst: number;
+      allowCoupons: boolean;
+    }[] = [];
     const itemsToRemove: number[] = [];
+    const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
+    const saleIndex = await loadLiveSaleIndex();
 
     // ── Validate each item ───────────────────────────────────────────────
     for (let i = 0; i < cart.items.length; i++) {
@@ -75,19 +82,24 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Price drift warning
-      if (item.priceAtAdd !== variant.price) {
+      // Price drift warning (includes live sale overlays)
+      const priced = resolveUnitPrice(
+        saleIndex,
+        product._id.toString(),
+        variant.price
+      );
+      if (item.priceAtAdd !== priced.price) {
         warnings.push(
-          `${product.title}: Price changed from ₹${item.priceAtAdd} to ₹${variant.price}`
+          `${product.title}: Price changed from ₹${item.priceAtAdd} to ₹${priced.price}`
         );
-        // Update the snapshot
-        cart.items[i].priceAtAdd = variant.price;
+        cart.items[i].priceAtAdd = priced.price;
       }
 
       validLineItems.push({
-        price: variant.price,
+        price: priced.price,
         quantity: item.quantity,
         gst: typeof variant.gst === "number" ? variant.gst : 18,
+        allowCoupons: priced.offer ? priced.offer.campaign.allowCoupons : true,
       });
     }
 
@@ -119,7 +131,13 @@ export async function POST(request: NextRequest) {
       maxDiscount: number | null;
     } | null = null;
 
-    if (cart.coupon) {
+    const saleBlocksCoupons = validLineItems.some((item) => !item.allowCoupons);
+
+    if (cart.coupon && saleBlocksCoupons) {
+      warnings.push("This sale cannot be combined with coupons — coupon removed");
+      cart.coupon = null;
+      await cart.save();
+    } else if (cart.coupon) {
       const coupon = await Coupon.findById(cart.coupon);
 
       if (!coupon || !coupon.isActive) {

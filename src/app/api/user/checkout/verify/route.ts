@@ -6,6 +6,7 @@ import { validatePaymentVerification } from "@/lib/validators";
 import { verifyPaymentSignature } from "@/lib/razorpay";
 import { deductInventoryForOrder } from "@/lib/inventory";
 import { notifyOrderPaid } from "@/lib/order-emails";
+import { recordSalePaymentStats } from "@/lib/sales";
 import Order from "@/models/order.model";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
@@ -124,6 +125,15 @@ export async function POST(request: NextRequest) {
           couponErr
         );
       }
+    }
+
+    try {
+      await recordSalePaymentStats(order);
+    } catch (saleErr) {
+      console.error(
+        `Sale stats update failed for order ${order.orderNumber}:`,
+        saleErr
+      );
     }
 
     // ── Clear cart ───────────────────────────────────────────────────────

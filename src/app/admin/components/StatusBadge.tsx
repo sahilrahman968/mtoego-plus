@@ -1,18 +1,32 @@
+// Status colour carries meaning, so it maps to the semantic admin tokens rather
+// than to a neutral shade per status: greens read as healthy, ambers as waiting,
+// reds as failed, and anything inert stays grey.
+const NEUTRAL = "bg-admin-subtle text-admin-body ring-admin-line";
+const INERT = "bg-admin-subtle text-admin-faint ring-admin-line";
+const SUCCESS = "bg-admin-success-soft text-admin-success ring-admin-success-line";
+const WARNING = "bg-admin-warning-soft text-admin-warning ring-admin-warning-line";
+const DANGER = "bg-admin-danger-soft text-admin-danger ring-admin-danger-line";
+const INFO = "bg-admin-info-soft text-admin-info ring-admin-info-line";
+
 const statusStyles: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-700 ring-gray-300/40",
-  paid: "bg-gray-50 text-gray-700 ring-gray-300/40",
-  processing: "bg-gray-100 text-gray-800 ring-gray-400/30",
-  shipped: "bg-gray-100 text-gray-700 ring-gray-300/40",
-  delivered: "bg-gray-50 text-gray-900 ring-gray-400/30",
-  cancelled: "bg-gray-50 text-gray-500 ring-gray-300/30",
-  refunded: "bg-gray-50 text-gray-500 ring-gray-300/30",
-  active: "bg-gray-50 text-gray-900 ring-gray-400/30",
-  inactive: "bg-gray-50 text-gray-500 ring-gray-300/30",
-  percentage: "bg-gray-50 text-gray-700 ring-gray-300/40",
-  flat: "bg-gray-100 text-gray-700 ring-gray-300/40",
-  super_admin: "bg-gray-100 text-gray-900 ring-gray-400/30",
-  staff: "bg-gray-50 text-gray-700 ring-gray-300/40",
-  customer: "bg-gray-50 text-gray-500 ring-gray-300/30",
+  pending: WARNING,
+  paid: SUCCESS,
+  processing: INFO,
+  shipped: INFO,
+  delivered: SUCCESS,
+  cancelled: DANGER,
+  refunded: DANGER,
+  active: SUCCESS,
+  inactive: INERT,
+  live: SUCCESS,
+  scheduled: WARNING,
+  paused: INERT,
+  ended: INERT,
+  percentage: NEUTRAL,
+  flat: NEUTRAL,
+  super_admin: NEUTRAL,
+  staff: NEUTRAL,
+  customer: INERT,
 };
 
 interface StatusBadgeProps {
@@ -21,7 +35,7 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, className = "" }: StatusBadgeProps) {
-  const style = statusStyles[status] || "bg-slate-50 text-slate-700 ring-slate-600/20";
+  const style = statusStyles[status] || NEUTRAL;
 
   return (
     <span

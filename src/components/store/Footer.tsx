@@ -38,6 +38,11 @@ export default function Footer() {
                   Featured
                 </Link>
               </li>
+              <li>
+                <Link href="/sale" className="text-sm transition-colors hover:text-primary">
+                  Sales
+                </Link>
+              </li>
             </ul>
           </div>
 

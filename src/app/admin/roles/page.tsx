@@ -252,12 +252,12 @@ export default function RolesPage() {
       />
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-lg">
+        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
           {success}
         </div>
       )}
@@ -265,11 +265,11 @@ export default function RolesPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-6 bg-white rounded-xl border border-slate-200 p-5 space-y-4 max-w-xl"
+          className="mb-6 bg-admin-surface rounded-xl border border-admin-line p-5 space-y-4 max-w-xl"
         >
-          <h2 className="text-sm font-semibold text-slate-900">Create role</h2>
+          <h2 className="text-sm font-semibold text-admin-heading">Create role</h2>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-admin-body mb-1.5">
               Name
             </label>
             <input
@@ -278,32 +278,32 @@ export default function RolesPage() {
               required
               minLength={2}
               placeholder="e.g. Inventory Manager"
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-admin-body mb-1.5">
               Description
             </label>
             <input
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               placeholder="Optional short description"
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
             />
           </div>
           <div className="flex gap-2">
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50"
             >
               {creating ? "Creating..." : "Create"}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+              className="px-4 py-2 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover"
             >
               Cancel
             </button>
@@ -321,11 +321,11 @@ export default function RolesPage() {
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-              <h2 className="text-sm font-semibold text-slate-700">Roles</h2>
+          <div className="lg:col-span-4 bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
+            <div className="px-4 py-3 border-b border-admin-line bg-admin-subtle/50">
+              <h2 className="text-sm font-semibold text-admin-body">Roles</h2>
             </div>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-admin-line">
               {roles.map((role) => (
                 <li key={role._id}>
                   <button
@@ -333,24 +333,24 @@ export default function RolesPage() {
                     onClick={() => selectRole(role)}
                     className={`w-full text-left px-4 py-3 transition-colors ${
                       selectedSlug === role.slug
-                        ? "bg-slate-100"
-                        : "hover:bg-slate-50"
+                        ? "bg-admin-subtle"
+                        : "hover:bg-admin-hover"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm font-medium text-admin-heading">
                         {role.name}
                       </p>
                       {role.isSystem && (
-                        <span className="text-[10px] uppercase tracking-wide text-slate-400">
+                        <span className="text-[10px] uppercase tracking-wide text-admin-faint">
                           System
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5 font-mono">
+                    <p className="text-xs text-admin-faint mt-0.5 font-mono">
                       {role.slug}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-admin-muted mt-1">
                       {role.slug === "super_admin"
                         ? "All permissions"
                         : `${role.permissions?.length || 0} permission${
@@ -363,36 +363,36 @@ export default function RolesPage() {
             </ul>
           </div>
 
-          <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="lg:col-span-8 bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
             {!selected ? (
-              <div className="p-8 text-sm text-slate-500">
+              <div className="p-8 text-sm text-admin-muted">
                 Select a role to edit permissions
               </div>
             ) : (
               <>
-                <div className="px-5 py-4 border-b border-slate-100 space-y-3">
+                <div className="px-5 py-4 border-b border-admin-line space-y-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">
+                        <label className="block text-xs font-medium text-admin-muted mb-1">
                           Display name
                         </label>
                         <input
                           value={draftName}
                           onChange={(e) => setDraftName(e.target.value)}
                           disabled={isLocked}
-                          className="w-full max-w-md px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:bg-slate-50 disabled:text-slate-500"
+                          className="w-full max-w-md px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus disabled:bg-admin-subtle disabled:text-admin-muted"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">
+                        <label className="block text-xs font-medium text-admin-muted mb-1">
                           Description
                         </label>
                         <input
                           value={draftDescription}
                           onChange={(e) => setDraftDescription(e.target.value)}
                           disabled={isLocked}
-                          className="w-full max-w-md px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:bg-slate-50 disabled:text-slate-500"
+                          className="w-full max-w-md px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus disabled:bg-admin-subtle disabled:text-admin-muted"
                         />
                       </div>
                     </div>
@@ -401,7 +401,7 @@ export default function RolesPage() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(selected)}
-                          className="px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
+                          className="px-3 py-2 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-lg"
                         >
                           Delete
                         </button>
@@ -410,14 +410,14 @@ export default function RolesPage() {
                         type="button"
                         onClick={handleSave}
                         disabled={saving || !dirty || isLocked}
-                        className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50"
                       >
                         {saving ? "Saving..." : "Save ACL"}
                       </button>
                     </div>
                   </div>
                   {isLocked && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-admin-muted">
                       Super Admin always has full access and cannot be edited.
                     </p>
                   )}
@@ -425,7 +425,7 @@ export default function RolesPage() {
                     <button
                       type="button"
                       onClick={allCollapsed ? expandAll : collapseAll}
-                      className="px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-md"
+                      className="px-2.5 py-1 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md"
                     >
                       {allCollapsed ? "Expand all" : "Collapse all"}
                     </button>
@@ -435,14 +435,14 @@ export default function RolesPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/50">
-                        <th className="text-left font-medium text-slate-500 px-5 py-3 w-12">
+                      <tr className="border-b border-admin-line bg-admin-subtle/50">
+                        <th className="text-left font-medium text-admin-muted px-5 py-3 w-12">
                           <span className="sr-only">Allowed</span>
                         </th>
-                        <th className="text-left font-medium text-slate-500 px-2 py-3">
+                        <th className="text-left font-medium text-admin-muted px-2 py-3">
                           Permission
                         </th>
-                        <th className="text-left font-medium text-slate-500 px-5 py-3 hidden sm:table-cell">
+                        <th className="text-left font-medium text-admin-muted px-5 py-3 hidden sm:table-cell">
                           Description
                         </th>
                       </tr>
@@ -524,7 +524,7 @@ function AclGroup({
 
   return (
     <>
-      <tr className="bg-slate-50/80 border-b border-slate-100">
+      <tr className="bg-admin-subtle/80 border-b border-admin-line">
         <td className="px-5 py-2.5">
           <input
             type="checkbox"
@@ -535,7 +535,7 @@ function AclGroup({
             disabled={locked}
             onChange={(e) => onToggleGroup(keys, e.target.checked)}
             onClick={(e) => e.stopPropagation()}
-            className="rounded border-slate-300 text-gray-900 focus:ring-gray-400"
+            className="rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
             aria-label={`Toggle all ${group} permissions`}
           />
         </td>
@@ -547,7 +547,7 @@ function AclGroup({
             aria-expanded={!collapsed}
           >
             <svg
-              className={`w-4 h-4 text-slate-400 transition-transform ${
+              className={`w-4 h-4 text-admin-faint transition-transform ${
                 collapsed ? "" : "rotate-90"
               }`}
               fill="none"
@@ -562,10 +562,10 @@ function AclGroup({
                 d="M9 5l7 7-7 7"
               />
             </svg>
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 group-hover:text-slate-700">
+            <span className="text-xs font-semibold uppercase tracking-wide text-admin-muted group-hover:text-admin-body">
               {group}
             </span>
-            <span className="text-[11px] text-slate-400 font-normal normal-case tracking-normal">
+            <span className="text-[11px] text-admin-faint font-normal normal-case tracking-normal">
               {enabledCount}/{keys.length}
             </span>
           </button>
@@ -575,7 +575,7 @@ function AclGroup({
         items.map((item) => (
           <tr
             key={item.key}
-            className="border-b border-slate-50 hover:bg-slate-50/40"
+            className="border-b border-admin-line hover:bg-admin-hover"
           >
             <td className="px-5 py-2.5">
               <input
@@ -583,14 +583,14 @@ function AclGroup({
                 checked={locked || draftPermissions.includes(item.key)}
                 disabled={locked}
                 onChange={() => onToggle(item.key)}
-                className="rounded border-slate-300 text-gray-900 focus:ring-gray-400"
+                className="rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
               />
             </td>
             <td className="px-2 py-2.5">
-              <p className="font-medium text-slate-800">{item.label}</p>
-              <p className="text-[11px] font-mono text-slate-400">{item.key}</p>
+              <p className="font-medium text-admin-body">{item.label}</p>
+              <p className="text-[11px] font-mono text-admin-faint">{item.key}</p>
             </td>
-            <td className="px-5 py-2.5 text-slate-500 hidden sm:table-cell">
+            <td className="px-5 py-2.5 text-admin-muted hidden sm:table-cell">
               {item.description}
             </td>
           </tr>

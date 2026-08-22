@@ -81,32 +81,32 @@ export default function NewStaffPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
         {error && (
-          <div className="p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">{error}</div>
+          <div className="p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-admin-body mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
                 placeholder="john@example.com"
               />
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-admin-faint">
                 Name is filled in when they sign in with Google using this email.
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Role</label>
+              <label className="block text-sm font-medium text-admin-body mb-1.5">Role</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 disabled={rolesLoading || roles.length === 0}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white disabled:opacity-50"
+                className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface disabled:opacity-50"
               >
                 {roles.map((r) => (
                   <option key={r.slug} value={r.slug}>
@@ -114,7 +114,7 @@ export default function NewStaffPage() {
                   </option>
                 ))}
               </select>
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-admin-faint">
                 Permissions for each role are managed under Roles &amp; Permissions.
               </p>
             </div>
@@ -125,14 +125,14 @@ export default function NewStaffPage() {
           <button
             type="submit"
             disabled={loading || rolesLoading || !role}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
           >
             {loading ? "Creating..." : "Create Staff Member"}
           </button>
           <button
             type="button"
             onClick={() => router.push("/admin/staff")}
-            className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover transition-colors"
           >
             Cancel
           </button>

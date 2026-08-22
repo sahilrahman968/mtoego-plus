@@ -74,17 +74,17 @@ export default async function AdminDashboard() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-admin-heading">Dashboard</h1>
+        <p className="mt-1 text-sm text-admin-muted">
           Overview of your store performance
         </p>
       </div>
 
       {dbError && (
-        <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+        <div className="mb-6 p-4 bg-admin-warning-soft border border-admin-warning-line rounded-xl">
           <div className="flex items-center gap-2">
             <svg
-              className="w-5 h-5 text-gray-600 flex-shrink-0"
+              className="w-5 h-5 text-admin-warning flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -97,10 +97,10 @@ export default async function AdminDashboard() {
               />
             </svg>
             <div>
-              <p className="text-sm font-medium text-gray-800">
+              <p className="text-sm font-medium text-admin-warning">
                 Unable to connect to database
               </p>
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-xs text-admin-warning/80 mt-0.5">
                 Stats are temporarily unavailable. Try refreshing the page.
               </p>
             </div>

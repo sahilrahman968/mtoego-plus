@@ -52,6 +52,8 @@ export interface IOrderItem {
   gst: number;
   quantity: number;
   total: number;
+  /** Live sale campaign that priced this line, if any */
+  saleCampaign?: Types.ObjectId;
 }
 
 export interface IOrderAddress {
@@ -128,6 +130,8 @@ export interface IOrderDocument extends Document {
   idempotencyKey?: string;
   /** Whether inventory has been deducted for this order */
   inventoryDeducted: boolean;
+  /** Prevents double-counting sale campaign conversion stats */
+  saleStatsRecorded: boolean;
   /** Tracks which customer emails have been sent (idempotency) */
   emailsSent: {
     confirmation: boolean;
@@ -186,6 +190,10 @@ const orderItemSchema = new Schema<IOrderItem>(
       type: Number,
       required: [true, "Total is required"],
       min: [0, "Total cannot be negative"],
+    },
+    saleCampaign: {
+      type: Schema.Types.ObjectId,
+      ref: "SaleCampaign",
     },
   },
   { _id: false }
@@ -326,6 +334,10 @@ const orderSchema = new Schema<IOrderDocument>(
       type: Boolean,
       default: false,
     },
+    saleStatsRecorded: {
+      type: Boolean,
+      default: false,
+    },
     emailsSent: {
       confirmation: { type: Boolean, default: false },
       shipped: { type: Boolean, default: false },
@@ -364,6 +376,7 @@ orderSchema.index({ "payment.razorpayOrderId": 1 }, { unique: true });
 orderSchema.index({ "payment.razorpayPaymentId": 1 }, { sparse: true });
 orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
 orderSchema.index({ createdAt: -1 });
+orderSchema.index({ "items.saleCampaign": 1, createdAt: -1 });
 
 // ─── Static: Generate Order Number ───────────────────────────────────────────
 // Format: ORD-YYYYMMDD-XXXXX (e.g. ORD-20260214-A3F8K)

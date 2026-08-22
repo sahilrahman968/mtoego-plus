@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -15,47 +14,23 @@ import {
   X,
 } from "lucide-react";
 import ProductCard from "@/components/store/ProductCard";
+import HeroCarousel, { type HeroSlide } from "@/components/store/HeroCarousel";
 import TabbedShowcase from "@/components/store/TabbedShowcase";
 import { ProductCardSkeleton } from "@/components/store/skeletons";
 import {
   fetchCategories,
+  fetchHomeSale,
   fetchProducts,
   type CategoryData,
   type ProductData,
+  type SaleCampaignPublic,
 } from "@/lib/store-api";
-import { priceInclGst } from "@/lib/pricing";
-import { getDiscountPercent } from "@/lib/utils";
 import {
   getRecentlyViewed,
   type RecentlyViewedProduct,
 } from "@/lib/recently-viewed";
 
 const HERO_BANNER_SRC = "/images/hero-banner.jpg";
-
-function productMaxDiscount(product: ProductData) {
-  const activeVariants = product.variants.filter((v) => v.isActive !== false);
-  if (!activeVariants.length) return 0;
-  return Math.max(
-    ...activeVariants.map((v) =>
-      getDiscountPercent(
-        priceInclGst(v.price, v.gst),
-        v.compareAtPrice ? priceInclGst(v.compareAtPrice, v.gst) : undefined
-      )
-    )
-  );
-}
-
-function getDropEndDate(from = new Date()) {
-  const end = new Date(from);
-  const day = end.getDay();
-  const daysUntilSunday = day === 0 ? 0 : 7 - day;
-  end.setDate(end.getDate() + daysUntilSunday);
-  end.setHours(23, 59, 59, 999);
-  if (end.getTime() <= from.getTime()) {
-    end.setDate(end.getDate() + 7);
-  }
-  return end;
-}
 
 function useCountdown(target: Date) {
   const [now, setNow] = useState(() => Date.now());
@@ -176,7 +151,7 @@ function ProductGrid({
       <div ref={trackRef} className={trackClassName}>
         {products.map((product) => (
           <div key={product._id} className={itemClassName}>
-            <ProductCard product={product} borderless />
+            <ProductCard product={product} />
           </div>
         ))}
       </div>
@@ -198,6 +173,9 @@ export default function HomeClient() {
   const [featured, setFeatured] = useState<ProductData[]>([]);
   const [newArrivals, setNewArrivals] = useState<ProductData[]>([]);
   const [flashDeals, setFlashDeals] = useState<ProductData[]>([]);
+  const [flashCampaign, setFlashCampaign] = useState<SaleCampaignPublic | null>(
+    null
+  );
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>(
     []
   );
@@ -214,17 +192,27 @@ export default function HomeClient() {
     contactHours: "",
   });
 
-  const dropEnd = useMemo(() => getDropEndDate(), []);
+  const dropEnd = useMemo(
+    () =>
+      flashCampaign
+        ? new Date(
+            flashCampaign.status === "scheduled"
+              ? flashCampaign.startsAt
+              : flashCampaign.endsAt
+          )
+        : new Date(Date.now() + 8.64e7),
+    [flashCampaign]
+  );
   const countdown = useCountdown(dropEnd);
 
   useEffect(() => {
     async function load() {
       try {
-        const [catRes, featuredRes, newestRes, catalogRes] = await Promise.all([
+        const [catRes, featuredRes, newestRes, homeSaleRes] = await Promise.all([
           fetchCategories(null),
           fetchProducts({ featured: true, limit: 8 }),
           fetchProducts({ sort: "createdAt", order: "desc", limit: 8 }),
-          fetchProducts({ limit: 40, sort: "createdAt", order: "desc" }),
+          fetchHomeSale(),
         ]);
 
         if (catRes.success && catRes.data) {
@@ -239,25 +227,17 @@ export default function HomeClient() {
           featuredRes.success && featuredRes.data ? featuredRes.data.items : [];
         const newestItems =
           newestRes.success && newestRes.data ? newestRes.data.items : [];
-        const catalogItems =
-          catalogRes.success && catalogRes.data ? catalogRes.data.items : [];
 
         setFeatured(featuredItems.slice(0, HOME_PRODUCT_LIMIT));
         setNewArrivals(newestItems.slice(0, HOME_PRODUCT_LIMIT));
 
-        const discounted = catalogItems
-          .map((product) => ({ product, discount: productMaxDiscount(product) }))
-          .filter((row) => row.discount > 0)
-          .sort((a, b) => b.discount - a.discount)
-          .map((row) => row.product);
-
-        const flashPool =
-          discounted.length > 0
-            ? discounted
-            : featuredItems.length > 0
-              ? featuredItems
-              : newestItems;
-        setFlashDeals(flashPool.slice(0, HOME_PRODUCT_LIMIT));
+        if (homeSaleRes.success && homeSaleRes.data) {
+          setFlashCampaign(homeSaleRes.data.campaign);
+          setFlashDeals(homeSaleRes.data.products || []);
+        } else {
+          setFlashCampaign(null);
+          setFlashDeals([]);
+        }
       } catch {
         // silently fail
       } finally {
@@ -351,55 +331,43 @@ export default function HomeClient() {
     { label: "Sec", value: countdown.seconds },
   ];
 
+  const heroSlides: HeroSlide[] = [
+    {
+      id: "store-hero",
+      image: HERO_BANNER_SRC,
+      imageAlt: "Motorcycle hero banner",
+      kicker: "Drop 07 / Stealth Series",
+      headline: (
+        <>
+          <span className="block">Forged For</span>
+          <span className="hero-title-outline block">Street</span>
+          <span className="block">Supremacy</span>
+        </>
+      ),
+      primaryCta: { label: "Shop The Drop", href: "/products" },
+      secondaryCta: { label: "All Gear", href: "/categories" },
+    },
+  ];
+
+  if (
+    flashCampaign?.banner?.url &&
+    (flashCampaign.status === "live" || flashCampaign.status === "scheduled")
+  ) {
+    heroSlides.push({
+      id: `sale-${flashCampaign._id}`,
+      image: flashCampaign.banner.url,
+      imageAlt: flashCampaign.banner.alt || flashCampaign.title,
+      primaryCta: {
+        label: flashCampaign.bannerCtaLabel || "Shop The Sale",
+        href: flashCampaign.bannerCtaHref || `/sale/${flashCampaign.slug}`,
+      },
+      ctaPosition: flashCampaign.bannerCtaPosition,
+    });
+  }
+
   return (
     <div>
-      <section className="relative h-screen min-h-[36rem] w-full overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, scale: 1.03 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          className="absolute inset-0"
-        >
-          <Image
-            src={HERO_BANNER_SRC}
-            alt="Motorcycle hero banner"
-            fill
-            sizes="100vw"
-            className="object-cover animate-hero-slow-zoom"
-            priority
-          />
-        </motion.div>
-
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.82)_0%,rgba(0,0,0,0.46)_42%,rgba(0,0,0,0.28)_68%,rgba(0,0,0,0.75)_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/40" />
-        <div className="absolute inset-0 mx-auto flex h-full w-full max-w-[92rem] items-end px-3 pb-14 sm:px-4 sm:pb-20 lg:px-6 lg:pb-24">
-          <div className="max-w-2xl text-left">
-            <p className="hero-kicker mb-5 text-[11px] uppercase text-primary/90 sm:text-xs">
-              Drop 07 / Stealth Series
-            </p>
-            <h1 className="hero-title text-5xl uppercase text-foreground sm:text-7xl lg:text-8xl">
-              <span className="block">Forged For</span>
-              <span className="hero-title-outline block">Street</span>
-              <span className="block">Supremacy</span>
-            </h1>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link
-                href="/products"
-                className="btn-text inline-flex items-center gap-2 bg-[#e32d22] px-7 py-3.5 text-white transition-colors hover:bg-[#8f0226]"
-              >
-                Shop The Drop
-                <ArrowRight size={14} />
-              </Link>
-              <Link
-                href="/categories"
-                className="btn-text inline-flex items-center gap-2 border border-white/30 bg-black/35 px-7 py-3.5 text-white transition-colors hover:border-accent hover:bg-black/55"
-              >
-                All Gear
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel slides={heroSlides} />
 
       <section className="border-y border-[#1A1A1D] bg-[#09090B]">
         <div className="ticker-wrap flex h-14 w-full items-center">
@@ -478,21 +446,40 @@ export default function HomeClient() {
         </section>
       )}
 
-      {(productsLoading || flashDeals.length > 0) && (
+      {flashCampaign && (
         <section className="border-t border-border/70 bg-[#09090B] py-[30px]">
           <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
             <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="eyebrow mb-3 text-primary/90">03 / Limited Drop</p>
                 <h2 className="section-title text-xl text-foreground sm:text-2xl lg:text-3xl">
-                  Flash Cut
+                  {flashCampaign?.homeHeadline || flashCampaign?.title || "Flash Cut"}
                 </h2>
+                {flashCampaign?.subtitle ? (
+                  <p className="body-copy mt-2 max-w-xl text-muted">{flashCampaign.subtitle}</p>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="eyebrow-xs inline-flex items-center gap-1.5 text-primary/90">
-                  <Clock3 size={14} />
-                  {countdown.ended ? "Drop reset pending" : "Ends in"}
-                </span>
+                {flashCampaign ? (
+                  <Link
+                    href={`/sale/${flashCampaign.slug}`}
+                    className="eyebrow-xs inline-flex items-center gap-1.5 text-primary/90"
+                  >
+                    <Clock3 size={14} />
+                    {flashCampaign.status === "scheduled"
+                      ? countdown.ended
+                        ? "Starting now"
+                        : "Starts in"
+                      : countdown.ended
+                        ? "Sale ended"
+                        : "Ends in"}
+                  </Link>
+                ) : (
+                  <span className="eyebrow-xs inline-flex items-center gap-1.5 text-primary/90">
+                    <Clock3 size={14} />
+                    Ends in
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   {countdownParts.map((part) => (
                     <div
@@ -509,6 +496,17 @@ export default function HomeClient() {
               </div>
             </div>
             <ProductGrid products={flashDeals} loading={productsLoading} />
+            {flashCampaign && (
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href={`/sale/${flashCampaign.slug}`}
+                  className="btn-text inline-flex items-center gap-2 border border-border/80 bg-black/40 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
+                >
+                  Shop The Sale
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       )}

@@ -77,7 +77,7 @@ export default function OrdersPage() {
           placeholder="Search by order # or customer..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus focus:border-transparent"
         />
         <div className="flex flex-wrap gap-1.5">
           {statusFilters.map((f) => (
@@ -86,8 +86,8 @@ export default function OrdersPage() {
               onClick={() => { setStatus(f.value); setPage(1); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                 status === f.value
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  ? "bg-admin-primary text-white"
+                  : "bg-admin-surface text-admin-muted border border-admin-line hover:bg-admin-hover"
               }`}
             >
               {f.label}
@@ -96,7 +96,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
         {loading ? (
           <LoadingSpinner />
         ) : !data || data.items.length === 0 ? (
@@ -109,33 +109,33 @@ export default function OrdersPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Order</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden md:table-cell">Customer</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden sm:table-cell">Items</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Total</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3">Status</th>
-                    <th className="text-left font-medium text-slate-500 px-4 py-3 hidden lg:table-cell">Date</th>
-                    <th className="text-right font-medium text-slate-500 px-4 py-3">Action</th>
+                  <tr className="border-b border-admin-line bg-admin-subtle/50">
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Order</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden md:table-cell">Customer</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden sm:table-cell">Items</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Total</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3">Status</th>
+                    <th className="text-left font-medium text-admin-muted px-4 py-3 hidden lg:table-cell">Date</th>
+                    <th className="text-right font-medium text-admin-muted px-4 py-3">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-admin-line">
                   {data.items.map((order) => (
-                    <tr key={order._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={order._id} className="hover:bg-admin-hover transition-colors">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">{order.orderNumber}</p>
+                        <p className="font-medium text-admin-heading">{order.orderNumber}</p>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <div className="min-w-0">
-                          <p className="text-slate-700 truncate">{order.user?.name || "N/A"}</p>
-                          <p className="text-xs text-slate-400 truncate">{order.user?.email || ""}</p>
+                          <p className="text-admin-body truncate">{order.user?.name || "N/A"}</p>
+                          <p className="text-xs text-admin-faint truncate">{order.user?.email || ""}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-slate-600">{totalItems(order.items)}</span>
+                        <span className="text-admin-muted">{totalItems(order.items)}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-admin-heading">
                           ₹{order.pricing.grandTotal.toLocaleString("en-IN")}
                         </span>
                       </td>
@@ -143,7 +143,7 @@ export default function OrdersPage() {
                         <StatusBadge status={order.status} />
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-slate-500">
+                        <span className="text-admin-muted">
                           {new Date(order.createdAt).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
@@ -154,7 +154,7 @@ export default function OrdersPage() {
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/admin/orders/${order._id}`}
-                          className="px-2.5 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                          className="px-2.5 py-1.5 text-xs font-medium text-admin-heading hover:bg-admin-hover rounded-md transition-colors"
                         >
                           View
                         </Link>
@@ -164,7 +164,7 @@ export default function OrdersPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 border-t border-slate-100">
+            <div className="px-4 border-t border-admin-line">
               <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
             </div>
           </>
