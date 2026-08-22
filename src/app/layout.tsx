@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { ToastProvider } from "@/components/store/Toast";
-import ScrollbarOverlay from "@/components/ScrollbarOverlay";
+import { ToastProvider } from "@/components/jewellery/shared/Toast";
 import { theme, getThemeCSSVariables } from "@/config/theme";
 
 // ── Font imports ─────────────────────────────────────────────────────────────
@@ -14,13 +13,13 @@ import { theme, getThemeCSSVariables } from "@/config/theme";
 // Both are variable fonts, so the whole weight range ships in a single file
 // instead of one request per static weight.
 
-const bodyFont = Inter({
+const bodyFont = Montserrat({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 });
 
-const displayFont = Space_Grotesk({
+const displayFont = Cormorant_Garamond({
   variable: "--font-display-face",
   subsets: ["latin"],
   display: "swap",
@@ -29,12 +28,24 @@ const displayFont = Space_Grotesk({
 // ── Metadata (reads from theme config) ───────────────────────────────────────
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
     default: `${theme.brand.name} - ${theme.brand.tagline}`,
     template: `%s | ${theme.brand.name}`,
   },
   description: theme.brand.description,
   keywords: [...theme.brand.keywords],
+  openGraph: {
+    type: "website",
+    siteName: theme.brand.name,
+    title: `${theme.brand.name} — ${theme.brand.tagline}`,
+    description: theme.brand.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${theme.brand.name} — ${theme.brand.tagline}`,
+    description: theme.brand.description,
+  },
 };
 
 // ── Theme CSS variables ──────────────────────────────────────────────────────
@@ -53,7 +64,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <body
         className={`${bodyFont.variable} ${displayFont.variable} antialiased`}
         style={themeVars as React.CSSProperties}
@@ -62,7 +73,6 @@ export default function RootLayout({
           <CartProvider>
             <ToastProvider>
               {children}
-              <ScrollbarOverlay />
             </ToastProvider>
           </CartProvider>
         </AuthProvider>

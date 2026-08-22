@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
-  Bot,
   CheckCircle2,
   Clock3,
+  Gem,
   PhoneCall,
-  Scissors,
-  Sparkles,
-  X,
+  ShieldCheck,
+  Truck,
 } from "lucide-react";
-import ProductCard from "@/components/store/ProductCard";
-import HeroCarousel, { type HeroSlide } from "@/components/store/HeroCarousel";
-import TabbedShowcase from "@/components/store/TabbedShowcase";
-import { ProductCardSkeleton } from "@/components/store/skeletons";
+import ProductCard from "@/components/jewellery/catalog/ProductCard";
+import {
+  CategoryCardSkeleton,
+  ProductCardSkeleton,
+} from "@/components/jewellery/shared/Skeletons";
 import {
   fetchCategories,
   fetchHomeSale,
@@ -29,271 +29,285 @@ import {
   getRecentlyViewed,
   type RecentlyViewedProduct,
 } from "@/lib/recently-viewed";
+import { getProductImage } from "@/lib/utils";
+import { theme } from "@/config/theme";
 
-const HERO_BANNER_SRC = "/images/hero-banner.jpg";
+const ROW_LIMIT = 4;
+const CATEGORY_LIMIT = 5;
 
-function useCountdown(target: Date) {
+const TRUST_POINTS: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  copy: string;
+}[] = [
+  {
+    icon: Gem,
+    title: "Considered selection",
+    copy: "A focused edit rather than an endless catalogue.",
+  },
+  {
+    icon: Truck,
+    title: "Complimentary shipping",
+    copy: theme.announcement.text,
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure checkout",
+    copy: "Encrypted payment with order tracking from start to finish.",
+  },
+  {
+    icon: PhoneCall,
+    title: "Personal assistance",
+    copy: "Request help choosing a piece before you place your order.",
+  },
+];
+
+type CardProduct = ProductData | RecentlyViewedProduct;
+
+/** Ticks once a second, and only while there is a live target to count towards. */
+function useCountdown(target: number | null) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (target === null) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [target]);
 
-  const remaining = Math.max(0, target.getTime() - now);
-  const totalSeconds = Math.floor(remaining / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return { days, hours, minutes, seconds, ended: remaining <= 0 };
+  return useMemo(() => {
+    if (target === null) return null;
+    const remaining = Math.max(0, target - now);
+    const seconds = Math.floor(remaining / 1000);
+    return {
+      ended: remaining <= 0,
+      parts: [
+        { label: "Days", value: Math.floor(seconds / 86400) },
+        { label: "Hrs", value: Math.floor((seconds % 86400) / 3600) },
+        { label: "Min", value: Math.floor((seconds % 3600) / 60) },
+        { label: "Sec", value: seconds % 60 },
+      ],
+    };
+  }, [target, now]);
 }
 
-function SectionHeader({
-  index,
+function SectionIntro({
+  eyebrow,
   title,
+  description,
   href,
-  linkLabel = "View All",
+  linkLabel = "View all",
 }: {
-  index: string;
+  eyebrow: string;
   title: string;
+  description?: string;
   href?: string;
   linkLabel?: string;
 }) {
   return (
-    <div className="mb-3 flex items-start justify-between gap-6">
+    <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="eyebrow mb-3 text-primary/90">{index}</p>
-        <h2 className="section-title text-xl text-foreground sm:text-2xl lg:text-3xl">
+        <p className="eyebrow text-primary">{eyebrow}</p>
+        <h2 className="mt-4 font-display text-4xl leading-[1.05] sm:text-5xl">
           {title}
         </h2>
+        {description && (
+          <p className="body-copy mt-4 text-muted">{description}</p>
+        )}
       </div>
-      {href ? (
-        <Link
-          href={href}
-          className="eyebrow mt-7 hidden shrink-0 items-center gap-2 text-muted transition-colors hover:text-foreground sm:inline-flex"
-        >
-          {linkLabel} <ArrowRight size={16} />
+      {href && (
+        <Link href={href} className="j-text-link shrink-0 text-muted hover:text-foreground">
+          {linkLabel}
+          <ArrowRight className="size-3.5" aria-hidden="true" />
         </Link>
-      ) : null}
+      )}
     </div>
   );
 }
 
-function ProductGrid({
+function ProductRow({
   products,
   loading,
   emptyLabel,
 }: {
-  products: ProductData[] | RecentlyViewedProduct[];
+  products: CardProduct[];
   loading?: boolean;
   emptyLabel?: string;
 }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [showPeekHint, setShowPeekHint] = useState(true);
-
-  const trackClassName =
-    "no-scrollbar flex gap-5 overflow-x-auto snap-x snap-mandatory pb-1 lg:grid lg:grid-cols-5 lg:gap-5 lg:overflow-visible lg:pb-0 lg:snap-none";
-  // 1 full card + 0.5 peek on small screens; 2 + 0.5 from sm; 5-up grid from lg
-  const itemClassName =
-    "w-[calc((100%-1.25rem)/1.5)] shrink-0 snap-start sm:w-[calc((100%-2.5rem)/2.5)] lg:w-auto";
-
-  const updatePeekHint = () => {
-    const el = trackRef.current;
-    if (!el) return;
-    const remaining = el.scrollWidth - el.scrollLeft - el.clientWidth;
-    setShowPeekHint(remaining > 12);
-  };
-
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    updatePeekHint();
-    el.addEventListener("scroll", updatePeekHint, { passive: true });
-    window.addEventListener("resize", updatePeekHint);
-    return () => {
-      el.removeEventListener("scroll", updatePeekHint);
-      window.removeEventListener("resize", updatePeekHint);
-    };
-  }, [products, loading]);
-
-  const peekBlur = showPeekHint ? (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[34%] bg-gradient-to-l from-black/55 via-black/20 to-transparent backdrop-blur-[2px] [mask-image:linear-gradient(to_right,transparent,black_45%)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_45%)] sm:w-[22%] lg:hidden"
-    />
-  ) : null;
-
   if (loading) {
     return (
-      <div className="relative">
-        <div ref={trackRef} className={trackClassName}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className={itemClassName}>
-              <ProductCardSkeleton />
-            </div>
-          ))}
-        </div>
-        {peekBlur}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-4">
+        {Array.from({ length: ROW_LIMIT }).map((_, index) => (
+          <ProductCardSkeleton key={index} />
+        ))}
       </div>
     );
   }
 
   if (!products.length) {
-    return emptyLabel ? (
-      <p className="body-copy text-muted">{emptyLabel}</p>
-    ) : null;
+    return emptyLabel ? <p className="body-copy text-muted">{emptyLabel}</p> : null;
   }
 
   return (
-    <div className="relative">
-      <div ref={trackRef} className={trackClassName}>
-        {products.map((product) => (
-          <div key={product._id} className={itemClassName}>
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
-      {peekBlur}
+    <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard key={product._id} product={product} />
+      ))}
     </div>
   );
 }
 
-const CATEGORY_TAB_LIMIT = 6;
-const CATEGORY_PRODUCT_LIMIT = 5;
-const HOME_PRODUCT_LIMIT = 5;
+function CategoryTile({
+  category,
+  aspect,
+  sizes,
+}: {
+  category: CategoryData;
+  aspect: string;
+  sizes: string;
+}) {
+  const count = category.productCount ?? 0;
+
+  return (
+    <Link
+      href={`/categories/${category.slug}`}
+      className="group relative block overflow-hidden bg-card-hover"
+    >
+      <div className={`relative ${aspect}`}>
+        {category.image?.url ? (
+          <Image
+            src={category.image.url}
+            alt={category.name}
+            fill
+            sizes={sizes}
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center bg-accent-light">
+            <span className="font-display text-6xl text-primary/45">
+              {category.name.charAt(0)}
+            </span>
+          </div>
+        )}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/15 to-transparent"
+        />
+      </div>
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-6">
+        <div>
+          {count > 0 && (
+            <p className="eyebrow-xs tabular text-background/75">
+              {count} {count === 1 ? "piece" : "pieces"}
+            </p>
+          )}
+          <h3 className="mt-1.5 font-display text-2xl text-background sm:text-3xl">
+            {category.name}
+          </h3>
+        </div>
+        <ArrowRight
+          className="mb-1.5 size-5 shrink-0 text-background opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          aria-hidden="true"
+        />
+      </div>
+    </Link>
+  );
+}
 
 export default function HomeClient() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [activeCategoryId, setActiveCategoryId] = useState("");
-  const [categoryProducts, setCategoryProducts] = useState<
-    Record<string, ProductData[]>
-  >({});
   const [featured, setFeatured] = useState<ProductData[]>([]);
   const [newArrivals, setNewArrivals] = useState<ProductData[]>([]);
-  const [flashDeals, setFlashDeals] = useState<ProductData[]>([]);
-  const [flashCampaign, setFlashCampaign] = useState<SaleCampaignPublic | null>(
-    null
-  );
-  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>(
-    []
-  );
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [isPopupMinimized, setIsPopupMinimized] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isSubmittingCallback, setIsSubmittingCallback] = useState(false);
-  const [showSuccessState, setShowSuccessState] = useState(false);
-  const [callbackError, setCallbackError] = useState("");
+  const [saleCampaign, setSaleCampaign] = useState<SaleCampaignPublic | null>(null);
+  const [saleProducts, setSaleProducts] = useState<ProductData[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [callbackForm, setCallbackForm] = useState({
     requirement: "",
     phone: "",
     contactHours: "",
   });
-
-  const dropEnd = useMemo(
-    () =>
-      flashCampaign
-        ? new Date(
-            flashCampaign.status === "scheduled"
-              ? flashCampaign.startsAt
-              : flashCampaign.endsAt
-          )
-        : new Date(Date.now() + 8.64e7),
-    [flashCampaign]
-  );
-  const countdown = useCountdown(dropEnd);
+  const [callbackSending, setCallbackSending] = useState(false);
+  const [callbackSent, setCallbackSent] = useState(false);
+  const [callbackError, setCallbackError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       try {
-        const [catRes, featuredRes, newestRes, homeSaleRes] = await Promise.all([
+        const [categoryRes, featuredRes, newestRes, saleRes] = await Promise.all([
           fetchCategories(null),
           fetchProducts({ featured: true, limit: 8 }),
           fetchProducts({ sort: "createdAt", order: "desc", limit: 8 }),
           fetchHomeSale(),
         ]);
+        if (cancelled) return;
 
-        if (catRes.success && catRes.data) {
-          const stocked = catRes.data.filter(
-            (cat) => (cat.productCount ?? 0) > 0
+        if (categoryRes.success && categoryRes.data) {
+          setCategories(
+            categoryRes.data
+              .filter((category) => (category.productCount ?? 0) > 0)
+              .slice(0, CATEGORY_LIMIT)
           );
-          setCategories(stocked.slice(0, CATEGORY_TAB_LIMIT));
-          setActiveCategoryId((current) => current || stocked[0]?._id || "");
         }
 
-        const featuredItems =
-          featuredRes.success && featuredRes.data ? featuredRes.data.items : [];
-        const newestItems =
-          newestRes.success && newestRes.data ? newestRes.data.items : [];
+        if (featuredRes.success && featuredRes.data) {
+          setFeatured(featuredRes.data.items.slice(0, ROW_LIMIT));
+        }
 
-        setFeatured(featuredItems.slice(0, HOME_PRODUCT_LIMIT));
-        setNewArrivals(newestItems.slice(0, HOME_PRODUCT_LIMIT));
+        if (newestRes.success && newestRes.data) {
+          setNewArrivals(newestRes.data.items.slice(0, ROW_LIMIT));
+        }
 
-        if (homeSaleRes.success && homeSaleRes.data) {
-          setFlashCampaign(homeSaleRes.data.campaign);
-          setFlashDeals(homeSaleRes.data.products || []);
+        if (saleRes.success && saleRes.data) {
+          setSaleCampaign(saleRes.data.campaign);
+          setSaleProducts((saleRes.data.products || []).slice(0, ROW_LIMIT));
         } else {
-          setFlashCampaign(null);
-          setFlashDeals([]);
+          setSaleCampaign(null);
+          setSaleProducts([]);
         }
       } catch {
-        // silently fail
+        // The page degrades to its editorial sections when the API is unreachable.
       } finally {
-        setProductsLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
-    load();
-  }, []);
 
-  useEffect(() => {
-    if (!activeCategoryId || categoryProducts[activeCategoryId]) return;
-    let cancelled = false;
-    fetchProducts({ category: activeCategoryId, limit: CATEGORY_PRODUCT_LIMIT })
-      .then((res) => {
-        if (cancelled) return;
-        setCategoryProducts((prev) => ({
-          ...prev,
-          [activeCategoryId]: res.success && res.data ? res.data.items : [],
-        }));
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCategoryProducts((prev) => ({ ...prev, [activeCategoryId]: [] }));
-        }
-      });
+    load();
     return () => {
       cancelled = true;
     };
-  }, [activeCategoryId, categoryProducts]);
-
-  useEffect(() => {
-    setRecentlyViewed(getRecentlyViewed().slice(0, HOME_PRODUCT_LIMIT));
   }, []);
 
-  const handlePopupClose = () => {
-    setIsPopupOpen(false);
-    setIsPopupMinimized(true);
-  };
+  useEffect(() => {
+    setRecentlyViewed(getRecentlyViewed().slice(0, ROW_LIMIT));
+  }, []);
 
-  const handlePopupRestore = () => {
-    setIsPopupMinimized(false);
-    setIsPopupOpen(true);
-  };
+  const saleIsVisible =
+    saleCampaign?.status === "live" || saleCampaign?.status === "scheduled";
+  const saleScheduled = saleCampaign?.status === "scheduled";
+  const countdown = useCountdown(
+    saleCampaign && saleIsVisible
+      ? new Date(saleScheduled ? saleCampaign.startsAt : saleCampaign.endsAt).getTime()
+      : null
+  );
 
-  const openCustomOrderForm = () => {
-    setCallbackError("");
-    setShowSuccessState(false);
-    setIsFormOpen(true);
-    setIsPopupMinimized(false);
-    setIsPopupOpen(true);
-  };
+  const heroProduct = featured[0] ?? newArrivals[0] ?? null;
+  const heroImage = heroProduct
+    ? getProductImage(heroProduct.images)
+    : loading
+      ? null
+      : null;
+  const storyProduct = featured[1] ?? newArrivals[1] ?? heroProduct;
+  const storyImage =
+    categories[0]?.image?.url ??
+    (storyProduct ? getProductImage(storyProduct.images) : null);
 
   const handleCallbackSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCallbackError("");
-    setIsSubmittingCallback(true);
+    setCallbackSending(true);
 
     try {
       const response = await fetch("/api/callback-request", {
@@ -304,465 +318,462 @@ export default function HomeClient() {
       const json = await response.json();
 
       if (!response.ok || !json?.success) {
-        setCallbackError(json?.message || "Failed to send callback request. Please try again.");
-        setIsSubmittingCallback(false);
+        setCallbackError(
+          json?.message || "We could not send your request. Please try again."
+        );
         return;
       }
 
-      setIsSubmittingCallback(false);
-      setShowSuccessState(true);
+      setCallbackSent(true);
       setCallbackForm({ requirement: "", phone: "", contactHours: "" });
-
-      window.setTimeout(() => {
-        setShowSuccessState(false);
-        setIsFormOpen(false);
-        handlePopupClose();
-      }, 2300);
     } catch {
-      setCallbackError("Failed to send callback request. Please try again.");
-      setIsSubmittingCallback(false);
+      setCallbackError("We could not send your request. Please try again.");
+    } finally {
+      setCallbackSending(false);
     }
   };
 
-  const countdownParts = [
-    { label: "Days", value: countdown.days },
-    { label: "Hrs", value: countdown.hours },
-    { label: "Min", value: countdown.minutes },
-    { label: "Sec", value: countdown.seconds },
-  ];
-
-  const heroSlides: HeroSlide[] = [
-    {
-      id: "store-hero",
-      image: HERO_BANNER_SRC,
-      imageAlt: "Motorcycle hero banner",
-      kicker: "Drop 07 / Stealth Series",
-      headline: (
-        <>
-          <span className="block">Forged For</span>
-          <span className="hero-title-outline block">Street</span>
-          <span className="block">Supremacy</span>
-        </>
-      ),
-      primaryCta: { label: "Shop The Drop", href: "/products" },
-      secondaryCta: { label: "All Gear", href: "/categories" },
-    },
-  ];
-
-  if (
-    flashCampaign?.banner?.url &&
-    (flashCampaign.status === "live" || flashCampaign.status === "scheduled")
-  ) {
-    heroSlides.push({
-      id: `sale-${flashCampaign._id}`,
-      image: flashCampaign.banner.url,
-      imageAlt: flashCampaign.banner.alt || flashCampaign.title,
-      primaryCta: {
-        label: flashCampaign.bannerCtaLabel || "Shop The Sale",
-        href: flashCampaign.bannerCtaHref || `/sale/${flashCampaign.slug}`,
-      },
-      ctaPosition: flashCampaign.bannerCtaPosition,
-    });
-  }
-
   return (
     <div>
-      <HeroCarousel slides={heroSlides} />
-
-      <section className="border-y border-[#1A1A1D] bg-[#09090B]">
-        <div className="ticker-wrap flex h-14 w-full items-center">
-          <div className="ticker-track flex items-center">
-            {[0, 1].map((setIdx) => (
-              <div
-                key={setIdx}
-                className="eyebrow-xs flex min-w-max items-center gap-6 px-3 leading-none text-[#AAA7AE] sm:px-4 lg:px-6"
-              >
-                {[
-                  "30-Day Returns",
-                  "ECE 22.06 Certified",
-                  "Built For The Apex",
-                  "Worldwide Delivery",
-                  "Race-Tested Gear",
-                  "Free Shipping Over ₹999",
-                ].map((item) => (
-                  <div key={`${setIdx}-${item}`} className="flex items-center gap-6">
-                    <span className="h-1 w-1 rounded-full bg-[#e32d22]" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {categories.length > 0 && (
-        <section className="bg-black py-[30px]">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <SectionHeader
-              index="01 / Categories"
-              title="Gear Up"
-              href="/categories"
-            />
-            <TabbedShowcase
-              tabs={categories.map((cat) => ({
-                id: cat._id,
-                label: cat.name,
-                imageUrl: cat.image?.url,
-                href: `/categories/${cat.slug}`,
-              }))}
-              activeTabId={activeCategoryId}
-              onTabChange={(tab) => setActiveCategoryId(tab.id)}
-              renderPanel={(tab) => (
-                <ProductGrid
-                  products={categoryProducts[tab.id] ?? []}
-                  loading={!categoryProducts[tab.id]}
-                  emptyLabel="No products in this category yet."
-                />
-              )}
-            />
-          </div>
-        </section>
-      )}
-
-      {(productsLoading || featured.length > 0) && (
-        <section className="border-t border-border/70 bg-black py-[30px]">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <SectionHeader
-              index="02 / Featured"
-              title="Best Sellers"
-              href="/products?featured=true"
-            />
-            <ProductGrid products={featured} loading={productsLoading} />
-            <div className="mt-6 flex justify-end sm:hidden">
-              <Link
-                href="/products?featured=true"
-                className="eyebrow inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
-              >
-                View All <ArrowRight size={16} />
+      {/* ── Hero ───────────────────────────────────────────────────────────── */}
+      <section className="border-b border-border">
+        <div className="j-container grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:py-24">
+          <div className="animate-fade-in">
+            <p className="eyebrow text-primary">
+              {theme.brand.name} — The new season
+            </p>
+            <h1 className="mt-6 font-display text-[clamp(2.9rem,7vw,5rem)] leading-[0.95]">
+              {theme.brand.tagline}
+            </h1>
+            <p className="body-copy mt-7 text-muted">{theme.brand.description}</p>
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <Link href="/products" className="j-button-primary">
+                Shop the collection
+              </Link>
+              <Link href="/categories" className="j-button-secondary">
+                Browse categories
               </Link>
             </div>
+            <Link
+              href="/products?featured=true"
+              className="j-text-link mt-10 text-muted hover:text-foreground"
+            >
+              See the edit
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
           </div>
-        </section>
-      )}
 
-      {flashCampaign && (
-        <section className="border-t border-border/70 bg-[#09090B] py-[30px]">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="eyebrow mb-3 text-primary/90">03 / Limited Drop</p>
-                <h2 className="section-title text-xl text-foreground sm:text-2xl lg:text-3xl">
-                  {flashCampaign?.homeHeadline || flashCampaign?.title || "Flash Cut"}
-                </h2>
-                {flashCampaign?.subtitle ? (
-                  <p className="body-copy mt-2 max-w-xl text-muted">{flashCampaign.subtitle}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                {flashCampaign ? (
-                  <Link
-                    href={`/sale/${flashCampaign.slug}`}
-                    className="eyebrow-xs inline-flex items-center gap-1.5 text-primary/90"
-                  >
-                    <Clock3 size={14} />
-                    {flashCampaign.status === "scheduled"
-                      ? countdown.ended
-                        ? "Starting now"
-                        : "Starts in"
-                      : countdown.ended
-                        ? "Sale ended"
-                        : "Ends in"}
-                  </Link>
-                ) : (
-                  <span className="eyebrow-xs inline-flex items-center gap-1.5 text-primary/90">
-                    <Clock3 size={14} />
-                    Ends in
-                  </span>
-                )}
-                <div className="flex items-center gap-2">
-                  {countdownParts.map((part) => (
-                    <div
-                      key={part.label}
-                      className="min-w-[3.5rem] border border-border/80 bg-black/60 px-2.5 py-2 text-center"
-                    >
-                      <p className="tabular text-lg font-bold text-foreground sm:text-xl">
-                        {String(part.value).padStart(2, "0")}
-                      </p>
-                      <p className="eyebrow-xs mt-0.5 text-muted">{part.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <ProductGrid products={flashDeals} loading={productsLoading} />
-            {flashCampaign && (
-              <div className="mt-8 flex justify-center">
-                <Link
-                  href={`/sale/${flashCampaign.slug}`}
-                  className="btn-text inline-flex items-center gap-2 border border-border/80 bg-black/40 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
-                >
-                  Shop The Sale
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
+          <div className="relative aspect-[4/5] overflow-hidden bg-card-hover sm:aspect-[5/4] lg:aspect-[4/5]">
+            {heroImage ? (
+              <Image
+                src={heroImage}
+                alt={heroProduct ? heroProduct.title : `${theme.brand.name} jewellery`}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 52vw"
+                className="object-cover"
+              />
+            ) : loading ? (
+              <div className="h-full w-full animate-pulse bg-card-hover" />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="h-full w-full bg-[radial-gradient(circle_at_68%_32%,rgba(161,98,7,0.26),transparent_18%),linear-gradient(145deg,#E3D4BF,#F9F5EE_55%,#CDB28E)]"
+              />
+            )}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-4 border border-background/25 sm:inset-6"
+            />
+            {heroProduct && (
+              <Link
+                href={`/products/${heroProduct.slug}`}
+                className="absolute bottom-6 left-6 max-w-[15rem] bg-background/92 px-5 py-4 backdrop-blur transition-colors hover:bg-background sm:bottom-8 sm:left-8"
+              >
+                <p className="eyebrow-xs text-primary">In the spotlight</p>
+                <p className="mt-1.5 line-clamp-2 font-display text-lg leading-snug">
+                  {heroProduct.title}
+                </p>
+              </Link>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* ── Categories ─────────────────────────────────────────────────────── */}
+      {(loading || categories.length > 0) && (
+        <section className="j-section border-b border-border">
+          <div className="j-container">
+            <SectionIntro
+              eyebrow="Explore"
+              title="Shop by category"
+              description="From everyday pieces to the ones saved for occasions — find your place to start."
+              href="/categories"
+              linkLabel="All categories"
+            />
+
+            <div className="mt-12 space-y-4 sm:space-y-5">
+              {loading ? (
+                <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <CategoryCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {categories[0] && (
+                    <CategoryTile
+                      category={categories[0]}
+                      aspect="aspect-[4/5] sm:aspect-[2/1]"
+                      sizes="(max-width: 640px) 100vw, 90vw"
+                    />
+                  )}
+                  {categories.length > 1 && (
+                    <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+                      {categories.slice(1).map((category) => (
+                        <CategoryTile
+                          key={category._id}
+                          category={category}
+                          aspect="aspect-[4/5]"
+                          sizes="(max-width: 640px) 50vw, 25vw"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </section>
       )}
 
-      {(productsLoading || newArrivals.length > 0) && (
-        <section className="border-t border-border/70 bg-black py-[30px]">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <SectionHeader index="04 / New Arrivals" title="Latest Drop" />
-            <ProductGrid products={newArrivals} loading={productsLoading} />
-            <div className="mt-8 flex justify-center">
+      {/* ── The edit ───────────────────────────────────────────────────────── */}
+      {(loading || featured.length > 0) && (
+        <section className="j-section border-b border-border">
+          <div className="j-container">
+            <SectionIntro
+              eyebrow="The edit"
+              title="Pieces we keep returning to"
+              description="A short list of favourites from across the collection."
+              href="/products?featured=true"
+            />
+            <div className="mt-12">
+              <ProductRow products={featured} loading={loading} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Live or upcoming sale ──────────────────────────────────────────── */}
+      {saleCampaign && saleIsVisible && (
+        <section className="j-section border-b border-border bg-card-hover">
+          <div className="j-container">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="eyebrow text-primary">
+                  {saleCampaign.badgeLabel || "Private sale"}
+                </p>
+                <h2 className="mt-4 font-display text-4xl leading-[1.05] sm:text-5xl">
+                  {saleCampaign.homeHeadline || saleCampaign.title}
+                </h2>
+                {saleCampaign.subtitle && (
+                  <p className="body-copy mt-4 text-muted">{saleCampaign.subtitle}</p>
+                )}
+              </div>
+
+              {countdown && (
+                <div>
+                  <p className="eyebrow-xs mb-3 inline-flex items-center gap-1.5 text-muted">
+                    <Clock3 className="size-3.5" aria-hidden="true" />
+                    {saleScheduled
+                      ? countdown.ended
+                        ? "Opening now"
+                        : "Opens in"
+                      : countdown.ended
+                        ? "Now closed"
+                        : "Closes in"}
+                  </p>
+                  <div className="flex gap-2.5">
+                    {countdown.parts.map((part) => (
+                      <div
+                        key={part.label}
+                        className="min-w-[3.75rem] border border-border bg-background px-3 py-2.5 text-center"
+                      >
+                        <p className="tabular font-display text-2xl leading-none">
+                          {String(part.value).padStart(2, "0")}
+                        </p>
+                        <p className="eyebrow-xs mt-1.5 text-muted">{part.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {saleCampaign.banner?.url && (
               <Link
-                href="/products"
-                className="btn-text inline-flex items-center gap-2 border border-border/80 bg-black/40 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-white"
+                href={saleCampaign.bannerCtaHref || `/sale/${saleCampaign.slug}`}
+                className="group relative mt-12 block aspect-[16/9] overflow-hidden bg-background sm:aspect-[21/9]"
               >
-                Shop New
-                <ArrowRight size={14} />
+                <Image
+                  src={saleCampaign.banner.url}
+                  alt={saleCampaign.banner.alt || saleCampaign.title}
+                  fill
+                  sizes="90vw"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                />
+              </Link>
+            )}
+
+            {(loading || saleProducts.length > 0) && (
+              <div className="mt-12">
+                <ProductRow products={saleProducts} loading={loading} />
+              </div>
+            )}
+
+            <div className="mt-12">
+              <Link href={`/sale/${saleCampaign.slug}`} className="j-button-primary">
+                {saleCampaign.bannerCtaLabel || "View the sale"}
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {recentlyViewed.length > 0 && (
-        <section className="border-t border-border/70 bg-[#09090B] py-[30px]">
-          <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-            <SectionHeader index="05 / Continue" title="Recently Viewed" />
-            <ProductGrid products={recentlyViewed} />
+      {/* ── New arrivals ───────────────────────────────────────────────────── */}
+      {(loading || newArrivals.length > 0) && (
+        <section className="j-section border-b border-border">
+          <div className="j-container">
+            <SectionIntro
+              eyebrow="Just arrived"
+              title="New in this season"
+              description="The most recent additions to the collection."
+              href="/products?sort=createdAt&order=desc"
+              linkLabel="Shop new in"
+            />
+            <div className="mt-12">
+              <ProductRow products={newArrivals} loading={loading} />
+            </div>
           </div>
         </section>
       )}
 
-      <section className="border-t border-border/70 bg-black py-[30px]">
-        <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-          <div className="relative overflow-hidden bg-black px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
-            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-              <svg
-                className="absolute inset-0 h-full w-full text-primary/50"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                fill="none"
-              >
-                <path
-                  d="M3.5 85 Q26 79 35.5 58 T66.5 31 T98 5"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  strokeDasharray="3 6"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-              <Scissors
-                size={30}
-                className="absolute bottom-[9%] left-0 -rotate-[24deg] text-primary/70"
+      {/* ── Recently viewed ────────────────────────────────────────────────── */}
+      {recentlyViewed.length > 0 && (
+        <section className="j-section border-b border-border">
+          <div className="j-container">
+            <SectionIntro
+              eyebrow="Where you left off"
+              title="Recently viewed"
+              href="/products"
+            />
+            <div className="mt-12">
+              <ProductRow products={recentlyViewed} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Brand story ────────────────────────────────────────────────────── */}
+      <section className="j-section border-b border-border">
+        <div className="j-container grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          <div className="relative aspect-[5/4] overflow-hidden bg-card-hover lg:aspect-[4/5]">
+            {storyImage ? (
+              <Image
+                src={storyImage}
+                alt=""
+                fill
+                sizes="(max-width: 1024px) 100vw, 46vw"
+                className="object-cover"
               />
-            </div>
-            <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-              <div>
-                <p className="eyebrow mb-3 text-primary/90">06 / Custom & Bulk</p>
-                <h2 className="hero-title text-4xl uppercase text-foreground sm:text-5xl lg:text-6xl">
-                  <span className="block">Built To Spec.</span>
-                  <span className="block text-primary">Shipped In Volume.</span>
-                </h2>
-                <p className="body-copy mt-4 max-w-xl text-foreground/80">
-                  Need custom colours, branding, or event-volume kits? Share your
-                  brief and our team will call you back in your preferred hours.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
-                <button
-                  type="button"
-                  onClick={openCustomOrderForm}
-                  className="btn-text inline-flex items-center justify-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
-                >
-                  <PhoneCall size={15} />
-                  Request Callback
-                </button>
-                <div className="border border-border/70 bg-black/35 px-4 py-3">
-                  <p className="label-text text-foreground">Custom builds</p>
-                  <p className="meta-text mt-0.5 text-muted">
-                    Colourways, patches, and fitment tweaks
-                  </p>
-                </div>
-                <div className="border border-border/70 bg-black/35 px-4 py-3">
-                  <p className="label-text text-foreground">Event bulk orders</p>
-                  <p className="meta-text mt-0.5 text-muted">
-                    Club rides, launches, and track days
-                  </p>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <div
+                aria-hidden="true"
+                className="h-full w-full bg-[radial-gradient(circle_at_35%_30%,rgba(161,98,7,0.24),transparent_22%),linear-gradient(145deg,#E9DDCB,#F8F4EC_52%,#D8C2A3)]"
+              />
+            )}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-4 border border-background/25 sm:inset-6"
+            />
+          </div>
+          <div>
+            <p className="eyebrow text-primary">Our approach</p>
+            <h2 className="mt-4 font-display text-4xl leading-[1.05] sm:text-5xl">
+              Chosen slowly, worn every day
+            </h2>
+            <p className="body-copy mt-6 text-muted">{theme.brand.description}</p>
+            <p className="body-copy mt-4 text-muted">
+              We keep the selection small on purpose. Each category is edited so
+              that whatever you choose sits easily alongside the pieces you
+              already own.
+            </p>
+            <Link
+              href="/categories"
+              className="j-text-link mt-9 text-foreground hover:text-primary"
+            >
+              Explore the collection
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </section>
 
-      <div className="pointer-events-none fixed inset-0 z-[70]">
-        {isPopupOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 24, x: 18, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            transition={{ duration: 0.28, ease: "easeOut" }}
-            className="pointer-events-auto absolute bottom-4 right-3 w-[min(90vw,28rem)] overflow-hidden rounded-2xl border border-primary/45 bg-[linear-gradient(135deg,rgba(8,8,12,0.97),rgba(13,13,20,0.96))] text-foreground shadow-[0_0_34px_rgba(176,3,47,0.24)] backdrop-blur md:bottom-6 md:right-6"
-          >
-            <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_20%_0%,rgba(227,18,69,0.28),transparent_36%),radial-gradient(circle_at_100%_100%,rgba(179,240,255,0.16),transparent_40%)]" />
-            <div className="relative">
-              <div className="flex items-start justify-between border-b border-primary/30 px-4 py-3">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-primary/45 bg-primary/15 text-primary">
-                    <Bot size={17} />
-                  </div>
-                  <div>
-                    <p className="eyebrow-xs text-primary/90">Neo Commerce Signal</p>
-                    <p className="mt-1.5 text-sm font-medium leading-snug text-foreground/90">
-                      Need custom builds or event-volume orders?
-                    </p>
-                  </div>
-                </div>
+      {/* ── Trust points ───────────────────────────────────────────────────── */}
+      <section className="border-b border-border py-16 sm:py-20">
+        <div className="j-container grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          {TRUST_POINTS.map((point) => (
+            <div key={point.title}>
+              <point.icon className="size-5 text-primary" aria-hidden="true" />
+              <h3 className="mt-4 font-display text-xl">{point.title}</h3>
+              <p className="mt-2 text-sm leading-7 text-muted">{point.copy}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Concierge callback ─────────────────────────────────────────────── */}
+      <section className="j-section bg-foreground text-background">
+        <div className="j-container grid gap-12 lg:grid-cols-2 lg:gap-20">
+          <div>
+            <p className="eyebrow text-background/60">Personal concierge</p>
+            <h2 className="mt-4 font-display text-4xl leading-[1.05] text-background sm:text-5xl">
+              Prefer to be guided?
+            </h2>
+            <p className="mt-6 max-w-md text-sm leading-7 text-background/70">
+              Tell us what you are looking for — a gift, a size, a piece you
+              cannot find — and our team will call you back at a time that suits
+              you.
+            </p>
+            <dl className="mt-10 space-y-5 text-sm">
+              <div>
+                <dt className="eyebrow-xs text-background/50">Call us</dt>
+                <dd className="mt-1.5 text-background/85">
+                  <a href={`tel:${theme.brand.supportPhone.replace(/\s/g, "")}`}>
+                    {theme.brand.supportPhone}
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="eyebrow-xs text-background/50">Write to us</dt>
+                <dd className="mt-1.5 text-background/85">
+                  <a href={`mailto:${theme.brand.supportEmail}`}>
+                    {theme.brand.supportEmail}
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="eyebrow-xs text-background/50">Client care hours</dt>
+                <dd className="mt-1.5 text-background/85">{theme.brand.supportHours}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="bg-background p-7 text-foreground sm:p-10">
+            {callbackSent ? (
+              <div className="flex min-h-[22rem] flex-col items-center justify-center text-center">
+                <CheckCircle2 className="size-7 text-success" aria-hidden="true" />
+                <h3 className="mt-5 font-display text-2xl">Request received</h3>
+                <p className="mt-3 max-w-xs text-sm leading-7 text-muted">
+                  Our client care team will call you during your preferred hours.
+                </p>
                 <button
                   type="button"
-                  onClick={handlePopupClose}
-                  aria-label="Minimize callback assistant"
-                  className="rounded-full border border-primary/30 bg-black/35 p-1.5 text-muted transition-colors hover:border-primary/70 hover:text-foreground"
+                  onClick={() => setCallbackSent(false)}
+                  className="j-text-link mt-8 text-foreground hover:text-primary"
                 >
-                  <X size={14} />
+                  Send another request
                 </button>
               </div>
+            ) : (
+              <form onSubmit={handleCallbackSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="callback-requirement" className="label-text text-muted">
+                    What are you looking for?
+                  </label>
+                  <textarea
+                    id="callback-requirement"
+                    required
+                    minLength={8}
+                    maxLength={1200}
+                    rows={4}
+                    value={callbackForm.requirement}
+                    onChange={(event) =>
+                      setCallbackForm((previous) => ({
+                        ...previous,
+                        requirement: event.target.value,
+                      }))
+                    }
+                    placeholder="A gift for an anniversary, a ring resize, a piece you saw earlier…"
+                    className="j-field mt-3 resize-none focus:border-foreground"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="callback-phone" className="label-text text-muted">
+                    Phone number
+                  </label>
+                  <input
+                    id="callback-phone"
+                    required
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={callbackForm.phone}
+                    onChange={(event) =>
+                      setCallbackForm((previous) => ({
+                        ...previous,
+                        phone: event.target.value,
+                      }))
+                    }
+                    placeholder={theme.brand.supportPhone}
+                    className="j-field mt-3 focus:border-foreground"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="callback-hours" className="label-text text-muted">
+                    Preferred hours
+                  </label>
+                  <input
+                    id="callback-hours"
+                    required
+                    type="text"
+                    minLength={3}
+                    maxLength={80}
+                    value={callbackForm.contactHours}
+                    onChange={(event) =>
+                      setCallbackForm((previous) => ({
+                        ...previous,
+                        contactHours: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g. 10am - 1pm"
+                    className="j-field mt-3 focus:border-foreground"
+                  />
+                </div>
 
-              <div className="px-4 pb-4 pt-3">
-                {!isFormOpen && !showSuccessState && (
-                  <div className="space-y-4">
-                    <p className="body-copy text-foreground/85">
-                      We provide product customisations and also accept bulk orders for events.
-                      Share your brief and our team will call you back.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCallbackError("");
-                        setIsFormOpen(true);
-                      }}
-                      className="btn-text inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-white transition-colors hover:bg-primary-dark"
-                    >
-                      <PhoneCall size={14} />
-                      Request Callback
-                    </button>
-                  </div>
+                {callbackError && (
+                  <p role="alert" className="border border-danger/35 bg-danger/10 px-4 py-3 text-sm text-danger">
+                    {callbackError}
+                  </p>
                 )}
 
-                {isFormOpen && !showSuccessState && (
-                  <form onSubmit={handleCallbackSubmit} className="space-y-3">
-                    <textarea
-                      value={callbackForm.requirement}
-                      onChange={(event) =>
-                        setCallbackForm((prev) => ({ ...prev, requirement: event.target.value }))
-                      }
-                      required
-                      rows={3}
-                      placeholder="Describe your requirement (customisation / event order details)"
-                      className="w-full rounded-lg border border-border bg-card/80 px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-1 focus:ring-primary/60"
-                    />
-                    <input
-                      value={callbackForm.phone}
-                      onChange={(event) =>
-                        setCallbackForm((prev) => ({ ...prev, phone: event.target.value }))
-                      }
-                      required
-                      type="tel"
-                      inputMode="tel"
-                      placeholder="Phone number"
-                      className="w-full rounded-lg border border-border bg-card/80 px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-1 focus:ring-primary/60"
-                    />
-                    <input
-                      value={callbackForm.contactHours}
-                      onChange={(event) =>
-                        setCallbackForm((prev) => ({ ...prev, contactHours: event.target.value }))
-                      }
-                      required
-                      type="text"
-                      placeholder="Preferred contact hours (e.g. 10am - 1pm)"
-                      className="w-full rounded-lg border border-border bg-card/80 px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-1 focus:ring-primary/60"
-                    />
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCallbackError("");
-                          setIsFormOpen(false);
-                        }}
-                        className="btn-text text-muted transition-colors hover:text-foreground"
-                      >
-                        Back
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isSubmittingCallback}
-                        className="btn-text inline-flex items-center gap-2 rounded-md border border-primary/60 bg-primary px-4 py-2.5 text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
-                      >
-                        {isSubmittingCallback ? (
-                          <>
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border border-white/80 border-r-transparent" />
-                            Sending
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles size={14} />
-                            Submit
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    {callbackError && (
-                      <p className="rounded-md border border-danger/40 bg-danger/10 px-2.5 py-2 text-xs text-danger">
-                        {callbackError}
-                      </p>
-                    )}
-                  </form>
-                )}
-
-                {showSuccessState && (
-                  <div className="relative overflow-hidden rounded-xl border border-success/40 bg-success/10 px-4 py-6 text-center">
-                    <motion.div
-                      initial={{ scale: 0.55, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.35 }}
-                      className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full border border-success/50 bg-success/20 text-success"
-                    >
-                      <CheckCircle2 size={22} />
-                    </motion.div>
-                    <p className="label-text text-success">Callback Requested</p>
-                    <p className="meta-text mt-1.5 text-foreground/80">
-                      Our team will connect with you in your preferred hours.
-                    </p>
-                    <span className="pointer-events-none absolute left-1/4 top-1/4 h-1.5 w-1.5 animate-ping rounded-full bg-success/80" />
-                    <span className="pointer-events-none absolute right-1/4 top-1/3 h-1.5 w-1.5 animate-ping rounded-full bg-primary/80 [animation-delay:0.25s]" />
-                    <span className="pointer-events-none absolute bottom-1/4 left-1/2 h-1.5 w-1.5 animate-ping rounded-full bg-foreground/80 [animation-delay:0.38s]" />
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {isPopupMinimized && !isPopupOpen && (
-          <motion.button
-            type="button"
-            onClick={handlePopupRestore}
-            initial={{ opacity: 0, x: 18 }}
-            animate={{ opacity: 1, x: 0 }}
-            whileHover={{ x: -3 }}
-            className="eyebrow-xs pointer-events-auto absolute bottom-5 right-0 inline-flex items-center gap-2 rounded-l-full border border-r-0 border-primary/50 bg-[linear-gradient(120deg,rgba(11,11,18,0.98),rgba(27,9,15,0.95))] px-3.5 py-2.5 text-foreground shadow-[0_0_22px_rgba(176,3,47,0.25)]"
-          >
-            <PhoneCall size={13} className="text-primary" />
-            <span>Callback</span>
-          </motion.button>
-        )}
-      </div>
+                <button
+                  type="submit"
+                  disabled={callbackSending}
+                  className="j-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <PhoneCall className="size-4" aria-hidden="true" />
+                  {callbackSending ? "Sending" : "Request a callback"}
+                </button>
+                <p className="text-xs leading-6 text-muted">
+                  We use your number only to return your call about this request.
+                </p>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

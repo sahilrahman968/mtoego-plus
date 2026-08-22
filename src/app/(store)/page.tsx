@@ -1,13 +1,15 @@
 import { Metadata } from "next";
+import { theme } from "@/config/theme";
 import HomeClient from "./HomeClient";
 
 export const metadata: Metadata = {
-  title: "Motoego+ - Your One-Stop Online Store",
-  description:
-    "Discover amazing products at the best prices. Free shipping on orders above ₹999. Shop now for quality products with secure checkout.",
+  title: theme.brand.tagline,
+  description: theme.brand.description,
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Motoego+ - Your One-Stop Online Store",
-    description: "Discover amazing products at the best prices.",
+    title: `${theme.brand.name} — ${theme.brand.tagline}`,
+    description: theme.brand.description,
+    url: "/",
     type: "website",
   },
 };

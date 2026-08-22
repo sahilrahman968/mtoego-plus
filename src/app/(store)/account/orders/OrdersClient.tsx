@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrders, type OrderListItem } from "@/lib/store-api";
 import { formatPrice, getProductImage } from "@/lib/utils";
-import { OrderListCardSkeleton } from "@/components/store/skeletons";
+import { OrderListCardSkeleton } from "@/components/jewellery/shared/Skeletons";
 
 const STATUS_ICONS: Record<string, LucideIcon> = {
   pending: Clock,
@@ -30,13 +30,13 @@ const STATUS_ICONS: Record<string, LucideIcon> = {
 };
 
 const STATUS_ICON_COLORS: Record<string, string> = {
-  pending: "text-[#D4A64C]",
+  pending: "text-primary",
   paid: "text-primary",
-  processing: "text-[#A68CFF]",
-  shipped: "text-[#6FBEE9]",
-  delivered: "text-[#6DD79C]",
-  cancelled: "text-[#F08095]",
-  refunded: "text-[#D09EFF]",
+  processing: "text-primary",
+  shipped: "text-primary",
+  delivered: "text-success",
+  cancelled: "text-danger",
+  refunded: "text-muted",
 };
 
 function OrderProductThumbnails({
@@ -72,7 +72,7 @@ function OrderProductThumbnails({
         {items.map((item, index) => (
           <div
             key={`${item.title}-${index}`}
-            className="relative h-10 w-10 shrink-0 overflow-hidden border border-border bg-black/40"
+            className="relative h-12 w-12 shrink-0 overflow-hidden bg-[#EEE9E0]"
           >
             <Image
               src={getProductImage(item.product?.images)}
@@ -87,7 +87,7 @@ function OrderProductThumbnails({
       {overflows && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card via-card/80 to-transparent backdrop-blur-[1px]"
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card via-card/80 to-transparent"
         />
       )}
     </div>
@@ -114,33 +114,36 @@ export default function OrdersClient() {
   }, [page]);
 
   useEffect(() => {
-    if (isAuthenticated) loadOrders();
+    if (!isAuthenticated) return;
+    const timer = window.setTimeout(() => void loadOrders(), 0);
+    return () => window.clearTimeout(timer);
   }, [isAuthenticated, loadOrders]);
 
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <Package size={48} className="mx-auto mb-4 text-muted/40" />
-        <h1 className="text-3xl text-foreground">My Orders</h1>
-        <p className="body-copy mx-auto mt-3 text-muted">Please login to view your orders</p>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <Package size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Your account</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">My Orders</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Sign in to view your order history and current status.</p>
         <Link
           href="/login?redirect=/account/orders"
-          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary"
         >
           Login to Continue
         </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
-      <div className="mb-6 border-b border-border/60 pb-5">
-        <p className="eyebrow mb-3 text-primary/90">
-          03 / Account
-        </p>
+    <div className="mx-auto w-full max-w-[92rem] px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <div className="mb-8 border-b border-border pb-6 sm:mb-10">
+        <p className="eyebrow mb-3 text-primary">Your account</p>
         <h1 className="section-title text-3xl text-foreground sm:text-5xl">
-          My Orders
+          Order History
         </h1>
         <p className="eyebrow-xs tabular mt-2.5 text-muted">
           {total} order{total !== 1 ? "s" : ""}
@@ -165,7 +168,7 @@ export default function OrdersClient() {
                 <Link
                   key={order._id}
                   href={`/account/orders/${order._id}`}
-                  className="block border border-border bg-card/75 p-4 transition-all hover:border-primary/35 hover:bg-card sm:p-5"
+                  className="group block border border-border bg-card p-5 transition-colors hover:border-primary/50 hover:bg-[#FBF8F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-6"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -173,12 +176,15 @@ export default function OrdersClient() {
                         <StatusIcon
                           size={16}
                           className={`shrink-0 ${statusColor}`}
-                          aria-label={order.status}
+                          aria-hidden="true"
                         />
                         <span className="tabular truncate text-sm font-bold uppercase text-foreground sm:text-base">
                           {order.orderNumber}
                         </span>
                       </div>
+                      <p className={`eyebrow-xs mt-2 capitalize ${statusColor}`}>
+                        {order.status}
+                      </p>
 
                       <OrderProductThumbnails items={order.items} />
 
@@ -200,7 +206,7 @@ export default function OrdersClient() {
                       <span className="price text-sm font-bold text-foreground sm:text-lg">
                         {formatPrice(order.pricing.grandTotal)}
                       </span>
-                      <ChevronRight size={16} className="text-muted" />
+                      <ChevronRight size={18} className="text-muted transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                     </div>
                   </div>
                 </Link>
@@ -213,7 +219,7 @@ export default function OrdersClient() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className="btn-text border border-border bg-black/45 px-4 py-2.5 hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-text min-h-11 cursor-pointer border border-foreground bg-transparent px-4 py-2.5 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Previous
               </button>
@@ -223,7 +229,7 @@ export default function OrdersClient() {
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page >= totalPages}
-                className="btn-text border border-border bg-black/45 px-4 py-2.5 hover:border-primary/45 disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-text min-h-11 cursor-pointer border border-foreground bg-transparent px-4 py-2.5 hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
@@ -231,15 +237,15 @@ export default function OrdersClient() {
           )}
         </>
       ) : (
-        <div className="py-20 text-center">
-          <Package size={48} className="mx-auto mb-4 text-muted/40" />
-          <h2 className="text-lg text-foreground">No orders yet</h2>
+        <div className="border border-border bg-card px-6 py-16 text-center shadow-[0_24px_70px_rgba(61,45,24,0.06)]">
+          <Package size={42} strokeWidth={1.25} className="mx-auto mb-5 text-primary" aria-hidden="true" />
+          <h2 className="section-title text-2xl text-foreground">No orders yet</h2>
           <p className="body-copy mx-auto mt-2 text-muted">
             When you make a purchase, your orders will appear here
           </p>
           <Link
             href="/products"
-            className="btn-text mt-5 inline-flex items-center gap-2 text-primary hover:underline"
+            className="btn-text mt-6 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary"
           >
             Start Shopping
           </Link>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
-import { useToast } from "@/components/store/Toast";
+import { useToast } from "@/components/jewellery/shared/Toast";
 import { validateProductColorImages } from "@/lib/validators";
 
 interface Variant {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useToast } from "@/components/store/Toast";
+import { useToast } from "@/components/jewellery/shared/Toast";
 
 interface Category {
   _id: string;

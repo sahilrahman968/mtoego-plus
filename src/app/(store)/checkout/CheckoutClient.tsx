@@ -8,8 +8,6 @@ import {
   MapPin,
   CreditCard,
   Shield,
-  Truck,
-  RotateCcw,
   ChevronRight,
   Loader2,
   Lock,
@@ -17,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/components/store/Toast";
+import { useToast } from "@/components/jewellery/shared/Toast";
 import { initiateCheckout, verifyPayment } from "@/lib/store-api";
 import {
   formatPrice,
@@ -27,6 +25,7 @@ import {
   isProductUnavailable,
 } from "@/lib/utils";
 import { buildCartSummary, priceInclGst } from "@/lib/pricing";
+import { theme } from "@/config/theme";
 
 interface ShippingForm {
   name: string;
@@ -222,7 +221,7 @@ export default function CheckoutClient() {
         key,
         amount,
         currency,
-        name: "Motoego+",
+        name: theme.brand.name,
         description: `Order ${orderNumber}`,
         order_id: razorpayOrderId,
         prefill: {
@@ -230,7 +229,7 @@ export default function CheckoutClient() {
           email: user?.email || "",
           contact: address.phone,
         },
-        theme: { color: "#e32d22" },
+        theme: { color: "#A16207" },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -277,50 +276,60 @@ export default function CheckoutClient() {
 
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <Lock size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-3xl text-foreground">Login Required</h1>
-        <p className="body-copy mx-auto mt-3 text-muted">Please login to proceed with checkout</p>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <Lock size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Secure checkout</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">Login Required</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Sign in to continue with your order.</p>
         <Link
           href="/login?redirect=/checkout"
-          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           Login to Continue
         </Link>
+        </div>
       </div>
     );
   }
 
   if (items.length === 0 && !authLoading) {
     return (
-      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <CreditCard size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-3xl text-foreground">Nothing to checkout</h1>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <CreditCard size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Checkout</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">Nothing to checkout</h1>
         <p className="body-copy mx-auto mt-3 text-muted">Your cart is empty</p>
         <Link
           href="/products"
-          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary"
         >
-          Start Shopping
+          Explore the collection
         </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+      <div className="mx-auto w-full max-w-[92rem] px-4 py-8 pb-28 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">
+        <header className="mb-8 text-center">
+          <p className="eyebrow mb-3 text-primary">Complete your order</p>
+          <h1 className="section-title text-4xl text-foreground sm:text-5xl">Checkout</h1>
+        </header>
         {/* Progress steps */}
-        <div className="mb-8 flex items-center justify-center gap-3 border-b border-border/60 pb-6">
+        <div className="mb-10 flex items-center justify-center gap-3 border-b border-border pb-7" aria-label="Checkout progress">
           <div
             className={`label-text flex items-center gap-2 ${
-              step === "address" ? "text-primary" : "text-muted"
+              step === "address" ? "text-foreground" : "text-muted"
             }`}
           >
             <div
               className={`tabular flex h-6 w-6 items-center justify-center text-[11px] font-semibold leading-none ${
                 step === "address"
-                  ? "bg-primary text-white"
+                  ? "bg-foreground text-background"
                   : "border border-border bg-card text-muted"
               }`}
             >
@@ -331,13 +340,13 @@ export default function CheckoutClient() {
           <ChevronRight size={16} className="text-muted" />
           <div
             className={`label-text flex items-center gap-2 ${
-              step === "review" ? "text-primary" : "text-muted"
+              step === "review" ? "text-foreground" : "text-muted"
             }`}
           >
             <div
               className={`tabular flex h-6 w-6 items-center justify-center text-[11px] font-semibold leading-none ${
                 step === "review"
-                  ? "bg-primary text-white"
+                  ? "bg-foreground text-background"
                   : "border border-border bg-card text-muted"
               }`}
             >
@@ -351,7 +360,7 @@ export default function CheckoutClient() {
           {/* Main content */}
           <div className="lg:col-span-2">
             {step === "address" ? (
-              <div className="border border-border bg-card/80 p-6">
+              <div className="border border-border bg-card p-5 shadow-[0_18px_50px_rgba(61,45,24,0.06)] sm:p-8">
                 <div className="flex items-center gap-2 mb-6">
                   <MapPin size={20} className="text-primary" />
                   <h2 className="section-title text-lg text-foreground">
@@ -361,77 +370,90 @@ export default function CheckoutClient() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-name" className="label-text mb-2 block text-muted">
                       Full Name *
                     </label>
                     <input
                       type="text"
+                      id="checkout-name"
+                      autoComplete="name"
                       value={address.name}
                       onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       required
                     />
                   </div>
                   <div>
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-phone" className="label-text mb-2 block text-muted">
                       Phone Number *
                     </label>
                     <input
                       type="tel"
+                      id="checkout-phone"
+                      autoComplete="tel"
+                      inputMode="numeric"
                       value={address.phone}
                       onChange={(e) =>
                         setAddress({ ...address, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
                       }
                       placeholder="10-digit mobile number"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       required
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-line1" className="label-text mb-2 block text-muted">
                       Address Line 1 *
                     </label>
                     <input
                       type="text"
+                      id="checkout-line1"
+                      autoComplete="address-line1"
                       value={address.line1}
                       onChange={(e) => setAddress({ ...address, line1: e.target.value })}
                       placeholder="House no., Building, Street"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       required
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-line2" className="label-text mb-2 block text-muted">
                       Address Line 2
                     </label>
                     <input
                       type="text"
+                      id="checkout-line2"
+                      autoComplete="address-line2"
                       value={address.line2}
                       onChange={(e) => setAddress({ ...address, line2: e.target.value })}
                       placeholder="Area, Landmark (optional)"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15"
                     />
                   </div>
                   <div>
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-city" className="label-text mb-2 block text-muted">
                       City *
                     </label>
                     <input
                       type="text"
+                      id="checkout-city"
+                      autoComplete="address-level2"
                       value={address.city}
                       onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       required
                     />
                   </div>
                   <div>
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-state" className="label-text mb-2 block text-muted">
                       State *
                     </label>
                     <select
+                      id="checkout-state"
+                      autoComplete="address-level1"
                       value={address.state}
                       onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
                       required
                     >
                       <option value="">Select state</option>
@@ -443,17 +465,20 @@ export default function CheckoutClient() {
                     </select>
                   </div>
                   <div>
-                    <label className="label-text mb-2 block text-muted">
+                    <label htmlFor="checkout-pincode" className="label-text mb-2 block text-muted">
                       Pincode *
                     </label>
                     <input
                       type="text"
+                      id="checkout-pincode"
+                      autoComplete="postal-code"
+                      inputMode="numeric"
                       value={address.pincode}
                       onChange={(e) =>
                         setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
                       }
                       placeholder="6-digit pincode"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className="w-full border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       required
                     />
                   </div>
@@ -461,7 +486,7 @@ export default function CheckoutClient() {
 
                 <button
                   onClick={handleProceedToReview}
-                  className="btn-text mt-7 flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark"
+                  className="btn-text mt-8 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 bg-foreground px-6 py-4 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   Continue to Review
                   <ChevronRight size={18} />
@@ -470,7 +495,7 @@ export default function CheckoutClient() {
             ) : (
               <div className="space-y-6">
                 {/* Shipping summary */}
-                <div className="border border-border bg-card/80 p-6">
+                <div className="border border-border bg-card p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-primary" />
@@ -495,7 +520,7 @@ export default function CheckoutClient() {
                 </div>
 
                 {/* Cart items */}
-                <div className="border border-border bg-card/80 p-6">
+                <div className="border border-border bg-card p-6">
                   <h3 className="section-title mb-4 text-base text-foreground">
                     Order Items ({items.length})
                   </h3>
@@ -523,9 +548,9 @@ export default function CheckoutClient() {
                       return (
                         <div
                           key={item._id}
-                          className={`flex gap-3 ${unavailable ? "opacity-70" : ""}`}
+                          className={`flex gap-3 border-b border-border py-3 last:border-0 ${unavailable ? "opacity-70" : ""}`}
                         >
-                          <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-border bg-black/45">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-[#EEE9E0]">
                             <Image
                               src={getProductImage(product?.images)}
                               alt={title}
@@ -574,7 +599,7 @@ export default function CheckoutClient() {
                     hasOutOfStockItems ||
                     availableItems.length === 0
                   }
-                  className="btn-text flex w-full items-center justify-center gap-2 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                  className="btn-text hidden min-h-12 w-full cursor-pointer items-center justify-center gap-2 bg-foreground px-6 py-4 text-background transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
                 >
                   {loading ? (
                     <Loader2 size={20} className="animate-spin" />
@@ -599,7 +624,7 @@ export default function CheckoutClient() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-28 border border-border bg-card/90 p-6">
+            <div className="sticky top-28 border border-border bg-[#F7F2E9] p-6 shadow-[0_18px_50px_rgba(61,45,24,0.08)]">
               <h2 className="section-title mb-5 text-lg text-foreground">
                 Order Summary
               </h2>
@@ -634,34 +659,27 @@ export default function CheckoutClient() {
                 <p className="eyebrow-xs text-muted">Total includes GST</p>
               </div>
 
-              <div className="mt-4 flex items-center gap-2 border border-border bg-black/45 p-3">
+              <div className="mt-5 flex items-center gap-2 border border-primary/20 bg-primary/5 p-3">
                 <Shield size={16} className="shrink-0 text-primary" />
                 <p className="meta-text text-muted">
-                  Your payment is secured with Razorpay&apos;s 256-bit encryption
+                  Payment is completed through Razorpay.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3 border-y border-border/70 py-4 sm:grid-cols-4">
-          {[
-            { icon: Truck, title: "Free Shipping", desc: "On orders above ₹999" },
-            { icon: Shield, title: "Secure Payment", desc: "100% secure checkout" },
-            { icon: RotateCcw, title: "Easy Returns", desc: "7-day return policy" },
-            { icon: CreditCard, title: "Multiple Payment", desc: "UPI, Cards, Net Banking" },
-          ].map((item) => (
-            <div key={item.title} className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center border border-primary/30 bg-primary/10">
-                <item.icon size={14} className="text-primary" />
-              </div>
-              <div>
-                <p className="label-text text-foreground">{item.title}</p>
-                <p className="meta-text mt-0.5 text-muted">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {step === "review" && (
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 shadow-[0_-10px_30px_rgba(61,45,24,0.1)] backdrop-blur lg:hidden">
+            <button
+              onClick={handlePayment}
+              disabled={loading || hasUnavailableItems || hasOutOfStockItems || availableItems.length === 0}
+              className="btn-text flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 bg-foreground px-6 py-3.5 text-background disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={20} className="animate-spin" aria-label="Processing payment" /> : <><Lock size={17} aria-hidden="true" />Pay {formatPrice(estimatedTotal)}</>}
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

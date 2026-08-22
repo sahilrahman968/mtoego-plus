@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/store/Toast";
-import AuthBackdrop from "@/components/store/AuthBackdrop";
-import GoogleSignInButton from "@/components/store/GoogleSignInButton";
+import { useToast } from "@/components/jewellery/shared/Toast";
+import AuthBackdrop from "@/components/jewellery/account/AuthBackdrop";
+import GoogleSignInButton from "@/components/jewellery/account/GoogleSignInButton";
+import { theme } from "@/config/theme";
 
 export default function AuthShell() {
   const router = useRouter();
@@ -44,14 +45,21 @@ export default function AuthShell() {
 
   return (
     <AuthBackdrop>
-      <div className="auth-form">
+      <div className="auth-form text-center">
+        <p className="eyebrow mb-3 text-primary">Your private account</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">
+          Welcome to {theme.brand.name}
+        </h1>
+        <p className="body-copy mx-auto mb-8 mt-3 text-muted">
+          Sign in to manage your orders, wishlist, and cart.
+        </p>
         <GoogleSignInButton
           onSuccess={handleGoogleSuccess}
           onError={handleGoogleError}
         />
 
         {error && (
-          <div className="mt-4 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm leading-relaxed text-danger animate-slide-up">
+          <div role="alert" aria-live="polite" className="mt-4 border border-danger/25 bg-danger/10 p-3 text-left text-sm leading-relaxed text-danger animate-slide-up">
             {error}
           </div>
         )}

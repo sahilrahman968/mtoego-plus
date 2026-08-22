@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Grid3x3 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { fetchCategories, type CategoryData } from "@/lib/store-api";
-import { CategoryCardSkeleton } from "@/components/store/skeletons";
+import { CategoryCardSkeleton } from "@/components/jewellery/shared/Skeletons";
 
 export default function CategoriesClient() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
@@ -20,84 +20,78 @@ export default function CategoriesClient() {
     });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="mx-auto w-full max-w-[92rem] px-3 py-8 sm:px-4 lg:px-6">
-        <div className="mb-2 h-3 w-32 animate-pulse-slow bg-card-hover" />
-        <div className="mb-8 h-10 w-56 animate-pulse-slow bg-card-hover" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <CategoryCardSkeleton key={i} />
+  return (
+    <div className="j-container py-10 sm:py-16">
+      <header className="max-w-2xl">
+        <p className="eyebrow text-primary">Browse</p>
+        <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl">Categories</h1>
+        <p className="mt-5 text-sm text-muted" aria-live="polite">
+          {loading
+            ? "Loading categories…"
+            : categories.length > 0
+              ? `${categories.length} ${categories.length === 1 ? "collection" : "collections"} to explore`
+              : "Our collections are being curated."}
+        </p>
+      </header>
+
+      {loading ? (
+        <div className="mt-14 grid grid-cols-2 gap-x-5 gap-y-12 sm:gap-x-7 lg:grid-cols-4 lg:gap-x-8">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <CategoryCardSkeleton key={index} />
           ))}
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-black py-8 sm:py-10">
-      <div className="mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6">
-        <div className="mb-8">
-          <p className="eyebrow mb-3 text-primary/90">
-            01 / Categories
-          </p>
-          <h1 className="section-title text-3xl text-foreground sm:text-5xl lg:text-6xl">
-            All Categories
-          </h1>
-          <p className="meta-text tabular mt-3 text-muted">
-            Browse our collection of {categories.length} categories
-          </p>
-        </div>
-
-        {categories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {categories.map((cat) => (
-              <div key={cat._id}>
-                <Link
-                  href={`/categories/${cat.slug}`}
-                  className="group relative block overflow-hidden bg-black focus:outline-none"
-                >
-                  <div className="relative aspect-[4/5] overflow-hidden bg-black/55">
-                    {cat.image?.url ? (
-                      <Image
-                        src={cat.image.url}
-                        alt={cat.name}
-                        fill
-                        sizes="(max-width: 1024px) 50vw, 25vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-card to-black">
-                        <span className="text-5xl font-bold text-primary/60">
-                          {cat.name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/42 to-transparent" />
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                    <p className="eyebrow-xs tabular text-primary/85">
-                      {cat.productCount} {cat.productCount === 1 ? "Piece" : "Pieces"}
-                    </p>
-                    <h2 className="section-title mt-1.5 text-base text-foreground transition-colors group-hover:text-primary sm:text-2xl">
+      ) : categories.length > 0 ? (
+        <ul className="mt-14 grid grid-cols-2 gap-x-5 gap-y-12 sm:gap-x-7 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-16">
+          {categories.map((cat) => (
+            <li key={cat._id}>
+              <Link href={`/categories/${cat.slug}`} className="group block cursor-pointer">
+                <div className="relative aspect-[4/5] overflow-hidden bg-[#EEE9E0]">
+                  {cat.image?.url ? (
+                    <Image
+                      src={cat.image.url}
+                      alt={cat.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 grid place-items-center font-display text-6xl text-primary/35"
+                    >
+                      {cat.name.charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline justify-between gap-3 pt-4">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-xl transition-colors group-hover:text-primary sm:text-2xl">
                       {cat.name}
                     </h2>
+                    <p className="tabular mt-1.5 text-xs uppercase tracking-[0.12em] text-muted">
+                      {cat.productCount} {cat.productCount === 1 ? "piece" : "pieces"}
+                    </p>
                   </div>
-                  <div className="absolute bottom-4 right-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <ArrowRight size={18} className="text-foreground" />
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-20 text-center">
-            <Grid3x3 size={40} className="mx-auto mb-3 text-muted/35" />
-            <h2 className="text-lg text-foreground">No categories yet</h2>
-            <p className="meta-text mt-2 text-muted">Check back soon for new categories</p>
-          </div>
-        )}
-      </div>
+                  <ArrowRight
+                    className="mt-1 size-4 shrink-0 text-muted transition-colors group-hover:text-primary"
+                    aria-hidden="true"
+                  />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-14 border border-border bg-card px-6 py-20 text-center">
+          <h2 className="text-2xl">No categories yet</h2>
+          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+            New collections are added as pieces arrive. In the meantime, browse everything we have.
+          </p>
+          <Link href="/products" className="j-button-primary mt-8">
+            View all jewellery
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

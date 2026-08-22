@@ -8,20 +8,20 @@
  * during build (they are overridden by the inline styles at runtime).
  */
 :root {
-  --background: #07070a;
-  --foreground: #f3f3f5;
-  --primary: #e32d22;
-  --primary-dark: #8f0226;
-  --primary-light: #2a1018;
-  --accent: #e31245;
-  --accent-light: #241117;
-  --muted: #a8a0a6;
-  --border: #2b2428;
-  --card: #101014;
-  --card-hover: #18181e;
-  --danger: #e23a56;
-  --warning: #d49a2a;
-  --success: #57b97d;
+  --background: #faf8f3;
+  --foreground: #1c1917;
+  --primary: #8a642d;
+  --primary-dark: #62451e;
+  --primary-light: #efe4d1;
+  --accent: #a16207;
+  --accent-light: #f7eedc;
+  --muted: #6f6a63;
+  --border: #d8d0c4;
+  --card: #ffffff;
+  --card-hover: #f5f0e8;
+  --danger: #b42318;
+  --warning: #946200;
+  --success: #327a57;
 
   /* Admin panel scale — see theme.ts `adminColors`. Light and low-chroma:
      the storefront palette is built for a dark page and is unreadable on the
@@ -140,9 +140,7 @@
     font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
     line-height: var(--leading-body);
     letter-spacing: 0;
-    background-image:
-      radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 38%),
-      radial-gradient(circle at 84% 0%, color-mix(in srgb, #ffffff 6%, transparent), transparent 36%);
+    background-image: linear-gradient(to bottom, rgba(255,255,255,.34), transparent 28rem);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -151,7 +149,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-    font-weight: 700;
+    font-weight: 500;
     text-transform: var(--heading-text-transform, uppercase);
     line-height: var(--leading-heading);
     text-wrap: balance;
@@ -257,7 +255,7 @@
 
   .hero-title {
     font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-    font-weight: 700;
+    font-weight: 500;
     /* Space Grotesk is proportional, so large caps need no extra tracking. */
     letter-spacing: -0.015em;
     line-height: 0.97;
@@ -267,8 +265,8 @@
   /* Section heading paired with an .eyebrow above it. */
   .section-title {
     font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
+    font-weight: 500;
+    text-transform: none;
     letter-spacing: -0.01em;
     line-height: 1.02;
     text-wrap: balance;
@@ -369,13 +367,13 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="s
 select:not(.admin-theme *),
 textarea:not(.admin-theme *) {
   color: var(--foreground);
-  background-color: color-mix(in srgb, var(--card) 80%, black 20%);
+  background-color: var(--card);
   border-color: var(--border);
 }
 
 input:not(.admin-theme *)::placeholder,
 textarea:not(.admin-theme *)::placeholder {
-  color: color-mix(in srgb, var(--muted) 85%, white 15%) !important;
+  color: color-mix(in srgb, var(--muted) 78%, transparent) !important;
   opacity: 1;
 }
 
@@ -431,7 +429,7 @@ textarea:not(.admin-theme *)::placeholder {
 .auth-form select,
 .auth-form textarea {
   color: var(--foreground);
-  background-color: color-mix(in srgb, var(--card) 88%, black 12%);
+  background-color: var(--card);
   border-color: var(--border) !important;
 }
 
@@ -510,10 +508,20 @@ textarea:not(.admin-theme *)::placeholder {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Page scrollbar is replaced by the cafe racer overlay (ScrollbarOverlay.tsx) */
-html { scrollbar-width: none; -ms-overflow-style: none; }
+html {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary) 55%, transparent) transparent;
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
 html::-webkit-scrollbar,
-body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+body::-webkit-scrollbar { width: 9px; }
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 50%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
 
 .cr-rail {
   position: fixed;
@@ -657,4 +665,132 @@ body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 ::selection {
   background: color-mix(in srgb, var(--primary) 42%, transparent);
   color: var(--foreground);
+}
+
+@layer components {
+  .j-container {
+    width: min(100% - 2rem, 90rem);
+    margin-inline: auto;
+  }
+
+  @media (min-width: 768px) {
+    .j-container { width: min(100% - 4rem, 90rem); }
+  }
+
+  @media (min-width: 1280px) {
+    .j-container { width: min(100% - 6rem, 90rem); }
+  }
+
+  .j-icon-button {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    color: var(--foreground);
+    transition: color 180ms ease, background-color 180ms ease;
+  }
+
+  .j-icon-button:hover { color: var(--primary); background: var(--accent-light); }
+  .j-icon-button svg { width: 1.15rem; height: 1.15rem; stroke-width: 1.55; }
+
+  .j-nav-link {
+    position: relative;
+    padding-block: .65rem;
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--foreground) 78%, transparent);
+    transition: color 180ms ease;
+  }
+
+  .j-nav-link::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: .2rem;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 220ms ease;
+  }
+
+  .j-nav-link:hover::after { transform: scaleX(1); transform-origin: left; }
+
+  .j-button-primary,
+  .j-button-secondary {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    padding: .8rem 1.4rem;
+    font-size: .7rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  .j-button-primary { background: var(--foreground); color: var(--background); border: 1px solid var(--foreground); }
+  .j-button-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: white; }
+  .j-button-secondary { border: 1px solid var(--border); color: var(--foreground); background: transparent; }
+  .j-button-secondary:hover { border-color: var(--foreground); background: var(--card); }
+
+  .j-text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: .2rem;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .j-skip-link {
+    position: fixed;
+    top: .75rem;
+    left: .75rem;
+    z-index: 9999;
+    transform: translateY(-200%);
+    background: var(--foreground);
+    color: var(--background);
+    padding: .75rem 1rem;
+    font-size: .75rem;
+  }
+
+  .j-skip-link:focus { transform: translateY(0); }
+
+  .j-section { padding-block: clamp(4.5rem, 9vw, 8.5rem); }
+  .j-section-title { font-size: clamp(2.6rem, 6vw, 5.5rem); line-height: .95; }
+  .j-page-title { font-size: clamp(3.2rem, 8vw, 7.5rem); line-height: .88; }
+
+  .j-field {
+    width: 100%;
+    min-height: 3rem;
+    border: 1px solid var(--border);
+    padding: .75rem .9rem;
+    font-size: .875rem;
+    outline: none;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
 }

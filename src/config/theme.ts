@@ -8,11 +8,11 @@
 export const theme = {
   // ── Brand ──────────────────────────────────────────────────────────────────
   brand: {
-    name: "Motoego+",
-    tagline: "Your One-Stop Online Store",
+    name: "Aurelia",
+    tagline: "Jewellery for the moments you keep",
     description:
-      "Discover amazing products at the best prices. Free shipping on orders above ₹999. Shop now for quality products with secure checkout.",
-    keywords: ["ecommerce", "online shopping", "buy online", "best prices", "free shipping"],
+      "Discover contemporary jewellery selected for everyday rituals, celebrations, and everything worth remembering.",
+    keywords: ["jewellery", "fine jewellery", "contemporary jewellery", "rings", "necklaces"],
     supportEmail: "help@shopnow.in",
     supportPhone: "+91 98765 43210",
     supportHours: "Mon - Sat, 9am - 6pm",
@@ -22,20 +22,20 @@ export const theme = {
   // These map directly to CSS custom properties (--background, --primary, etc.)
   // and are available as Tailwind utilities (bg-primary, text-muted, etc.)
   colors: {
-    background: "#07070A",
-    foreground: "#F3F3F5",
-    primary: "#E32D22",
-    primaryDark: "#8F0226",
-    primaryLight: "#2A1018",
-    accent: "#E31245",
-    accentLight: "#241117",
-    muted: "#A8A0A6",
-    border: "#2B2428",
-    card: "#101014",
-    cardHover: "#18181E",
-    danger: "#E23A56",
-    warning: "#D49A2A",
-    success: "#57B97D",
+    background: "#FAF8F3",
+    foreground: "#1C1917",
+    primary: "#8A642D",
+    primaryDark: "#62451E",
+    primaryLight: "#EFE4D1",
+    accent: "#A16207",
+    accentLight: "#F7EEDC",
+    muted: "#6F6A63",
+    border: "#D8D0C4",
+    card: "#FFFFFF",
+    cardHover: "#F5F0E8",
+    danger: "#B42318",
+    warning: "#946200",
+    success: "#327A57",
   },
 
   // ── Admin panel colors ─────────────────────────────────────────────────────
@@ -85,14 +85,14 @@ export const theme = {
   // Base tracking for uppercase headings. Optical sizing in globals.css tightens
   // this further as headings get larger — big type needs less letter spacing.
   headings: {
-    letterSpacing: "0.015em",
-    textTransform: "uppercase" as const,
+    letterSpacing: "-0.015em",
+    textTransform: "none" as const,
   },
 
   // ── Announcement Bar ───────────────────────────────────────────────────────
   announcement: {
-    enabled: false,
-    text: 'Throttle into savings: free shipping above ₹999 | Use code <strong>WELCOME10</strong> for 10% off',
+    enabled: true,
+    text: "Complimentary shipping on orders above ₹999",
   },
 } as const;
 

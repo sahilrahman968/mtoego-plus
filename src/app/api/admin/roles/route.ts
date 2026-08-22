@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Role name must be at least 2 characters", 400);
     }
 
-    let slug =
+    const slug =
       typeof body.slug === "string" && body.slug.trim()
         ? body.slug.trim().toLowerCase()
         : slugifyRoleName(name);

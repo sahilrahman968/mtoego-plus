@@ -1,9 +1,11 @@
 import { Metadata } from "next";
+import { theme } from "@/config/theme";
 import SalesIndexClient from "./SalesIndexClient";
 
 export const metadata: Metadata = {
-  title: "Sales | Motoego+",
-  description: "Live and upcoming limited drops, flash cuts, and campaign pricing.",
+  title: "Jewellery Sale",
+  description: `Explore current ${theme.brand.name} offers and limited-time pricing on selected jewellery.`,
+  alternates: { canonical: "/sale" },
 };
 
 export default function SalesIndexPage() {

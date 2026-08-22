@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { theme } from "@/config/theme";
 import CategoryProductsClient from "./CategoryProductsClient";
 
 interface Props {
@@ -12,8 +13,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
   return {
-    title: `${formatted} - Motoego+`,
-    description: `Browse our collection of ${formatted.toLowerCase()} products.`,
+    title: `${formatted} Jewellery`,
+    description: `Browse ${formatted.toLowerCase()} jewellery from ${theme.brand.name}. Discover contemporary pieces for everyday wear and special moments.`,
+    alternates: { canonical: `/categories/${slug}` },
+    openGraph: {
+      title: `${formatted} Jewellery | ${theme.brand.name}`,
+      description: `Explore the ${formatted.toLowerCase()} jewellery collection from ${theme.brand.name}.`,
+      url: `/categories/${slug}`,
+    },
   };
 }
 

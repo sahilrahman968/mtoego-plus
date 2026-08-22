@@ -20,7 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getOrder, type OrderDetail } from "@/lib/store-api";
 import { formatPrice, getProductImage, isProductUnavailable } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
-import { OrderDetailPageSkeleton } from "@/components/store/skeletons";
+import { OrderDetailPageSkeleton } from "@/components/jewellery/shared/Skeletons";
 
 const STATUS_ICONS: Record<string, typeof Package> = {
   pending: Clock,
@@ -33,13 +33,13 @@ const STATUS_ICONS: Record<string, typeof Package> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "border border-[#4A3B17] bg-[#251D0D] text-[#D4A64C]",
-  paid: "border border-primary/45 bg-primary/15 text-primary",
-  processing: "border border-[#3A2F52] bg-[#1B1627] text-[#A68CFF]",
-  shipped: "border border-[#264352] bg-[#111E26] text-[#6FBEE9]",
-  delivered: "border border-[#1E4C33] bg-[#10241A] text-[#6DD79C]",
-  cancelled: "border border-[#5A232F] bg-[#2A1218] text-[#F08095]",
-  refunded: "border border-[#4F355E] bg-[#24172C] text-[#D09EFF]",
+  pending: "border border-primary/30 bg-primary/10 text-primary",
+  paid: "border border-primary/30 bg-primary/10 text-primary",
+  processing: "border border-primary/30 bg-primary/10 text-primary",
+  shipped: "border border-primary/30 bg-primary/10 text-primary",
+  delivered: "border border-success/30 bg-success/10 text-success",
+  cancelled: "border border-danger/30 bg-danger/10 text-danger",
+  refunded: "border border-border bg-card-hover text-muted",
 };
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
@@ -68,15 +68,18 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <Package size={48} className="mx-auto mb-4 text-muted/40" />
-        <h1 className="text-3xl text-foreground">Login Required</h1>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <Package size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Order details</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">Login Required</h1>
         <Link
           href={`/login?redirect=/account/orders/${orderId}`}
-          className="btn-text mt-6 inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary"
         >
           Login to Continue
         </Link>
+        </div>
       </div>
     );
   }
@@ -91,15 +94,18 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
   if (!order) {
     return (
-      <div className="mx-auto w-full max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <AlertCircle size={48} className="mx-auto mb-4 text-muted/40" />
-        <h1 className="text-3xl text-foreground">Order Not Found</h1>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <AlertCircle size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Order details</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">Order Not Found</h1>
         <Link
           href="/account/orders"
-          className="btn-text mt-6 inline-flex items-center gap-2 text-primary hover:underline"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 border border-foreground px-7 py-3.5 text-foreground transition-colors hover:bg-foreground hover:text-background"
         >
           <ArrowLeft size={16} /> Back to Orders
         </Link>
+        </div>
       </div>
     );
   }
@@ -107,7 +113,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const StatusIcon = STATUS_ICONS[order.status] || Package;
 
   return (
-    <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+    <div className="mx-auto w-full max-w-[92rem] px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       {/* Back */}
       <Link
         href="/account/orders"
@@ -118,8 +124,9 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       </Link>
 
       {/* Header */}
-      <div className="mb-6 flex flex-col justify-between gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center">
+      <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-7 sm:flex-row sm:items-end">
         <div>
+          <p className="eyebrow mb-3 text-primary">Order details</p>
           <h1 className="tabular section-title text-3xl text-foreground sm:text-4xl">
             {order.orderNumber}
           </h1>
@@ -148,7 +155,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Timeline */}
-          <div className="border border-border bg-card/75 p-6">
+          <section className="border border-border bg-card p-5 shadow-[0_18px_50px_rgba(61,45,24,0.05)] sm:p-7">
             <h3 className="section-title mb-5 text-base text-foreground">Order Timeline</h3>
             <div className="space-y-4">
               {order.statusHistory.map((entry, idx) => {
@@ -163,7 +170,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                   <div key={idx} className="flex gap-3">
                     <div className="relative">
                       <div
-                        className={`w-3 h-3 rounded-full mt-1 ${
+                        className={`mt-1 h-3 w-3 rounded-full ${
                           idx === order.statusHistory.length - 1
                             ? "bg-primary"
                             : "bg-muted/45"
@@ -181,7 +188,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                         <p className="meta-text mt-0.5 text-muted">{entry.note}</p>
                       )}
                       {entry.status === "shipped" && (awb || trackUrl) && (
-                        <div className="mt-2 space-y-1.5 border border-border bg-black/25 px-3 py-2">
+                        <div className="mt-2 space-y-1.5 border border-primary/20 bg-primary/5 px-3 py-2">
                           {awb && (
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="eyebrow-xs shrink-0 text-muted">
@@ -230,10 +237,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                 );
               })}
             </div>
-          </div>
+          </section>
 
           {/* Items */}
-          <div className="border border-border bg-card/75 p-6">
+          <section className="border border-border bg-card p-5 sm:p-7">
             <h3 className="section-title mb-5 text-base text-foreground">
               Items ({order.items.length})
             </h3>
@@ -243,8 +250,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                 const canLink = !unavailable && !!item.product?.slug;
 
                 return (
-                <div key={`${item.sku}-${index}`} className="flex gap-4">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-border bg-black/45">
+                <div key={`${item.sku}-${index}`} className="flex flex-wrap gap-4 border-b border-border py-4 first:pt-0 last:border-0 last:pb-0 sm:flex-nowrap">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-[#EEE9E0]">
                     <Image
                       src={getProductImage(item.product?.images)}
                       alt={item.title}
@@ -276,7 +283,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                     </p>
                     <p className="meta-text tabular text-muted">Qty: {item.quantity}</p>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="ml-24 w-full text-left sm:ml-0 sm:w-auto sm:shrink-0 sm:text-right">
                     <p className="price text-sm font-medium text-foreground">
                       {formatPrice(priceInclGst(item.price, item.gst) * item.quantity)}
                     </p>
@@ -288,10 +295,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                 );
               })}
             </div>
-          </div>
+          </section>
 
           {/* Shipping Address */}
-          <div className="border border-border bg-card/75 p-6">
+          <section className="border border-border bg-card p-5 sm:p-7">
             <div className="flex items-center gap-2 mb-3">
               <MapPin size={18} className="text-primary" />
               <h3 className="section-title text-base text-foreground">Shipping Address</h3>
@@ -308,12 +315,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </p>
               <p className="tabular text-muted">Phone: {order.shippingAddress.phone}</p>
             </div>
-          </div>
+          </section>
         </div>
 
         {/* Pricing Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-28 border border-border bg-card/85 p-6">
+          <div className="sticky top-28 border border-border bg-[#F7F2E9] p-6 shadow-[0_18px_50px_rgba(61,45,24,0.08)]">
             <h3 className="section-title mb-5 text-base text-foreground">Payment Details</h3>
             <div className="tabular space-y-3 text-sm">
               <div className="flex justify-between">

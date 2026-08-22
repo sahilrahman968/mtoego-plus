@@ -79,7 +79,7 @@ export interface CreateCategoryBody {
   isActive?: boolean;
 }
 
-export interface UpdateCategoryBody extends Partial<CreateCategoryBody> {}
+export type UpdateCategoryBody = Partial<CreateCategoryBody>;
 
 // ─── Product Colors & Sizes ──────────────────────────────────────────────
 
@@ -187,7 +187,7 @@ export interface CreateProductBody {
   tags?: string[];
 }
 
-export interface UpdateProductBody extends Partial<CreateProductBody> {}
+export type UpdateProductBody = Partial<CreateProductBody>;
 
 // ─── Inventory ──────────────────────────────────────────────────────────────
 
@@ -269,7 +269,7 @@ export interface CreateCouponBody {
   isActive?: boolean;
 }
 
-export interface UpdateCouponBody extends Partial<CreateCouponBody> {}
+export type UpdateCouponBody = Partial<CreateCouponBody>;
 
 export interface ApplyCouponBody {
   code: string;

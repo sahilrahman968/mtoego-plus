@@ -1,45 +1,68 @@
 "use client";
 
-import { useEffect, useState, useCallback, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { useSearchParams, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { SlidersHorizontal, X } from "lucide-react";
-import ProductCard from "@/components/store/ProductCard";
-import { ProductCardSkeleton } from "@/components/store/skeletons";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Check, SlidersHorizontal, X } from "lucide-react";
+import ProductCard from "@/components/jewellery/catalog/ProductCard";
+import { ProductCardSkeleton } from "@/components/jewellery/shared/Skeletons";
 import {
-  fetchProducts,
   fetchCategories,
-  type ProductData,
+  fetchProducts,
   type CategoryData,
+  type ProductData,
 } from "@/lib/store-api";
 
-const SORT_OPTIONS = [
-  { value: "price:asc", label: "Low to High" },
-  { value: "price:desc", label: "High to Low" },
-];
+const PAGE_SIZE = 20;
 
-function FilterOptionLabel({
+/** Only `createdAt` and `price` are sortable server-side. */
+const SORT_OPTIONS = [
+  { value: "createdAt:desc", label: "Newest first" },
+  { value: "price:asc", label: "Price: low to high" },
+  { value: "price:desc", label: "Price: high to low" },
+] as const;
+
+const DEFAULT_SORT = "createdAt:desc";
+
+function GroupHeading({ children }: { children: ReactNode }) {
+  return <h3 className="eyebrow mb-3 text-muted">{children}</h3>;
+}
+
+function FilterOption({
   active,
+  onSelect,
   children,
 }: {
   active: boolean;
+  onSelect: () => void;
   children: ReactNode;
 }) {
   return (
-    <span className="relative inline-block pb-1">
-      {children}
-      {active && (
-        <span className="absolute inset-x-0 bottom-0 h-px bg-primary" />
-      )}
-      <motion.span
-        variants={{
-          rest: { scaleX: 0 },
-          hover: { scaleX: 1 },
-        }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="absolute inset-x-0 bottom-0 h-px origin-left bg-white"
-      />
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 border-b border-border/60 text-left text-sm transition-colors ${
+        active ? "text-primary" : "text-foreground/80 hover:text-foreground"
+      }`}
+    >
+      <span>{children}</span>
+      {active && <Check className="size-4 shrink-0" aria-hidden="true" />}
+    </button>
+  );
+}
+
+function Chip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-2 border border-border bg-card px-3 py-2 text-xs uppercase tracking-[0.12em] text-foreground">
+      {label}
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={`Remove ${label} filter`}
+        className="cursor-pointer text-muted transition-colors hover:text-foreground"
+      >
+        <X className="size-3.5" aria-hidden="true" />
+      </button>
     </span>
   );
 }
@@ -48,11 +71,15 @@ export default function ProductsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [products, setProducts] = useState<ProductData[]>([]);
+  const [result, setResult] = useState<{
+    key: string;
+    items: ProductData[];
+    total: number;
+    totalPages: number;
+  } | null>(null);
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [refineOpen, setRefineOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const page = parseInt(searchParams.get("page") || "1");
   const category = searchParams.get("category") || "";
@@ -61,10 +88,22 @@ export default function ProductsClient() {
   const search = searchParams.get("search") || "";
   const featured = searchParams.get("featured") === "true";
 
-  const sortValue =
-    sortParam === "price" && (orderParam === "asc" || orderParam === "desc")
-      ? `price:${orderParam}`
-      : "";
+  const sortField = sortParam === "price" || sortParam === "createdAt" ? sortParam : "";
+  const sortOrder: "asc" | "desc" | undefined =
+    orderParam === "asc" || orderParam === "desc" ? orderParam : undefined;
+  // Both halves are required: a lone `sort` or `order` falls back to the
+  // server default (newest first) rather than guessing the missing half.
+  const sortValue = sortField && sortOrder ? `${sortField}:${sortOrder}` : "";
+  const activeSort = sortValue || DEFAULT_SORT;
+
+  // Deriving "loading" from the in-flight request identity avoids a setState
+  // pass on every param change, and keeps the last result on screen until the
+  // matching response lands.
+  const requestKey = `${page}|${category}|${sortValue}|${search}|${featured}`;
+  const loading = result?.key !== requestKey;
+  const products = result?.items ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 0;
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
@@ -88,359 +127,268 @@ export default function ProductsClient() {
   }, []);
 
   useEffect(() => {
-    if (!filterOpen) return;
-
+    if (!refineOpen) return;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setFilterOpen(false);
-    };
-
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-
+    closeButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setRefineOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("keydown", onKeyDown);
     };
-  }, [filterOpen]);
+  }, [refineOpen]);
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     fetchProducts({
       page,
-      limit: 20,
-      sort: sortValue ? "price" : undefined,
-      order: sortValue
-        ? (orderParam as "asc" | "desc")
-        : undefined,
+      limit: PAGE_SIZE,
+      sort: sortValue ? sortField : undefined,
+      order: sortValue ? sortOrder : undefined,
       category: category || undefined,
       search: search || undefined,
       featured: featured || undefined,
     }).then((res) => {
-      if (res.success && res.data) {
-        setProducts(res.data.items);
-        setTotalPages(res.data.totalPages);
-      }
-      setLoading(false);
+      if (cancelled) return;
+      setResult({
+        key: requestKey,
+        items: res.success && res.data ? res.data.items : [],
+        total: res.success && res.data ? res.data.total : 0,
+        totalPages: res.success && res.data ? res.data.totalPages : 0,
+      });
     });
-  }, [page, category, sortValue, search, featured, orderParam]);
+    return () => {
+      cancelled = true;
+    };
+  }, [page, category, sortValue, sortField, sortOrder, search, featured, requestKey]);
 
-  const activeCategory = category
-    ? categories.find((c) => c._id === category)?.name
-    : null;
+  const activeCategory = category ? categories.find((c) => c._id === category)?.name : null;
+  const hasChips = Boolean(activeCategory) || featured;
 
-  const renderFilters = (mobile = false) => (
+  const selectCategory = (value: string) => {
+    updateParams({ category: value, page: "1" });
+    setRefineOpen(false);
+  };
+
+  const selectSort = (value: string) => {
+    const [sort, order] = value.split(":");
+    updateParams({ sort, order, page: "1" });
+    setRefineOpen(false);
+  };
+
+  const refineControls = (
     <>
-      {mobile && (
-        <button
-          type="button"
-          onClick={() => setFilterOpen(false)}
-          className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
-          aria-label="Close filters"
-        >
-          <X size={18} />
-        </button>
-      )}
-
-      <div className={mobile ? "relative px-4 pb-6 pt-14" : ""}>
-        {mobile && (
-          <p className="eyebrow-xs mb-4 px-3 text-muted/70">
-            Filters & Sort
-          </p>
-        )}
-
-        <div className={mobile ? "mb-7" : "mb-6"}>
-          <h4
-            className={
-              mobile
-                ? "eyebrow-xs mb-2 px-3 text-muted/70"
-                : "label-text mb-3 text-foreground"
-            }
-          >
-            Category
-          </h4>
-          <div className={mobile ? "" : "space-y-1"}>
-            <motion.button
-              initial="rest"
-              animate="rest"
-              whileHover="hover"
-              whileFocus="hover"
-              onClick={() => {
-                updateParams({ category: "", page: "1" });
-                setFilterOpen(false);
-              }}
-              className={`block w-full text-left transition-colors ${
-                mobile
-                  ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
-                      !category
-                        ? "text-primary"
-                        : "text-foreground/85 hover:text-foreground"
-                    }`
-                  : `rounded px-2 py-1.5 text-sm ${
-                      !category
-                        ? "font-medium text-primary"
-                        : "text-foreground"
-                    }`
-              }`}
+      <div>
+        <GroupHeading>Category</GroupHeading>
+        <div>
+          <FilterOption active={!category} onSelect={() => selectCategory("")}>
+            All jewellery
+          </FilterOption>
+          {categories.map((cat) => (
+            <FilterOption
+              key={cat._id}
+              active={category === cat._id}
+              onSelect={() => selectCategory(cat._id)}
             >
-              <FilterOptionLabel active={!category}>
-                All Categories
-              </FilterOptionLabel>
-            </motion.button>
-            {categories.map((cat) => (
-              <motion.button
-                key={cat._id}
-                initial="rest"
-                animate="rest"
-                whileHover="hover"
-                whileFocus="hover"
-                onClick={() => {
-                  updateParams({ category: cat._id, page: "1" });
-                  setFilterOpen(false);
-                }}
-                className={`block w-full text-left transition-colors ${
-                  mobile
-                    ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
-                        category === cat._id
-                          ? "text-primary"
-                          : "text-foreground/85 hover:text-foreground"
-                      }`
-                    : `rounded px-2 py-1.5 text-sm ${
-                        category === cat._id
-                          ? "font-medium text-primary"
-                          : "text-foreground"
-                      }`
-                }`}
-              >
-                <FilterOptionLabel active={category === cat._id}>
-                  {cat.name}
-                </FilterOptionLabel>
-              </motion.button>
-            ))}
-          </div>
+              {cat.name}
+            </FilterOption>
+          ))}
         </div>
+      </div>
 
-        <div className={mobile ? "border-t border-white/8 pt-5" : "mb-6"}>
-          <h4
-            className={
-              mobile
-                ? "eyebrow-xs mb-2 px-3 text-muted/70"
-                : "label-text mb-3 text-foreground"
-            }
-          >
-            Sort by Price
-          </h4>
-          <div className={mobile ? "" : "space-y-1"}>
-            {SORT_OPTIONS.map((opt) => {
-              const active = sortValue === opt.value;
-              return (
-                <motion.button
-                  key={opt.value}
-                  initial="rest"
-                  animate="rest"
-                  whileHover="hover"
-                  whileFocus="hover"
-                  onClick={() => {
-                    const [sort, order] = opt.value.split(":");
-                    updateParams({ sort, order, page: "1" });
-                    setFilterOpen(false);
-                  }}
-                  className={`block w-full text-left transition-colors ${
-                    mobile
-                      ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
-                          active
-                            ? "text-primary"
-                            : "text-foreground/85 hover:text-foreground"
-                        }`
-                      : `rounded px-2 py-1.5 text-sm ${
-                          active
-                            ? "font-medium text-primary"
-                            : "text-foreground"
-                        }`
-                  }`}
-                >
-                  <FilterOptionLabel active={active}>
-                    {opt.label}
-                  </FilterOptionLabel>
-                </motion.button>
-              );
-            })}
-          </div>
+      <div className="mt-10">
+        <GroupHeading>Sort by</GroupHeading>
+        <div>
+          {SORT_OPTIONS.map((option) => (
+            <FilterOption
+              key={option.value}
+              active={activeSort === option.value}
+              onSelect={() => selectSort(option.value)}
+            >
+              {option.label}
+            </FilterOption>
+          ))}
         </div>
       </div>
     </>
   );
 
+  const grid = (
+    <div className="grid grid-cols-2 gap-x-5 gap-y-12 sm:gap-x-7 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16">
+      {loading
+        ? Array.from({ length: 6 }).map((_, index) => <ProductCardSkeleton key={index} />)
+        : products.map((product) => <ProductCard key={product._id} product={product} />)}
+    </div>
+  );
+
   return (
     <>
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {search && (
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Search results for &quot;{search}&quot;
+      <div className="j-container py-10 sm:py-16">
+        <header className="max-w-2xl">
+          <p className="eyebrow text-primary">
+            {search ? "Search" : featured ? "The edit" : "The collection"}
+          </p>
+          <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl">
+            {search ? `Results for “${search}”` : activeCategory || "All jewellery"}
           </h1>
-        </div>
-      )}
+          <p className="mt-5 text-sm text-muted" aria-live="polite">
+            {loading
+              ? "Loading pieces…"
+              : `${total} ${total === 1 ? "piece" : "pieces"}`}
+          </p>
+        </header>
 
-      {/* Active filters */}
-      {(activeCategory || featured) && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {activeCategory && (
-            <span className="eyebrow-xs inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-primary">
-              {activeCategory}
-              <button onClick={() => updateParams({ category: "" })}>
-                <X size={12} />
-              </button>
-            </span>
-          )}
-          {featured && (
-            <span className="eyebrow-xs inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-primary">
-              Featured
-              <button onClick={() => updateParams({ featured: "" })}>
-                <X size={12} />
-              </button>
-            </span>
-          )}
+        {hasChips && (
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            {activeCategory && (
+              <Chip label={activeCategory} onClear={() => updateParams({ category: "" })} />
+            )}
+            {featured && <Chip label="Featured" onClear={() => updateParams({ featured: "" })} />}
+            <button
+              type="button"
+              onClick={() => router.push("/products")}
+              className="cursor-pointer text-xs uppercase tracking-[0.12em] text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
+        <div className="mt-10 border-y border-border py-4 lg:hidden">
           <button
-            onClick={() => router.push("/products")}
-            className="meta-text text-muted hover:text-foreground"
+            type="button"
+            onClick={() => setRefineOpen(true)}
+            aria-expanded={refineOpen}
+            className="j-button-secondary w-full cursor-pointer"
           >
-            Clear all
+            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            Filter &amp; sort
           </button>
         </div>
-      )}
 
-      {/* Toolbar — mobile only; desktop uses the sidebar */}
-      <div className="mb-6 flex items-center border-b border-border pb-4 lg:hidden">
-        <button
-          onClick={() => setFilterOpen(!filterOpen)}
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-50"
-        >
-          <SlidersHorizontal size={16} />
-          Filters & Sort
-        </button>
-      </div>
-
-      <div className="flex gap-8">
-        {/* Sidebar filters */}
-        <aside className="hidden w-56 shrink-0 lg:block">
-          <div className="sticky top-28">{renderFilters()}</div>
-        </aside>
-
-        {/* Product Grid */}
-        <div className="flex-1 min-w-0">
-          {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10 lg:gap-14">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))}
+        <div className="mt-12 lg:grid lg:grid-cols-[13rem_1fr] lg:gap-16">
+          <aside className="hidden lg:block" aria-labelledby="refine-heading">
+            <div className="sticky top-28">
+              <h2 id="refine-heading" className="eyebrow mb-8 text-foreground">
+                Refine
+              </h2>
+              {refineControls}
             </div>
-          ) : products.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10 lg:gap-14">
-                {products.map((p) => (
-                  <ProductCard key={p._id} product={p} />
-                ))}
-              </div>
+          </aside>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    onClick={() => updateParams({ page: String(page - 1) })}
-                    disabled={page <= 1}
-                    className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          <div className="min-w-0">
+            {loading || products.length > 0 ? (
+              <>
+                {grid}
+
+                {!loading && totalPages > 1 && (
+                  <nav
+                    aria-label="Pagination"
+                    className="mt-16 flex flex-wrap items-center justify-center gap-2 border-t border-border pt-10"
                   >
-                    Previous
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (page <= 3) {
-                        pageNum = i + 1;
-                      } else if (page >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = page - 2 + i;
-                      }
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => updateParams({ page: String(pageNum) })}
-                          className={`tabular h-10 w-10 rounded-lg text-sm font-medium leading-none transition-colors ${
-                            pageNum === page
-                              ? "bg-primary text-white"
-                              : "hover:bg-gray-50 text-foreground"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button
-                    onClick={() => updateParams({ page: String(page + 1) })}
-                    disabled={page >= totalPages}
-                    className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <SlidersHorizontal size={32} className="text-gray-400" />
+                    <button
+                      type="button"
+                      onClick={() => updateParams({ page: String(page - 1) })}
+                      disabled={page <= 1}
+                      className="min-h-11 cursor-pointer border border-border px-4 text-xs uppercase tracking-[0.12em] transition-colors hover:border-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (page <= 3) {
+                          pageNum = i + 1;
+                        } else if (page >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = page - 2 + i;
+                        }
+                        const current = pageNum === page;
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => updateParams({ page: String(pageNum) })}
+                            aria-label={`Page ${pageNum}`}
+                            aria-current={current ? "page" : undefined}
+                            className={`tabular size-11 cursor-pointer text-sm transition-colors ${
+                              current
+                                ? "bg-foreground text-background"
+                                : "text-foreground hover:bg-card-hover"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => updateParams({ page: String(page + 1) })}
+                      disabled={page >= totalPages}
+                      className="min-h-11 cursor-pointer border border-border px-4 text-xs uppercase tracking-[0.12em] transition-colors hover:border-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                )}
+              </>
+            ) : (
+              <div className="border border-border bg-card px-6 py-20 text-center">
+                <h2 className="text-2xl">Nothing here yet</h2>
+                <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+                  {search
+                    ? `We could not find a piece matching “${search}”. Try another term or explore the full collection.`
+                    : "No pieces match this selection. Adjust your filters to see more of the collection."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/products")}
+                  className="j-button-primary mt-8 cursor-pointer"
+                >
+                  View all jewellery
+                </button>
               </div>
-              <h3 className="text-lg text-foreground">No products found</h3>
-              <p className="meta-text mx-auto mt-2 max-w-xs text-muted">
-                Try adjusting your filters or search terms
-              </p>
-              <button
-                onClick={() => router.push("/products")}
-                className="mt-4 text-sm font-medium text-primary hover:underline"
-              >
-                Clear all filters
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    {typeof document !== "undefined" &&
-      createPortal(
-        <AnimatePresence>
-          {filterOpen && (
-            <>
-              <motion.button
+      {refineOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
+          <button
+            type="button"
+            onClick={() => setRefineOpen(false)}
+            aria-label="Close filters"
+            className="absolute inset-0 cursor-default bg-foreground/30 backdrop-blur-[2px]"
+          />
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filter and sort"
+            className="animate-slide-in-right absolute right-0 top-0 h-dvh w-[min(90vw,22rem)] overflow-y-auto border-l border-border bg-background shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-border px-6 py-5">
+              <h2 className="text-2xl">Filter &amp; sort</h2>
+              <button
+                ref={closeButtonRef}
                 type="button"
+                onClick={() => setRefineOpen(false)}
+                className="j-icon-button cursor-pointer"
                 aria-label="Close filters"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => setFilterOpen(false)}
-                className="fixed inset-0 z-[2147483646] cursor-default bg-black/30 lg:hidden"
-              />
-              <motion.aside
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", stiffness: 340, damping: 34 }}
-                className="fixed right-0 top-0 z-[2147483647] min-h-dvh w-[68vw] max-w-[17.5rem] overflow-y-auto border-b border-l border-white/10 bg-[#0d0d11]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.55)] lg:hidden"
-                aria-label="Product filters and sort"
               >
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_35%)]" />
-                {renderFilters(true)}
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>,
-        document.body,
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <div className="px-6 py-8">{refineControls}</div>
+          </aside>
+        </div>
       )}
     </>
   );

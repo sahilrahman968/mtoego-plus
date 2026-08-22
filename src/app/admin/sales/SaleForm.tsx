@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { useToast } from "@/components/store/Toast";
+import { useToast } from "@/components/jewellery/shared/Toast";
 import { priceInclGst } from "@/lib/pricing";
 import {
   BANNER_CTA_POSITIONS,

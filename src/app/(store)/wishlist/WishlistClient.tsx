@@ -5,15 +5,15 @@ import Link from "next/link";
 import { Heart, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/components/store/Toast";
+import { useToast } from "@/components/jewellery/shared/Toast";
 import {
   getWishlist,
   removeFromWishlist,
   type WishlistItemData,
 } from "@/lib/store-api";
 import { isProductUnavailable } from "@/lib/utils";
-import ProductCard from "@/components/store/ProductCard";
-import { ProductCardSkeleton } from "@/components/store/skeletons";
+import ProductCard from "@/components/jewellery/catalog/ProductCard";
+import { ProductCardSkeleton } from "@/components/jewellery/shared/Skeletons";
 
 export default function WishlistClient() {
   const { isAuthenticated } = useAuth();
@@ -81,23 +81,30 @@ export default function WishlistClient() {
 
   if (!isAuthenticated) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl text-foreground">Your Wishlist</h1>
-        <p className="body-copy mx-auto mt-3 text-muted">Please login to view your wishlist</p>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <Heart size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Saved for later</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">Your Wishlist</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Sign in to revisit the pieces that caught your eye.</p>
         <Link
           href="/login?redirect=/wishlist"
-          className="btn-text mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           Login to Continue
         </Link>
+        </div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[92rem] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mb-10 space-y-3 border-b border-border pb-6">
+          <div className="h-3 w-24 animate-pulse bg-card-hover" />
+          <div className="h-10 w-56 animate-pulse bg-card-hover" />
+        </div>
         <div className="grid grid-cols-2 gap-4 sm:gap-10 lg:grid-cols-4 lg:gap-14">
           {Array.from({ length: 4 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
@@ -109,27 +116,37 @@ export default function WishlistClient() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-2xl text-foreground">
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <Heart size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Curate your collection</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">
           Your wishlist is empty
         </h1>
         <p className="body-copy mx-auto mt-3 text-muted">
-          Save items you love to your wishlist
+          Keep the pieces you love close while you consider your selection.
         </p>
         <Link
           href="/products"
-          className="btn-text mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          Explore Products
-          <ArrowRight size={18} />
+          Explore the collection
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="mx-auto max-w-[92rem] px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <header className="mb-8 border-b border-border pb-6 sm:mb-12">
+        <p className="eyebrow mb-3 text-primary">Saved for later</p>
+        <div className="flex items-end justify-between gap-4">
+          <h1 className="section-title text-4xl text-foreground sm:text-5xl">Your Wishlist</h1>
+          <p className="eyebrow-xs tabular pb-1 text-muted">{items.length} piece{items.length === 1 ? "" : "s"}</p>
+        </div>
+      </header>
       <div className="grid grid-cols-2 gap-4 sm:gap-10 lg:grid-cols-4 lg:gap-14">
         {items.map((item) => {
           const product = item.product;

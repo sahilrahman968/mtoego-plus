@@ -1,90 +1,96 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Package, SlidersHorizontal, X } from "lucide-react";
-import ProductCard from "@/components/store/ProductCard";
-import { ProductCardSkeleton } from "@/components/store/skeletons";
+import { ArrowUpDown, Check, ChevronRight, X } from "lucide-react";
+import ProductCard from "@/components/jewellery/catalog/ProductCard";
+import { ProductCardSkeleton } from "@/components/jewellery/shared/Skeletons";
 import {
-  fetchProducts,
   fetchCategories,
-  type ProductData,
+  fetchProducts,
   type CategoryData,
+  type ProductData,
 } from "@/lib/store-api";
 
-const SORT_OPTIONS = [
-  { value: "price:asc", label: "Low to High" },
-  { value: "price:desc", label: "High to Low" },
-];
+const PAGE_SIZE = 20;
 
-function FilterOptionLabel({
+/** An empty value keeps the server default (newest first). */
+const SORT_OPTIONS = [
+  { value: "", label: "Newest first" },
+  { value: "price:asc", label: "Price: low to high" },
+  { value: "price:desc", label: "Price: high to low" },
+] as const;
+
+function SortOption({
   active,
+  onSelect,
   children,
 }: {
   active: boolean;
-  children: ReactNode;
+  onSelect: () => void;
+  children: React.ReactNode;
 }) {
   return (
-    <span className="relative inline-block pb-1">
-      {children}
-      {active && (
-        <span className="absolute inset-x-0 bottom-0 h-px bg-primary" />
-      )}
-      <motion.span
-        variants={{
-          rest: { scaleX: 0 },
-          hover: { scaleX: 1 },
-        }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="absolute inset-x-0 bottom-0 h-px origin-left bg-white"
-      />
-    </span>
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 border-b border-border/60 text-left text-sm transition-colors ${
+        active ? "text-primary" : "text-foreground/80 hover:text-foreground"
+      }`}
+    >
+      <span>{children}</span>
+      {active && <Check className="size-4 shrink-0" aria-hidden="true" />}
+    </button>
   );
 }
 
 export default function CategoryProductsClient({ slug }: { slug: string }) {
   const [category, setCategory] = useState<CategoryData | null>(null);
+  const [categoryMissing, setCategoryMissing] = useState(false);
   const [result, setResult] = useState<{
     key: string;
     items: ProductData[];
     totalPages: number;
+    total: number;
   } | null>(null);
   const [page, setPage] = useState(1);
   const [sortValue, setSortValue] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const requestKey = category ? `${category._id}|${page}|${sortValue}` : "";
-  const loading = result?.key !== requestKey;
+  const loading = !categoryMissing && result?.key !== requestKey;
   const products = result?.items ?? [];
   const totalPages = result?.totalPages ?? 0;
+  const total = result?.total ?? 0;
 
   useEffect(() => {
     fetchCategories().then((res) => {
       if (res.success && res.data) {
         const cat = res.data.find((c) => c.slug === slug);
         setCategory(cat || null);
+        setCategoryMissing(!cat);
+      } else {
+        setCategoryMissing(true);
       }
     });
   }, [slug]);
 
   useEffect(() => {
-    if (!filterOpen) return;
-
+    if (!sortOpen) return;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setFilterOpen(false);
-    };
-
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-
+    closeButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSortOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("keydown", onKeyDown);
     };
-  }, [filterOpen]);
+  }, [sortOpen]);
 
   useEffect(() => {
     if (!category) return;
@@ -95,7 +101,7 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
     fetchProducts({
       category: category._id,
       page,
-      limit: 20,
+      limit: PAGE_SIZE,
       sort,
       order,
     }).then((res) => {
@@ -104,6 +110,7 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
         key: requestKey,
         items: res.success && res.data ? res.data.items : [],
         totalPages: res.success && res.data ? res.data.totalPages : 0,
+        total: res.success && res.data ? res.data.total : 0,
       });
     });
     return () => {
@@ -111,200 +118,190 @@ export default function CategoryProductsClient({ slug }: { slug: string }) {
     };
   }, [category, page, sortValue, requestKey]);
 
-  const renderSortFilters = (mobile = false) => (
-    <>
-      {mobile && (
-        <button
-          type="button"
-          onClick={() => setFilterOpen(false)}
-          className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
-          aria-label="Close filters"
-        >
-          <X size={18} />
-        </button>
-      )}
+  const selectSort = (value: string) => {
+    setSortValue(value);
+    setPage(1);
+    setSortOpen(false);
+  };
 
-      <div className={mobile ? "relative px-4 pb-6 pt-14" : ""}>
-        {mobile && (
-          <p className="eyebrow-xs mb-4 px-3 text-muted/70">
-            Sort
-          </p>
-        )}
-
-        <div>
-          <h4
-            className={
-              mobile
-                ? "eyebrow-xs mb-2 px-3 text-muted/70"
-                : "label-text mb-3 text-foreground"
-            }
-          >
-            Sort by Price
-          </h4>
-          <div className={mobile ? "" : "space-y-1"}>
-            {SORT_OPTIONS.map((opt) => {
-              const active = sortValue === opt.value;
-              return (
-                <motion.button
-                  key={opt.value}
-                  initial="rest"
-                  animate="rest"
-                  whileHover="hover"
-                  whileFocus="hover"
-                  onClick={() => {
-                    setSortValue(opt.value);
-                    setPage(1);
-                    setFilterOpen(false);
-                  }}
-                  className={`block w-full text-left transition-colors ${
-                    mobile
-                      ? `min-h-10 px-3.5 text-sm font-medium leading-snug ${
-                          active
-                            ? "text-primary"
-                            : "text-foreground/85 hover:text-foreground"
-                        }`
-                      : `rounded px-2 py-1.5 text-sm ${
-                          active
-                            ? "font-medium text-primary"
-                            : "text-foreground"
-                        }`
-                  }`}
-                >
-                  <FilterOptionLabel active={active}>
-                    {opt.label}
-                  </FilterOptionLabel>
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </>
-  );
+  const sortControls = SORT_OPTIONS.map((option) => (
+    <SortOption
+      key={option.label}
+      active={sortValue === option.value}
+      onSelect={() => selectSort(option.value)}
+    >
+      {option.label}
+    </SortOption>
+  ));
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Breadcrumb */}
-        <nav className="eyebrow-xs mb-6 flex items-center gap-2 overflow-x-auto text-muted">
-          <Link href="/" className="hover:text-foreground">
-            Home
-          </Link>
-          <ChevronRight size={14} />
-          <Link href="/categories" className="hover:text-foreground">
-            Categories
-          </Link>
-          <ChevronRight size={14} />
-          <span className="text-foreground">{category?.name || slug}</span>
+      <div className="j-container py-10 sm:py-16">
+        <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-[0.12em] text-muted">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link href="/" className="transition-colors hover:text-foreground">
+                Home
+              </Link>
+            </li>
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
+            <li>
+              <Link href="/categories" className="transition-colors hover:text-foreground">
+                Categories
+              </Link>
+            </li>
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
+            <li aria-current="page" className="text-foreground">
+              {category?.name || slug.replace(/-/g, " ")}
+            </li>
+          </ol>
         </nav>
 
-        {/* Toolbar — mobile only; desktop uses the sidebar */}
-        <div className="mb-6 flex items-center border-b border-border pb-4 lg:hidden">
-          <button
-            onClick={() => setFilterOpen(!filterOpen)}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-50"
-          >
-            <SlidersHorizontal size={16} />
-            Sort
-          </button>
-        </div>
+        {categoryMissing ? (
+          <div className="mt-14 border border-border bg-card px-6 py-20 text-center">
+            <h1 className="text-3xl">Collection not found</h1>
+            <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+              This collection is no longer available. Explore our other categories instead.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/categories" className="j-button-primary">
+                All categories
+              </Link>
+              <Link href="/products" className="j-button-secondary">
+                All jewellery
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            <header className="mt-8 max-w-2xl">
+              <p className="eyebrow text-primary">Collection</p>
+              <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl">
+                {category?.name || slug.replace(/-/g, " ")}
+              </h1>
+              {category?.description && (
+                <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted">
+                  {category.description}
+                </p>
+              )}
+              <p className="mt-5 text-sm text-muted" aria-live="polite">
+                {loading ? "Loading pieces…" : `${total} ${total === 1 ? "piece" : "pieces"}`}
+              </p>
+            </header>
 
-        <div className="flex gap-8">
-          {/* Sidebar filters */}
-          <aside className="hidden w-56 shrink-0 lg:block">
-            <div className="sticky top-28">{renderSortFilters()}</div>
-          </aside>
+            <div className="mt-10 border-y border-border py-4 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setSortOpen(true)}
+                aria-expanded={sortOpen}
+                className="j-button-secondary w-full cursor-pointer"
+              >
+                <ArrowUpDown className="size-4" aria-hidden="true" />
+                Sort
+              </button>
+            </div>
 
-          {/* Products */}
-          <div className="flex-1 min-w-0">
-            {loading ? (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10 lg:gap-14">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <ProductCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : products.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10 lg:gap-14">
-                  {products.map((p) => (
-                    <ProductCard key={p._id} product={p} />
-                  ))}
+            <div className="mt-12 lg:grid lg:grid-cols-[13rem_1fr] lg:gap-16">
+              <aside className="hidden lg:block" aria-labelledby="sort-heading">
+                <div className="sticky top-28">
+                  <h2 id="sort-heading" className="eyebrow mb-8 text-foreground">
+                    Sort
+                  </h2>
+                  {sortControls}
                 </div>
+              </aside>
 
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page <= 1}
-                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Previous
-                    </button>
-                    <span className="tabular meta-text px-4 text-muted">
-                      Page {page} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      disabled={page >= totalPages}
-                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next
-                    </button>
+              <div className="min-w-0">
+                {loading || products.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-12 sm:gap-x-7 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16">
+                      {loading
+                        ? Array.from({ length: 6 }).map((_, index) => (
+                            <ProductCardSkeleton key={index} />
+                          ))
+                        : products.map((product) => (
+                            <ProductCard key={product._id} product={product} />
+                          ))}
+                    </div>
+
+                    {!loading && totalPages > 1 && (
+                      <nav
+                        aria-label="Pagination"
+                        className="mt-16 flex items-center justify-center gap-4 border-t border-border pt-10"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setPage(Math.max(1, page - 1))}
+                          disabled={page <= 1}
+                          className="min-h-11 cursor-pointer border border-border px-4 text-xs uppercase tracking-[0.12em] transition-colors hover:border-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border"
+                        >
+                          Previous
+                        </button>
+                        <span className="tabular text-xs uppercase tracking-[0.12em] text-muted">
+                          Page {page} of {totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPage(Math.min(totalPages, page + 1))}
+                          disabled={page >= totalPages}
+                          className="min-h-11 cursor-pointer border border-border px-4 text-xs uppercase tracking-[0.12em] transition-colors hover:border-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border"
+                        >
+                          Next
+                        </button>
+                      </nav>
+                    )}
+                  </>
+                ) : (
+                  <div className="border border-border bg-card px-6 py-20 text-center">
+                    <h2 className="text-2xl">No pieces in this collection</h2>
+                    <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+                      New arrivals are added regularly. Explore the full collection in the meantime.
+                    </p>
+                    <Link href="/products" className="j-button-primary mt-8">
+                      View all jewellery
+                    </Link>
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="text-center py-20">
-                <Package size={40} className="mx-auto text-gray-300 mb-3" />
-                <h2 className="text-lg text-foreground">
-                  No products in this category
-                </h2>
-                <p className="meta-text mx-auto mt-2 text-muted">
-                  Check back later for new arrivals
-                </p>
-                <Link
-                  href="/products"
-                  className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-primary hover:underline"
-                >
-                  Browse all products
-                </Link>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {typeof document !== "undefined" &&
-        createPortal(
-          <AnimatePresence>
-            {filterOpen && (
-              <>
-                <motion.button
-                  type="button"
-                  aria-label="Close filters"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => setFilterOpen(false)}
-                  className="fixed inset-0 z-[2147483646] cursor-default bg-black/30 lg:hidden"
-                />
-                <motion.aside
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ type: "spring", stiffness: 340, damping: 34 }}
-                  className="fixed right-0 top-0 z-[2147483647] min-h-dvh w-[68vw] max-w-[17.5rem] overflow-y-auto border-b border-l border-white/10 bg-[#0d0d11]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.55)] lg:hidden"
-                  aria-label="Sort options"
-                >
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_35%)]" />
-                  {renderSortFilters(true)}
-                </motion.aside>
-              </>
-            )}
-          </AnimatePresence>,
-          document.body,
-        )}
+      {sortOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
+          <button
+            type="button"
+            onClick={() => setSortOpen(false)}
+            aria-label="Close sort options"
+            className="absolute inset-0 cursor-default bg-foreground/30 backdrop-blur-[2px]"
+          />
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Sort options"
+            className="animate-slide-in-right absolute right-0 top-0 h-dvh w-[min(90vw,22rem)] overflow-y-auto border-l border-border bg-background shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-border px-6 py-5">
+              <h2 className="text-2xl">Sort</h2>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={() => setSortOpen(false)}
+                className="j-icon-button cursor-pointer"
+                aria-label="Close sort options"
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <div className="px-6 py-8">{sortControls}</div>
+          </aside>
+        </div>
+      )}
     </>
   );
 }

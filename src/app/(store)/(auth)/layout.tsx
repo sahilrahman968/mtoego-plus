@@ -1,11 +1,7 @@
 import { Suspense } from "react";
 import AuthShell from "./AuthShell";
 
-export default function AuthLayout({
-  children: _children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout() {
   return (
     <Suspense>
       <AuthShell />

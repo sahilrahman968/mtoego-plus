@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/components/store/Toast";
+import { useToast } from "@/components/jewellery/shared/Toast";
 import {
   formatPrice,
   getProductImage,
@@ -23,7 +23,7 @@ import {
   isProductUnavailable,
 } from "@/lib/utils";
 import { buildCartSummary, priceInclGst } from "@/lib/pricing";
-import { CartItemSkeleton } from "@/components/store/skeletons";
+import { CartItemSkeleton } from "@/components/jewellery/shared/Skeletons";
 
 export default function CartClient() {
   const { isAuthenticated } = useAuth();
@@ -44,27 +44,24 @@ export default function CartClient() {
     return !!variant && variant.stock <= 0;
   });
 
-  const summary = useMemo(() => {
-    const lineItems = availableItems.map((item) => {
-      const variant = item.product!.variants?.find((v) => v._id === item.variant);
-      return {
-        price: variant?.price || item.priceAtAdd,
-        quantity: item.quantity,
-        gst: variant?.gst ?? 18,
-      };
-    });
-
-    return buildCartSummary(
-      lineItems,
-      cart?.coupon
-        ? {
-            type: cart.coupon.type,
-            value: cart.coupon.value,
-            maxDiscount: cart.coupon.maxDiscount ?? null,
-          }
-        : null
-    );
-  }, [availableItems, cart?.coupon]);
+  const lineItems = availableItems.map((item) => {
+    const variant = item.product!.variants?.find((v) => v._id === item.variant);
+    return {
+      price: variant?.price || item.priceAtAdd,
+      quantity: item.quantity,
+      gst: variant?.gst ?? 18,
+    };
+  });
+  const summary = buildCartSummary(
+    lineItems,
+    cart?.coupon
+      ? {
+          type: cart.coupon.type,
+          value: cart.coupon.value,
+          maxDiscount: cart.coupon.maxDiscount ?? null,
+        }
+      : null
+  );
 
   const { subtotal, discount, shipping, gst, grandTotal: estimatedTotal } = summary;
   const shippingCost = shipping.cost;
@@ -112,16 +109,19 @@ export default function CartClient() {
 
   if (!isAuthenticated) {
     return (
-      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <ShoppingCart size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-2xl text-foreground">Your Cart</h1>
-        <p className="body-copy mx-auto mt-3 text-muted">Please login to view your cart</p>
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <ShoppingCart size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Private collection</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">Your Cart</h1>
+        <p className="body-copy mx-auto mt-3 text-muted">Sign in to view the pieces saved in your cart.</p>
         <Link
           href="/login?redirect=/cart"
-          className="btn-text mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           Login to Continue
         </Link>
+        </div>
       </div>
     );
   }
@@ -153,29 +153,39 @@ export default function CartClient() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-[92rem] px-3 py-20 text-center sm:px-4 lg:px-6">
-        <ShoppingCart size={48} className="mx-auto mb-4 text-muted/45" />
-        <h1 className="text-2xl text-foreground">
+      <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-20 text-center">
+        <div className="w-full border border-border bg-card px-6 py-14 shadow-[0_24px_70px_rgba(61,45,24,0.08)] sm:px-12">
+        <ShoppingCart size={42} strokeWidth={1.25} className="mx-auto mb-6 text-primary" aria-hidden="true" />
+        <p className="eyebrow mb-3 text-primary">Your selection</p>
+        <h1 className="section-title text-3xl text-foreground sm:text-4xl">
           Your cart is empty
         </h1>
         <p className="body-copy mx-auto mt-3 text-muted">
-          Looks like you haven&apos;t added any items to your cart yet.
+          Discover jewellery chosen to become part of your everyday ritual.
         </p>
         <Link
           href="/products"
-          className="btn-text mt-6 inline-flex items-center gap-2 border border-primary/60 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
+          className="btn-text mt-7 inline-flex min-h-12 items-center gap-2 bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          Start Shopping
-          <ArrowRight size={18} />
+          Explore the collection
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+    <div className="mx-auto max-w-[92rem] px-4 py-8 pb-28 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">
+      <header className="mb-8 border-b border-border pb-6 sm:mb-10">
+        <p className="eyebrow mb-3 text-primary">Your selection</p>
+        <div className="flex items-end justify-between gap-4">
+          <h1 className="section-title text-4xl text-foreground sm:text-5xl">Shopping Cart</h1>
+          <p className="eyebrow-xs tabular pb-1 text-muted">{items.length} item{items.length === 1 ? "" : "s"}</p>
+        </div>
+      </header>
       {(hasUnavailableItems || hasOutOfStockItems) && (
-        <div className="mb-4 border border-danger/40 bg-danger/10 px-4 py-3 text-sm leading-relaxed text-danger">
+        <div role="alert" className="mb-6 border border-danger/30 bg-danger/5 px-4 py-3 text-sm leading-relaxed text-danger">
           Some items in your cart are unavailable or out of stock. Remove them to
           continue checkout.
         </div>
@@ -198,13 +208,13 @@ export default function CartClient() {
             return (
               <div
                 key={item._id}
-                className={`flex gap-4 border border-border bg-card/50 p-4 transition-opacity ${
+                className={`flex gap-4 border-b border-border bg-card px-1 py-5 transition-opacity sm:px-5 ${
                   isUpdating ? "opacity-60" : ""
                 } ${unavailable ? "opacity-75" : ""}`}
               >
                 {/* Image */}
                 {unavailable || !product ? (
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden border border-border bg-black/45 sm:h-24 sm:w-24">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-[#EEE9E0] sm:h-28 sm:w-28">
                     <Image
                       src={imageSrc}
                       alt={title}
@@ -216,7 +226,7 @@ export default function CartClient() {
                 ) : (
                   <Link
                     href={`/products/${product.slug}`}
-                    className="relative h-20 w-20 shrink-0 overflow-hidden border border-border bg-black/45 sm:h-24 sm:w-24"
+                    className="relative h-20 w-20 shrink-0 overflow-hidden bg-[#EEE9E0] sm:h-28 sm:w-28"
                   >
                     <Image
                       src={imageSrc}
@@ -237,7 +247,7 @@ export default function CartClient() {
                   ) : (
                     <Link
                       href={`/products/${product.slug}`}
-                      className="line-clamp-2 text-sm font-semibold uppercase leading-snug text-foreground transition-colors hover:text-primary"
+                      className="line-clamp-2 font-display text-lg font-semibold leading-snug text-foreground transition-colors hover:text-primary sm:text-xl"
                     >
                       {title}
                     </Link>
@@ -256,7 +266,7 @@ export default function CartClient() {
                   {/* Quantity + Remove */}
                   <div className="mt-2 flex items-center gap-4">
                     {!unavailable && !outOfStock && (
-                      <div className="inline-flex items-center border border-border bg-black/35">
+                      <div className="inline-flex items-center border border-border bg-background">
                         <button
                           onClick={() =>
                             item.quantity > 1
@@ -264,7 +274,8 @@ export default function CartClient() {
                               : handleRemoveItem(item._id)
                           }
                           disabled={isUpdating}
-                          className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
+                          aria-label={`Decrease quantity of ${title}`}
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center transition-colors hover:bg-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <Minus size={14} />
                         </button>
@@ -276,7 +287,8 @@ export default function CartClient() {
                             handleUpdateQuantity(item._id, item.quantity + 1)
                           }
                           disabled={isUpdating}
-                          className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-black/60"
+                          aria-label={`Increase quantity of ${title}`}
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center transition-colors hover:bg-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <Plus size={14} />
                         </button>
@@ -285,7 +297,8 @@ export default function CartClient() {
                     <button
                       onClick={() => handleRemoveItem(item._id)}
                       disabled={isUpdating}
-                      className="text-muted transition-colors hover:text-danger"
+                      aria-label={`Remove ${title} from cart`}
+                      className="flex h-10 w-10 cursor-pointer items-center justify-center text-muted transition-colors hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -327,7 +340,7 @@ export default function CartClient() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="sticky top-24 border border-border bg-card/85 p-5 sm:p-6">
+          <div className="sticky top-24 border border-border bg-[#F7F2E9] p-5 shadow-[0_18px_50px_rgba(61,45,24,0.08)] sm:p-7">
             <h2 className="section-title mb-5 text-lg text-foreground">
               Order Summary
             </h2>
@@ -369,7 +382,7 @@ export default function CartClient() {
               </div>
 
               {shippingCost > 0 && (
-                <div className="meta-text flex items-center gap-2 border border-border bg-black/35 p-2.5 text-muted">
+                <div className="meta-text flex items-center gap-2 border border-primary/20 bg-primary/5 p-2.5 text-muted">
                   <Truck size={14} />
                   Add {formatPrice(999 - subtotal)} more for free shipping
                 </div>
@@ -395,12 +408,13 @@ export default function CartClient() {
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="Coupon code"
-                    className="flex-1 border border-border bg-black/45 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    aria-label="Coupon code"
+                    className="min-w-0 flex-1 border border-border bg-card px-3 py-2.5 text-base text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   <button
                     onClick={handleApplyCoupon}
                     disabled={couponLoading || !couponCode.trim()}
-                    className="btn-text border border-border bg-black/50 px-4 py-2.5 text-foreground transition-colors hover:border-accent disabled:opacity-50"
+                    className="btn-text cursor-pointer border border-foreground bg-transparent px-4 py-2.5 text-foreground transition-colors hover:bg-foreground hover:text-background disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {couponLoading ? "..." : "Apply"}
                   </button>
@@ -413,7 +427,7 @@ export default function CartClient() {
             !hasOutOfStockItems ? (
               <Link
                 href="/checkout"
-                className="btn-text mt-5 flex w-full items-center justify-center gap-2 border border-primary/60 bg-primary px-6 py-4 text-white transition-colors hover:bg-primary-dark"
+                className="btn-text mt-5 hidden w-full items-center justify-center gap-2 bg-foreground px-6 py-4 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:flex"
               >
                 Proceed to Checkout
                 <ArrowRight size={18} />
@@ -439,6 +453,14 @@ export default function CartClient() {
           </div>
         </div>
       </div>
+      {availableItems.length > 0 && !hasUnavailableItems && !hasOutOfStockItems && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 shadow-[0_-10px_30px_rgba(61,45,24,0.1)] backdrop-blur lg:hidden">
+          <Link href="/checkout" className="btn-text flex min-h-12 w-full items-center justify-between bg-foreground px-5 py-3.5 text-background">
+            <span>Proceed to Checkout</span>
+            <span className="tabular flex items-center gap-2">{formatPrice(estimatedTotal)} <ArrowRight size={17} aria-hidden="true" /></span>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,14 +8,14 @@ import {
   ArrowRight,
   ChevronRight,
   Clock3,
-  Flame,
+  IndianRupee,
   PackageSearch,
   Tag,
   Ticket,
   TriangleAlert,
 } from "lucide-react";
-import ProductCard from "@/components/store/ProductCard";
-import { ProductCardSkeleton } from "@/components/store/skeletons";
+import ProductCard from "@/components/jewellery/catalog/ProductCard";
+import { ProductCardSkeleton } from "@/components/jewellery/shared/Skeletons";
 import { formatPrice, getDiscountPercent } from "@/lib/utils";
 import { priceInclGst } from "@/lib/pricing";
 import {
@@ -25,15 +25,11 @@ import {
   type SaleCampaignPublic,
 } from "@/lib/store-api";
 
-const CONTAINER = "mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6";
-/** Matches the sticky store header height so the urgency bar docks beneath it. */
-const HEADER_HEIGHT = "4.5rem";
-
 const SORT_OPTIONS = [
   { value: "curated", label: "Curated" },
-  { value: "discount", label: "Biggest cut" },
-  { value: "price-asc", label: "Price low" },
-  { value: "price-desc", label: "Price high" },
+  { value: "discount", label: "Biggest saving" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
 ] as const;
 
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
@@ -51,7 +47,6 @@ function useCountdown(targetIso: string | undefined): Countdown {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [target]);
@@ -96,21 +91,21 @@ function priceFacts(product: ProductData) {
 
 function StatusPill({ status }: { status: SaleCampaignPublic["status"] }) {
   const config = {
-    live: { label: "Live now", className: "border-primary/60 bg-primary/15 text-primary" },
-    scheduled: { label: "Starts soon", className: "border-warning/50 bg-warning/12 text-warning" },
-    ended: { label: "Sale ended", className: "border-white/15 bg-white/5 text-muted" },
-    paused: { label: "Paused", className: "border-white/15 bg-white/5 text-muted" },
+    live: { label: "Live now", className: "border-primary/50 bg-accent-light text-primary" },
+    scheduled: { label: "Opens soon", className: "border-warning/40 bg-card text-warning" },
+    ended: { label: "Sale ended", className: "border-border bg-card text-muted" },
+    paused: { label: "Paused", className: "border-border bg-card text-muted" },
   }[status];
 
   return (
     <span
-      className={`eyebrow-xs inline-flex items-center gap-2 border px-3 py-1.5 ${config.className}`}
+      className={`inline-flex items-center gap-2 border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${config.className}`}
     >
-      <span className="relative flex h-1.5 w-1.5">
+      <span className="relative flex size-1.5" aria-hidden="true">
         {status === "live" && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-70 motion-reduce:animate-none" />
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-current opacity-70 motion-reduce:animate-none" />
         )}
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+        <span className="relative inline-flex size-1.5 rounded-full bg-current" />
       </span>
       {config.label}
     </span>
@@ -126,27 +121,26 @@ function CountdownTiles({ countdown, label }: { countdown: Countdown; label: str
   ];
 
   return (
-    <div role="timer" aria-label={`${label} ${countdown.days} days ${countdown.hours} hours`}>
-      <p className="eyebrow-xs mb-3 inline-flex items-center gap-1.5 text-primary">
-        <Clock3 size={13} />
+    <div
+      role="timer"
+      aria-label={`${label}: ${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes`}
+    >
+      <p className="eyebrow inline-flex items-center gap-2 text-primary">
+        <Clock3 className="size-3.5" aria-hidden="true" />
         {label}
       </p>
-      <div className="flex items-stretch gap-1.5 sm:gap-2" aria-hidden="true">
-        {parts.map((part, index) => (
-          <div key={part.key} className="flex items-stretch gap-1.5 sm:gap-2">
-            <div className="min-w-[4rem] border border-white/12 bg-black/55 px-3 py-2.5 text-center backdrop-blur-sm sm:min-w-[5rem] sm:py-3">
-              <p
-                className={`tabular text-2xl font-bold leading-none sm:text-3xl ${
-                  part.key === "seconds" ? "text-primary" : "text-foreground"
-                }`}
-              >
-                {pad(part.value)}
-              </p>
-              <p className="eyebrow-xs mt-1.5 text-muted">{part.label}</p>
-            </div>
-            {index < parts.length - 1 && (
-              <span className="self-center text-lg font-bold leading-none text-white/20">:</span>
-            )}
+      <div className="mt-4 flex gap-2.5" aria-hidden="true">
+        {parts.map((part) => (
+          <div
+            key={part.key}
+            className="min-w-[4.25rem] border border-border bg-card px-3 py-3 text-center sm:min-w-[5rem]"
+          >
+            <p className="tabular text-2xl leading-none text-foreground sm:text-3xl">
+              {pad(part.value)}
+            </p>
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+              {part.label}
+            </p>
           </div>
         ))}
       </div>
@@ -176,39 +170,35 @@ function UrgencyBar({
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ y: -56, opacity: 0 }}
+          initial={{ y: -48, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -56, opacity: 0 }}
+          exit={{ y: -48, opacity: 0 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
-          style={{ top: HEADER_HEIGHT }}
-          className="fixed inset-x-0 z-40 border-y border-white/10 bg-[#09090B]/90 backdrop-blur-md"
+          className="fixed inset-x-0 top-16 z-30 border-b border-border bg-background/95 backdrop-blur-xl lg:top-20"
         >
-          <div
-            className={`${CONTAINER} flex h-14 items-center justify-between gap-4`}
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="eyebrow-xs hidden shrink-0 bg-primary px-2 py-1 text-white sm:inline-block">
-                {campaign.badgeLabel}
-              </span>
-              <p className="label-text truncate text-foreground">{campaign.title}</p>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="eyebrow-xs hidden text-muted md:inline">{timerLabel}</span>
+          <div className="j-container flex h-14 items-center justify-between gap-4">
+            <p className="min-w-0 truncate text-xs uppercase tracking-[0.14em] text-foreground">
+              {campaign.title}
+            </p>
+            <div className="flex shrink-0 items-center gap-4">
+              <p className="flex items-baseline gap-1.5">
+                <span className="sr-only">{timerLabel}</span>
+                <span
+                  className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-muted md:inline"
+                  aria-hidden="true"
+                >
+                  {timerLabel}
+                </span>
                 {compact.map((part) => (
-                  <span key={part.unit} className="tabular text-sm font-bold text-foreground">
+                  <span key={part.unit} className="tabular text-sm text-foreground">
                     {pad(part.value)}
-                    <span className="text-[0.6875rem] font-semibold text-muted">{part.unit}</span>
+                    <span className="text-[11px] text-muted">{part.unit}</span>
                   </span>
                 ))}
-              </div>
-              <a
-                href="#sale-products"
-                className="btn-text hidden items-center gap-2 bg-primary px-4 py-2.5 text-white transition-colors hover:bg-primary-dark sm:inline-flex"
-              >
+              </p>
+              <a href="#sale-products" className="j-button-primary hidden min-h-11 sm:inline-flex">
                 Shop
-                <ArrowRight size={13} />
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -228,11 +218,13 @@ function StatCell({
   value: string;
 }) {
   return (
-    <div className="flex items-start gap-3 bg-[#09090B] px-4 py-5 sm:px-6">
-      <span className="mt-0.5 text-primary">{icon}</span>
+    <div className="flex items-start gap-3 bg-background px-5 py-6 sm:px-7">
+      <span className="mt-0.5 shrink-0 text-primary" aria-hidden="true">
+        {icon}
+      </span>
       <div className="min-w-0">
-        <p className="eyebrow-xs text-muted">{label}</p>
-        <p className="mt-1 truncate text-sm font-bold uppercase text-foreground">{value}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
+        <p className="mt-1.5 truncate text-sm text-foreground">{value}</p>
       </div>
     </div>
   );
@@ -240,25 +232,29 @@ function StatCell({
 
 function SaleDetailSkeleton() {
   return (
-    <div>
-      <div className="relative min-h-[30rem] animate-pulse-slow bg-card/60 lg:min-h-[36rem]" />
-      <div className="border-y border-border/60 bg-black/40">
-        <div className={`${CONTAINER} grid grid-cols-2 lg:grid-cols-4`}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="px-4 py-5 sm:px-6">
-              <div className="h-3 w-20 animate-pulse-slow bg-card-hover" />
-              <div className="mt-2 h-4 w-28 animate-pulse-slow bg-card-hover" />
-            </div>
-          ))}
+    <div className="j-container py-12 sm:py-16">
+      <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+        <div className="space-y-6">
+          <div className="h-4 w-28 animate-pulse bg-card-hover" />
+          <div className="h-16 w-4/5 animate-pulse bg-card-hover" />
+          <div className="h-4 w-full animate-pulse bg-card-hover" />
+          <div className="h-24 w-72 animate-pulse bg-card-hover" />
+          <div className="h-12 w-48 animate-pulse bg-card-hover" />
         </div>
+        <div className="aspect-[4/5] animate-pulse bg-[#EEE9E0]" />
       </div>
-      <div className={`${CONTAINER} py-10 lg:py-14`}>
-        <div className="mb-8 h-4 w-40 animate-pulse-slow bg-card-hover" />
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 xl:grid-cols-5">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
-        </div>
+      <div className="mt-16 grid grid-cols-2 gap-px border-y border-border bg-border lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="bg-background px-5 py-6">
+            <div className="h-3 w-20 animate-pulse bg-card-hover" />
+            <div className="mt-2.5 h-4 w-28 animate-pulse bg-card-hover" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-16 grid grid-cols-2 gap-x-5 gap-y-12 sm:grid-cols-3 sm:gap-x-7 lg:grid-cols-4 lg:gap-x-8">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <ProductCardSkeleton key={index} />
+        ))}
       </div>
     </div>
   );
@@ -364,28 +360,25 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
 
   if (error || !campaign) {
     return (
-      <div className={`${CONTAINER} py-24`}>
-        <div className="mx-auto max-w-lg border border-border/70 bg-black/40 p-8 text-center sm:p-10">
-          <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center border border-border/80 text-muted">
-            <TriangleAlert size={20} />
+      <div className="j-container py-24">
+        <div className="mx-auto max-w-lg border border-border bg-card px-6 py-16 text-center sm:px-10">
+          <span
+            className="mx-auto mb-6 grid size-12 place-items-center border border-border text-muted"
+            aria-hidden="true"
+          >
+            <TriangleAlert className="size-5" />
           </span>
-          <h1 className="section-title text-2xl text-foreground">Sale unavailable</h1>
-          <p className="body-copy mx-auto mt-3 text-muted">
-            {error || "This campaign is not live right now."}
+          <h1 className="text-3xl">Sale unavailable</h1>
+          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+            {error || "This event is not open right now."}
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/sale"
-              className="btn-text inline-flex items-center gap-2 bg-primary px-6 py-3.5 text-white transition-colors hover:bg-primary-dark"
-            >
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/sale" className="j-button-primary">
               All sales
-              <ArrowRight size={13} />
+              <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>
-            <Link
-              href="/products"
-              className="btn-text inline-flex items-center gap-2 border border-border/80 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:text-primary"
-            >
-              Browse gear
+            <Link href="/products" className="j-button-secondary">
+              Browse jewellery
             </Link>
           </div>
         </div>
@@ -395,8 +388,8 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
 
   const timerLabel = isScheduled
     ? countdown.ended
-      ? "Starting now"
-      : "Starts in"
+      ? "Opening now"
+      : "Opens in"
     : countdown.ended || isEnded
       ? "Sale ended"
       : "Ends in";
@@ -418,130 +411,116 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
       />
 
       {/* ── Masthead ─────────────────────────────────────────────────────── */}
-      <section
-        ref={heroRef}
-        className="relative isolate flex min-h-[32rem] flex-col overflow-hidden bg-black lg:min-h-[40rem]"
-      >
-        <div className="absolute inset-0 -z-10">
-          {banner ? (
-            <>
-              <Image
-                src={banner.url}
-                alt={banner.alt || campaign.title}
-                fill
-                priority
-                sizes="100vw"
-                className={`object-cover ${
-                  isEnded ? "grayscale" : "animate-hero-slow-zoom motion-reduce:animate-none"
-                }`}
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.9)_0%,rgba(0,0,0,0.6)_45%,rgba(0,0,0,0.32)_72%,rgba(0,0,0,0.72)_100%)]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/55" />
-            </>
-          ) : (
-            <>
-              <div className="absolute inset-0 bg-[#0A0A0D]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,color-mix(in_srgb,var(--primary)_40%,transparent),transparent_58%)]" />
-              <div className="absolute inset-0 opacity-[0.05] [background-image:repeating-linear-gradient(115deg,#fff_0_1px,transparent_1px_14px)]" />
-            </>
-          )}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent" />
-        </div>
-
-        <nav className={`${CONTAINER} eyebrow-xs flex items-center gap-2 pt-[5.75rem] text-white/60`}>
-          <Link href="/" className="transition-colors hover:text-white">
-            Home
-          </Link>
-          <ChevronRight size={12} className="shrink-0" />
-          <Link href="/sale" className="transition-colors hover:text-white">
-            Sale
-          </Link>
-          <ChevronRight size={12} className="shrink-0" />
-          <span className="truncate text-white/90">{campaign.title}</span>
+      <section ref={heroRef} className="j-container py-10 sm:py-14">
+        <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-[0.12em] text-muted">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link href="/" className="transition-colors hover:text-foreground">
+                Home
+              </Link>
+            </li>
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
+            <li>
+              <Link href="/sale" className="transition-colors hover:text-foreground">
+                Sale
+              </Link>
+            </li>
+            <li aria-hidden="true">
+              <ChevronRight className="size-3.5 shrink-0" />
+            </li>
+            <li aria-current="page" className="truncate text-foreground">
+              {campaign.title}
+            </li>
+          </ol>
         </nav>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: "easeOut" }}
-          className={`${CONTAINER} mt-auto pb-12 pt-14 lg:pb-16`}
+        <div
+          className={`mt-10 grid gap-12 ${banner ? "lg:grid-cols-2 lg:items-center lg:gap-20" : ""}`}
         >
-          <div className="max-w-3xl">
-            <div className="mb-6 flex flex-wrap items-center gap-2.5">
+          <div className={banner ? "" : "max-w-3xl"}>
+            <div className="flex flex-wrap items-center gap-3">
               <StatusPill status={campaign.status} />
               {campaign.badgeLabel && (
-                <span className="eyebrow-xs inline-flex items-center gap-1.5 bg-primary px-3 py-1.5 text-white">
-                  <Flame size={12} />
+                <span className="border border-primary/40 bg-accent-light px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
                   {campaign.badgeLabel}
                 </span>
               )}
             </div>
 
-            <h1 className="hero-title text-4xl uppercase text-foreground sm:text-6xl lg:text-7xl">
-              {headline}
-            </h1>
+            <h1 className="mt-7 text-4xl sm:text-5xl lg:text-6xl">{headline}</h1>
 
             {campaign.subtitle && (
-              <p className="body-copy mt-5 text-foreground/80">{campaign.subtitle}</p>
-            )}
-
-            {showCountdown ? (
-              <div className="mt-9">
-                <CountdownTiles countdown={countdown} label={timerLabel} />
-              </div>
-            ) : (
-              <p className="eyebrow mt-8 inline-flex items-center gap-2 text-muted">
-                <Clock3 size={14} />
-                {isEnded || countdown.ended
-                  ? `Closed ${formatDateTime(campaign.endsAt)}`
-                  : `Starts ${formatDateTime(campaign.startsAt)}`}
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted">
+                {campaign.subtitle}
               </p>
             )}
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <a
-                href="#sale-products"
-                className="btn-text inline-flex items-center gap-2 bg-primary px-7 py-3.5 text-white transition-colors hover:bg-primary-dark"
-              >
-                {isScheduled ? "Preview the drop" : "Shop the sale"}
-                <ArrowRight size={14} />
+            {showCountdown ? (
+              <div className="mt-10">
+                <CountdownTiles countdown={countdown} label={timerLabel} />
+              </div>
+            ) : (
+              <p className="mt-10 inline-flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-muted">
+                <Clock3 className="size-3.5" aria-hidden="true" />
+                {isEnded || countdown.ended
+                  ? `Closed ${formatDateTime(campaign.endsAt)}`
+                  : `Opens ${formatDateTime(campaign.startsAt)}`}
+              </p>
+            )}
+
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <a href="#sale-products" className="j-button-primary">
+                {isScheduled ? "Preview the edit" : "Shop the sale"}
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </a>
               {secondaryCta && (
-                <Link
-                  href={secondaryCta.href}
-                  className="btn-text inline-flex items-center gap-2 border border-white/25 bg-black/35 px-7 py-3.5 text-white transition-colors hover:border-primary hover:bg-black/60"
-                >
+                <Link href={secondaryCta.href} className="j-button-secondary">
                   {secondaryCta.label}
                 </Link>
               )}
             </div>
           </div>
-        </motion.div>
+
+          {banner && (
+            <div className="relative aspect-[4/5] overflow-hidden bg-[#EEE9E0]">
+              <Image
+                src={banner.url}
+                alt={banner.alt || campaign.title}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className={`object-cover ${isEnded ? "grayscale" : ""}`}
+              />
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ── Fact strip ───────────────────────────────────────────────────── */}
-      <section className="border-y border-border/60 bg-[#09090B]">
-        <div className={CONTAINER}>
+      <section aria-label="Sale details" className="border-y border-border">
+        <div className="j-container">
           {/* A 1px gap over a tinted parent draws exact hairlines between cells
               at every breakpoint, without per-cell border bookkeeping. */}
-          <div className="grid grid-cols-2 gap-px bg-border/60 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px bg-border lg:grid-cols-4">
             <StatCell
-              icon={<PackageSearch size={16} />}
+              icon={<PackageSearch className="size-4" />}
               label="On sale"
-              value={`${products.length} ${products.length === 1 ? "product" : "products"}`}
+              value={`${products.length} ${products.length === 1 ? "piece" : "pieces"}`}
             />
             <StatCell
-              icon={<Tag size={16} />}
+              icon={<Tag className="size-4" />}
               label="Savings"
-              value={maxDiscount > 0 ? `Up to ${maxDiscount}% off` : "Campaign pricing"}
+              value={maxDiscount > 0 ? `Up to ${maxDiscount}% off` : "Event pricing"}
             />
             <StatCell
-              icon={<Flame size={16} />}
+              icon={<IndianRupee className="size-4" />}
               label="Starting at"
               value={Number.isFinite(lowestPrice) ? formatPrice(lowestPrice) : "—"}
             />
             <StatCell
-              icon={<Ticket size={16} />}
+              icon={<Ticket className="size-4" />}
               label="Coupons"
               value={campaign.allowCoupons ? "Stackable" : "Not stackable"}
             />
@@ -550,58 +529,60 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
       </section>
 
       {/* ── Products ─────────────────────────────────────────────────────── */}
-      <section id="sale-products" className={`${CONTAINER} scroll-mt-32 py-10 lg:py-14`}>
+      <section
+        id="sale-products"
+        className="j-container scroll-mt-36 py-14 sm:py-20 lg:scroll-mt-44"
+      >
         {campaign.description && (
-          <p className="body-copy mb-9 text-muted">{campaign.description}</p>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted">{campaign.description}</p>
         )}
 
         {isEnded && (
-          <div className="mb-9 flex flex-col gap-4 border border-border/70 bg-black/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="mt-10 flex flex-col gap-5 border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
             <div className="flex items-start gap-3">
-              <TriangleAlert size={18} className="mt-0.5 shrink-0 text-muted" />
+              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
               <div>
-                <p className="label-text text-foreground">This sale has ended</p>
-                <p className="meta-text mt-1 text-muted">
-                  Prices below have returned to regular. Catch the next drop early.
+                <h2 className="text-lg">This sale has ended</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Prices below have returned to regular. Join us for the next event.
                 </p>
               </div>
             </div>
-            <Link
-              href="/sale"
-              className="btn-text inline-flex shrink-0 items-center gap-2 border border-border/80 px-5 py-3 text-foreground transition-colors hover:border-primary hover:text-primary"
-            >
+            <Link href="/sale" className="j-button-secondary shrink-0">
               See live sales
-              <ArrowRight size={13} />
+              <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>
           </div>
         )}
 
         {isScheduled && (
-          <div className="mb-9 flex items-start gap-3 border border-warning/30 bg-warning/[0.06] p-5">
-            <Clock3 size={18} className="mt-0.5 shrink-0 text-warning" />
+          <div className="mt-10 flex items-start gap-3 border border-warning/35 bg-card p-6">
+            <Clock3 className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
             <div>
-              <p className="label-text text-foreground">Preview only</p>
-              <p className="meta-text mt-1 text-muted">
-                Sale pricing goes live {formatDateTime(campaign.startsAt)}. Wishlist now, check out
-                the moment it drops.
+              <h2 className="text-lg">Preview only</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Sale pricing opens {formatDateTime(campaign.startsAt)}. Save your pieces now and
+                check out the moment it begins.
               </p>
             </div>
           </div>
         )}
 
         {!campaign.allowCoupons && campaign.status === "live" && (
-          <div className="mb-9 flex items-start gap-3 border border-border/70 bg-black/30 p-4">
-            <Ticket size={16} className="mt-0.5 shrink-0 text-primary" />
-            <p className="meta-text text-muted">
+          <div className="mt-10 flex items-start gap-3 border border-border bg-card p-5">
+            <Ticket className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <p className="text-sm leading-relaxed text-muted">
               Sale prices cannot be combined with coupon codes.
             </p>
           </div>
         )}
 
         {products.length > 0 && (
-          <div className="mb-8 border-b border-border/60 pb-5">
+          <div className="mt-12 border-b border-border pb-6">
+            <h2 className="sr-only">Filter and sort sale pieces</h2>
+
             {categories.length > 1 && (
-              <div className="no-scrollbar -mx-3 mb-5 flex gap-2 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+              <div className="no-scrollbar -mx-4 mb-7 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 {[{ id: "all", name: "All", count: products.length }, ...categories].map((cat) => {
                   const active = categoryId === cat.id;
                   return (
@@ -610,26 +591,24 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
                       type="button"
                       onClick={() => setCategoryId(cat.id)}
                       aria-pressed={active}
-                      className={`eyebrow-xs shrink-0 border px-3.5 py-2 transition-colors ${
+                      className={`shrink-0 cursor-pointer border px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
                         active
-                          ? "border-primary bg-primary text-white"
-                          : "border-border/70 text-muted hover:border-foreground/40 hover:text-foreground"
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-muted hover:border-foreground/50 hover:text-foreground"
                       }`}
                     >
                       {cat.name}
-                      <span className={`tabular ml-2 ${active ? "text-white/70" : "text-muted/70"}`}>
-                        {cat.count}
-                      </span>
+                      <span className="tabular ml-2 opacity-70">{cat.count}</span>
                     </button>
                   );
                 })}
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-              <p className="eyebrow-xs text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+              <p className="text-xs uppercase tracking-[0.12em] text-muted" aria-live="polite">
                 <span className="tabular text-foreground">{visible.length}</span>{" "}
-                {visible.length === 1 ? "item" : "items"}
+                {visible.length === 1 ? "piece" : "pieces"}
                 {categoryId !== "all" && (
                   <>
                     {" "}
@@ -638,8 +617,13 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
                 )}
               </p>
 
-              <div className="no-scrollbar flex items-center gap-1 overflow-x-auto">
-                <span className="eyebrow-xs mr-2 shrink-0 text-muted/70">Sort</span>
+              <div className="no-scrollbar -mx-4 flex items-center gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                <span
+                  className="mr-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted"
+                  aria-hidden="true"
+                >
+                  Sort
+                </span>
                 {SORT_OPTIONS.map((option) => {
                   const active = sort === option.value;
                   return (
@@ -648,14 +632,13 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
                       type="button"
                       onClick={() => setSort(option.value)}
                       aria-pressed={active}
-                      className={`relative shrink-0 px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors ${
+                      aria-label={`Sort by ${option.label}`}
+                      className={`relative min-h-11 shrink-0 cursor-pointer px-3 text-sm transition-colors ${
                         active ? "text-primary" : "text-muted hover:text-foreground"
                       }`}
                     >
                       {option.label}
-                      {active && (
-                        <span className="absolute inset-x-2.5 bottom-0.5 h-px bg-primary" />
-                      )}
+                      {active && <span className="absolute inset-x-3 bottom-2 h-px bg-primary" />}
                     </button>
                   );
                 })}
@@ -665,44 +648,44 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
         )}
 
         {visible.length === 0 ? (
-          <div className="border border-border/70 bg-black/30 px-6 py-20 text-center">
-            <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center border border-border/80 text-muted">
-              <PackageSearch size={20} />
+          <div className="mt-12 border border-border bg-card px-6 py-20 text-center">
+            <span
+              className="mx-auto mb-6 grid size-12 place-items-center border border-border text-muted"
+              aria-hidden="true"
+            >
+              <PackageSearch className="size-5" />
             </span>
-            <h2 className="section-title text-lg text-foreground">
-              {products.length === 0 ? "No products in this sale yet" : "Nothing in this category"}
+            <h2 className="text-2xl">
+              {products.length === 0 ? "No pieces in this sale yet" : "Nothing in this category"}
             </h2>
-            <p className="meta-text mx-auto mt-2 max-w-sm text-muted">
+            <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
               {products.length === 0
-                ? "Products for this campaign will appear here as soon as they go live."
-                : "Try another category or clear the filter to see the full drop."}
+                ? "Pieces for this event will appear here as soon as they go live."
+                : "Try another category, or clear the filter to see the whole edit."}
             </p>
             {products.length === 0 ? (
-              <Link
-                href="/products"
-                className="btn-text mt-6 inline-flex items-center gap-2 border border-border/80 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:text-primary"
-              >
-                Browse all gear
-                <ArrowRight size={13} />
+              <Link href="/products" className="j-button-primary mt-8">
+                Browse all jewellery
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             ) : (
               <button
                 type="button"
                 onClick={() => setCategoryId("all")}
-                className="btn-text mt-6 inline-flex items-center gap-2 border border-border/80 px-6 py-3.5 text-foreground transition-colors hover:border-primary hover:text-primary"
+                className="j-button-secondary mt-8 cursor-pointer"
               >
                 Clear filter
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-12 sm:grid-cols-3 sm:gap-x-7 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-16">
             {visible.map((item) => (
               <ProductCard
                 key={item.product._id}
                 product={item.product}
                 // Every card sits under the same campaign, so the shared campaign
-                // badge carries no information here — the cut does.
+                // badge carries no information here — the saving does.
                 badgeLabel={item.discount > 0 ? `-${item.discount}%` : null}
               />
             ))}

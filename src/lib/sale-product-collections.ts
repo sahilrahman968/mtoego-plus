@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types, type PipelineStage } from "mongoose";
 import Product from "@/models/product.model";
 import Category from "@/models/category.model";
 import { getTopProducts } from "@/lib/analytics/orders";
@@ -139,7 +139,7 @@ function minPriceExpr() {
 }
 
 async function aggregateIds(
-  extraStages: Record<string, unknown>[],
+  extraStages: PipelineStage[],
   sort: Record<string, 1 | -1>
 ) {
   const rows = await Product.aggregate<{ _id: Types.ObjectId }>([

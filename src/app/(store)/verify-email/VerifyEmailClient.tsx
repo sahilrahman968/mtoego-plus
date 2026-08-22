@@ -17,9 +17,11 @@ export default function VerifyEmailClient() {
 
   useEffect(() => {
     if (!token) {
-      setStatus("error");
-      setMessage("No verification token provided.");
-      return;
+      const timer = window.setTimeout(() => {
+        setStatus("error");
+        setMessage("No verification token provided.");
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     if (calledRef.current) return;
@@ -40,25 +42,29 @@ export default function VerifyEmailClient() {
   }, [token]);
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md text-center">
-        <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 shadow-sm">
+    <div className="relative flex min-h-[70vh] items-center justify-center overflow-hidden px-4 py-16">
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(161,98,7,0.1),transparent_32%),linear-gradient(135deg,#F3ECE0_0%,#FAF8F3_50%,#ECE2D3_100%)]" />
+      <div className="relative w-full max-w-lg text-center">
+        <div className="border border-border bg-background/90 p-8 shadow-[0_28px_80px_rgba(77,57,31,0.12)] backdrop-blur-xl sm:p-12">
           {status === "loading" && (
             <>
-              <Loader2 size={48} className="mx-auto text-primary animate-spin mb-4" />
-              <h1 className="text-xl text-foreground">Verifying your email…</h1>
+              <Loader2 size={40} strokeWidth={1.5} className="mx-auto mb-6 animate-spin text-primary" aria-hidden="true" />
+              <p className="eyebrow mb-3 text-primary">Account verification</p>
+              <h1 className="section-title text-3xl text-foreground">Verifying your email…</h1>
               <p className="body-copy mx-auto mt-3 text-muted">This will only take a moment.</p>
+              <span className="sr-only" role="status" aria-live="polite">Email verification in progress</span>
             </>
           )}
 
           {status === "success" && (
             <>
-              <CheckCircle2 size={48} className="mx-auto text-green-600 mb-4" />
-              <h1 className="text-xl text-foreground">Email verified!</h1>
+              <CheckCircle2 size={42} strokeWidth={1.5} className="mx-auto mb-6 text-success" aria-hidden="true" />
+              <p className="eyebrow mb-3 text-primary">Verification complete</p>
+              <h1 className="section-title text-3xl text-foreground">Email verified</h1>
               <p className="body-copy mx-auto mt-3 text-muted">{message}</p>
               <Link
                 href="/login"
-                className="inline-block mt-6 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
+                className="btn-text mt-7 inline-flex min-h-12 items-center justify-center bg-foreground px-7 py-3.5 text-background transition-colors hover:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 Sign In
               </Link>
@@ -67,12 +73,13 @@ export default function VerifyEmailClient() {
 
           {status === "error" && (
             <>
-              <XCircle size={48} className="mx-auto text-danger mb-4" />
-              <h1 className="text-xl text-foreground">Verification failed</h1>
-              <p className="body-copy mx-auto mt-3 text-muted">{message}</p>
+              <XCircle size={42} strokeWidth={1.5} className="mx-auto mb-6 text-danger" aria-hidden="true" />
+              <p className="eyebrow mb-3 text-primary">Account verification</p>
+              <h1 className="section-title text-3xl text-foreground">Verification failed</h1>
+              <p role="alert" className="body-copy mx-auto mt-3 text-muted">{message}</p>
               <Link
                 href="/login"
-                className="inline-block mt-6 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
+                className="btn-text mt-7 inline-flex min-h-12 items-center justify-center border border-foreground px-7 py-3.5 text-foreground transition-colors hover:bg-foreground hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 Sign In
               </Link>

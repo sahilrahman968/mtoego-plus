@@ -1,9 +1,11 @@
 import { Metadata } from "next";
+import { theme } from "@/config/theme";
 import WishlistClient from "./WishlistClient";
 
 export const metadata: Metadata = {
-  title: "Wishlist - Motoego+",
-  description: "Your saved products. Add items to your cart when you're ready.",
+  title: "Wishlist",
+  description: `View your saved ${theme.brand.name} jewellery and add pieces to your cart when you are ready.`,
+  robots: { index: false, follow: false },
 };
 
 export default function WishlistPage() {

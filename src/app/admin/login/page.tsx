@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import AuthBackdrop from "@/components/store/AuthBackdrop";
-import GoogleSignInButton from "@/components/store/GoogleSignInButton";
+import AuthBackdrop from "@/components/jewellery/account/AuthBackdrop";
+import GoogleSignInButton from "@/components/jewellery/account/GoogleSignInButton";
 import { isAdminPanelRole } from "@/lib/auth/permissions";
 
 export default function AdminLoginPage() {
