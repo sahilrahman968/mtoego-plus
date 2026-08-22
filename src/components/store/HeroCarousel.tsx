@@ -48,7 +48,7 @@ export default function HeroCarousel({
 
   const sectionSize = compact
     ? "aspect-[16/9] min-h-[16rem]"
-    : "h-screen min-h-[36rem]";
+    : "min-h-[32rem] lg:min-h-[40rem]";
   const headingSize = compact
     ? "text-3xl sm:text-4xl"
     : "text-5xl sm:text-7xl lg:text-8xl";
