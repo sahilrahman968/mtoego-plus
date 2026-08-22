@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types, type PipelineStage } from "mongoose";
 import Product from "@/models/product.model";
 import Category from "@/models/category.model";
 import { getTopProducts } from "@/lib/analytics/orders";
@@ -139,17 +139,18 @@ function minPriceExpr() {
 }
 
 async function aggregateIds(
-  extraStages: Record<string, unknown>[],
+  extraStages: PipelineStage[],
   sort: Record<string, 1 | -1>
 ) {
-  const rows = await Product.aggregate<{ _id: Types.ObjectId }>([
+  const pipeline: PipelineStage[] = [
     { $match: { isActive: true } },
     { $addFields: { _stock: stockExpr(), _minPrice: minPriceExpr() } },
     ...extraStages,
     { $sort: sort },
     { $limit: SALE_COLLECTION_LIMIT },
     { $project: { _id: 1 } },
-  ]);
+  ];
+  const rows = await Product.aggregate<{ _id: Types.ObjectId }>(pipeline);
   return rows.map((r) => String(r._id));
 }
 
