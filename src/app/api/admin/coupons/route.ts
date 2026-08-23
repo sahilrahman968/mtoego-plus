@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { requirePermission } from "@/lib/auth/require-auth";
-import { validateCreateCoupon } from "@/lib/validators";
+import { isValidObjectId, validateCreateCoupon } from "@/lib/validators";
 import Coupon from "@/models/coupon.model";
+import Product from "@/models/product.model";
 
 // ─── GET /api/admin/coupons — List all coupons (paginated) ───────────────────
 
@@ -81,6 +82,19 @@ export async function POST(request: NextRequest) {
       return errorResponse("A coupon with this code already exists", 409);
     }
 
+    const applicableProducts: string[] = Array.isArray(body.applicableProducts)
+      ? body.applicableProducts.filter(
+          (id: unknown): id is string => typeof id === "string" && isValidObjectId(id)
+        )
+      : [];
+
+    if (applicableProducts.length > 0) {
+      const found = await Product.countDocuments({ _id: { $in: applicableProducts } });
+      if (found !== applicableProducts.length) {
+        return errorResponse("One or more applicable products were not found", 400);
+      }
+    }
+
     const coupon = await Coupon.create({
       code: body.code.trim().toUpperCase(),
       description: body.description,
@@ -91,6 +105,7 @@ export async function POST(request: NextRequest) {
       expiresAt: new Date(body.expiresAt),
       usageLimit: body.usageLimit,
       perUserLimit: body.perUserLimit ?? 1,
+      applicableProducts,
       isActive: body.isActive ?? true,
     });
 

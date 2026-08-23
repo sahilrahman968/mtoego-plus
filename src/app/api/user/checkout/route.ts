@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { validateCheckout } from "@/lib/validators";
 import { getRazorpayInstance } from "@/lib/razorpay";
-import { buildCartSummary } from "@/lib/pricing";
+import { buildCartSummary, isCouponProductEligible } from "@/lib/pricing";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
 import Product, { IProductDocument } from "@/models/product.model";
@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
       maxDiscount: number | null;
       code: string;
     } | null = null;
+    let applicableProducts: Array<{ toString(): string }> = [];
 
     if (cart.coupon) {
       const saleBlocksCoupons = validLineItems.some((li) => !li.allowCoupons);
@@ -153,12 +154,32 @@ export async function POST(request: NextRequest) {
           userUsage.count < coupon.perUserLimit;
 
         if (withinLimit) {
-          couponData = {
-            type: coupon.type as "percentage" | "flat",
-            value: coupon.value,
-            maxDiscount: coupon.maxDiscount,
-            code: coupon.code,
-          };
+          const restricted = (coupon.applicableProducts || []).length > 0;
+          const eligibleItems = validLineItems.filter((li) =>
+            isCouponProductEligible(li.product._id.toString(), coupon.applicableProducts)
+          );
+
+          if (restricted && eligibleItems.length === 0) {
+            cart.coupon = null;
+            await cart.save();
+          } else {
+            const minOrderBase = restricted
+              ? eligibleItems.reduce((sum, li) => sum + li.price * li.quantity, 0)
+              : validLineItems.reduce((sum, li) => sum + li.price * li.quantity, 0);
+
+            if (minOrderBase < coupon.minOrderValue) {
+              cart.coupon = null;
+              await cart.save();
+            } else {
+              couponData = {
+                type: coupon.type as "percentage" | "flat",
+                value: coupon.value,
+                maxDiscount: coupon.maxDiscount,
+                code: coupon.code,
+              };
+              applicableProducts = coupon.applicableProducts || [];
+            }
+          }
         }
       }
     }
@@ -167,6 +188,10 @@ export async function POST(request: NextRequest) {
       price: li.price,
       quantity: li.quantity,
       gst: li.gst,
+      couponEligible: isCouponProductEligible(
+        li.product._id.toString(),
+        applicableProducts
+      ),
     }));
 
     const summary = buildCartSummary(

@@ -20,7 +20,7 @@ import {
   getVariantLabel,
   isProductUnavailable,
 } from "@/lib/utils";
-import { buildCartSummary, priceInclGst } from "@/lib/pricing";
+import { buildCartSummary, isCouponProductEligible, priceInclGst } from "@/lib/pricing";
 import { CartItemSkeleton } from "@/components/store/skeletons";
 
 export default function CartClient() {
@@ -40,12 +40,17 @@ export default function CartClient() {
   });
 
   const summary = useMemo(() => {
+    const applicable = cart?.coupon?.applicableProducts;
     const lineItems = availableItems.map((item) => {
       const variant = item.product!.variants?.find((v) => v._id === item.variant);
       return {
         price: variant?.price || item.priceAtAdd,
         quantity: item.quantity,
         gst: variant?.gst ?? 18,
+        couponEligible: isCouponProductEligible(
+          item.product!._id,
+          applicable
+        ),
       };
     });
 

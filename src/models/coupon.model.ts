@@ -27,6 +27,11 @@ export interface ICouponDocument extends Document {
   perUserLimit: number;
   /** Track which users have used this coupon and how many times */
   usedBy: { user: Types.ObjectId; count: number }[];
+  /**
+   * Products this coupon can discount. Empty = applies to the whole cart.
+   * When set, discount (and min-order check) use only matching line items.
+   */
+  applicableProducts: Types.ObjectId[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -96,6 +101,12 @@ const couponSchema = new Schema<ICouponDocument>(
       {
         user: { type: Schema.Types.ObjectId, ref: "User", required: true },
         count: { type: Number, default: 1, min: 1 },
+      },
+    ],
+    applicableProducts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
       },
     ],
     isActive: {

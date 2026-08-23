@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
       })
       .populate({
         path: "coupon",
-        select: "code type value maxDiscount minOrderValue expiresAt isActive",
+        select:
+          "code type value maxDiscount minOrderValue expiresAt isActive applicableProducts",
       })
       .lean();
 
@@ -155,7 +156,8 @@ export async function POST(request: NextRequest) {
       })
       .populate({
         path: "coupon",
-        select: "code type value maxDiscount minOrderValue expiresAt isActive",
+        select:
+          "code type value maxDiscount minOrderValue expiresAt isActive applicableProducts",
       })
       .lean();
 

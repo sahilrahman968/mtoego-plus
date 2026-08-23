@@ -531,6 +531,7 @@ export interface CartData {
     minOrderValue: number;
     expiresAt: string;
     isActive: boolean;
+    applicableProducts?: string[];
   } | null;
 }
 

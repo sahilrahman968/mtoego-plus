@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
 import Product, { IProductDocument } from "@/models/product.model";
-import { buildCartSummary } from "@/lib/pricing";
+import { buildCartSummary, isCouponProductEligible } from "@/lib/pricing";
 import { CartValidationResult } from "@/types";
 
 // ─── POST /api/user/cart/validate — Secure cart validation before checkout ───
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       quantity: number;
       gst: number;
       allowCoupons: boolean;
+      productId: string;
     }[] = [];
     const itemsToRemove: number[] = [];
     const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         gst: typeof variant.gst === "number" ? variant.gst : 18,
         allowCoupons: priced.offer ? priced.offer.campaign.allowCoupons : true,
+        productId: product._id.toString(),
       });
     }
 
@@ -130,6 +132,7 @@ export async function POST(request: NextRequest) {
       value: number;
       maxDiscount: number | null;
     } | null = null;
+    let applicableProducts: Array<{ toString(): string }> = [];
 
     const saleBlocksCoupons = validLineItems.some((item) => !item.allowCoupons);
 
@@ -162,33 +165,57 @@ export async function POST(request: NextRequest) {
           cart.coupon = null;
           await cart.save();
         } else {
-          // Check min order value
-          const rawSubtotal = validLineItems.reduce(
-            (sum, li) => sum + li.price * li.quantity,
-            0
+          const restricted = (coupon.applicableProducts || []).length > 0;
+          const eligibleItems = validLineItems.filter((li) =>
+            isCouponProductEligible(li.productId, coupon.applicableProducts)
           );
-          if (rawSubtotal < coupon.minOrderValue) {
+
+          if (restricted && eligibleItems.length === 0) {
             warnings.push(
-              `Cart subtotal ₹${rawSubtotal.toFixed(2)} is below coupon minimum of ₹${coupon.minOrderValue} — coupon removed`
+              "Applied coupon only covers products that are no longer in your cart — removed"
             );
             cart.coupon = null;
             await cart.save();
           } else {
-            couponData = {
-              type: coupon.type as "percentage" | "flat",
-              value: coupon.value,
-              maxDiscount: coupon.maxDiscount,
-            };
+            const minOrderBase = restricted
+              ? eligibleItems.reduce((sum, li) => sum + li.price * li.quantity, 0)
+              : validLineItems.reduce((sum, li) => sum + li.price * li.quantity, 0);
+
+            if (minOrderBase < coupon.minOrderValue) {
+              warnings.push(
+                restricted
+                  ? `Eligible products subtotal ₹${minOrderBase.toFixed(2)} is below coupon minimum of ₹${coupon.minOrderValue} — coupon removed`
+                  : `Cart subtotal ₹${minOrderBase.toFixed(2)} is below coupon minimum of ₹${coupon.minOrderValue} — coupon removed`
+              );
+              cart.coupon = null;
+              await cart.save();
+            } else {
+              couponData = {
+                type: coupon.type as "percentage" | "flat",
+                value: coupon.value,
+                maxDiscount: coupon.maxDiscount,
+              };
+              applicableProducts = coupon.applicableProducts || [];
+            }
           }
         }
       }
     }
 
     // ── Build summary ────────────────────────────────────────────────────
-    const summary = buildCartSummary(validLineItems, couponData, {
-      isInterState: body.isInterState === true,
-      pincode: typeof body.pincode === "string" ? body.pincode : undefined,
-    });
+    const summary = buildCartSummary(
+      validLineItems.map((li) => ({
+        price: li.price,
+        quantity: li.quantity,
+        gst: li.gst,
+        couponEligible: isCouponProductEligible(li.productId, applicableProducts),
+      })),
+      couponData,
+      {
+        isInterState: body.isInterState === true,
+        pincode: typeof body.pincode === "string" ? body.pincode : undefined,
+      }
+    );
 
     return successResponse<CartValidationResult>(
       {

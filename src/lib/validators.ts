@@ -457,7 +457,35 @@ export function validateCreateCoupon(body: Record<string, unknown>): ValidationR
     errors.push("Description must be a string");
   }
 
+  errors.push(...validateApplicableProducts(body.applicableProducts));
+
   return { valid: errors.length === 0, errors };
+}
+
+const MAX_COUPON_PRODUCTS = 100;
+
+function validateApplicableProducts(value: unknown): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    return ["Applicable products must be an array of product IDs"];
+  }
+  if (value.length > MAX_COUPON_PRODUCTS) {
+    return [`A coupon can target at most ${MAX_COUPON_PRODUCTS} products`];
+  }
+  const seen = new Set<string>();
+  const errors: string[] = [];
+  for (const id of value) {
+    if (typeof id !== "string" || !isValidObjectId(id)) {
+      errors.push("Each applicable product must be a valid product ID");
+      continue;
+    }
+    if (seen.has(id)) {
+      errors.push("Duplicate products are not allowed on a coupon");
+      continue;
+    }
+    seen.add(id);
+  }
+  return errors;
 }
 
 export function validateUpdateCoupon(body: Record<string, unknown>): ValidationResult {
@@ -521,6 +549,8 @@ export function validateUpdateCoupon(body: Record<string, unknown>): ValidationR
       errors.push("Per-user limit must be a non-negative number");
     }
   }
+
+  errors.push(...validateApplicableProducts(body.applicableProducts));
 
   return { valid: errors.length === 0, errors };
 }

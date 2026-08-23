@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { requirePermission } from "@/lib/auth/require-auth";
 import { isValidObjectId, validateUpdateCoupon } from "@/lib/validators";
 import Coupon from "@/models/coupon.model";
+import Product from "@/models/product.model";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -21,7 +22,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     await connectDB();
 
-    const coupon = await Coupon.findById(id).lean();
+    const coupon = await Coupon.findById(id)
+      .populate({
+        path: "applicableProducts",
+        select: "title slug images variants isActive",
+      })
+      .lean();
     if (!coupon) {
       return errorResponse("Coupon not found", 404);
     }
@@ -71,6 +77,22 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (body.usageLimit !== undefined) updates.usageLimit = body.usageLimit;
     if (body.perUserLimit !== undefined) updates.perUserLimit = body.perUserLimit;
     if (body.isActive !== undefined) updates.isActive = body.isActive;
+
+    if (body.applicableProducts !== undefined) {
+      const applicableProducts: string[] = Array.isArray(body.applicableProducts)
+        ? body.applicableProducts.filter(
+            (pid: unknown): pid is string => typeof pid === "string" && isValidObjectId(pid)
+          )
+        : [];
+
+      if (applicableProducts.length > 0) {
+        const found = await Product.countDocuments({ _id: { $in: applicableProducts } });
+        if (found !== applicableProducts.length) {
+          return errorResponse("One or more applicable products were not found", 400);
+        }
+      }
+      updates.applicableProducts = applicableProducts;
+    }
 
     // Check code uniqueness if changing
     if (updates.code && updates.code !== coupon.code) {

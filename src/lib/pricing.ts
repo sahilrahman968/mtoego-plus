@@ -116,6 +116,18 @@ export function calculateShipping(
 // ─── Coupon Discount Calculation ─────────────────────────────────────────────
 
 /**
+ * Empty / missing applicableProducts means the coupon applies to every product.
+ */
+export function isCouponProductEligible(
+  productId: string,
+  applicableProducts?: Array<string | { toString(): string }> | null
+): boolean {
+  if (!applicableProducts || applicableProducts.length === 0) return true;
+  const id = productId.toString();
+  return applicableProducts.some((entry) => entry.toString() === id);
+}
+
+/**
  * Compute the discount amount for a given coupon and subtotal.
  */
 export function calculateDiscount(
@@ -149,6 +161,11 @@ interface CartLineItem {
   quantity: number;
   /** GST percentage (0–100). Defaults to 18 when omitted. */
   gst?: number;
+  /**
+   * When false, this line is excluded from coupon discount allocation.
+   * Defaults to true when omitted.
+   */
+  couponEligible?: boolean;
 }
 
 /**
@@ -156,7 +173,7 @@ interface CartLineItem {
  * and grand total.
  *
  * Supports per-line GST rates. Discount is allocated proportionally across
- * line items before tax is calculated on the taxable value.
+ * coupon-eligible line items before tax is calculated on the taxable value.
  */
 export function buildCartSummary(
   items: CartLineItem[],
@@ -183,7 +200,14 @@ export function buildCartSummary(
     items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
 
-  const discount = coupon ? calculateDiscount(subtotal, coupon) : 0;
+  const eligibleSubtotal = round(
+    items.reduce((sum, item) => {
+      if (item.couponEligible === false) return sum;
+      return sum + item.price * item.quantity;
+    }, 0)
+  );
+
+  const discount = coupon ? calculateDiscount(eligibleSubtotal, coupon) : 0;
   const subtotalAfterDiscount = round(Math.max(0, subtotal - discount));
 
   // Per-line GST (with proportional discount allocation) when items carry rates.
@@ -197,7 +221,10 @@ export function buildCartSummary(
 
     for (const item of items) {
       const lineTotal = item.price * item.quantity;
-      const lineDiscount = discount * (lineTotal / subtotal);
+      const lineDiscount =
+        discount > 0 && eligibleSubtotal > 0 && item.couponEligible !== false
+          ? discount * (lineTotal / eligibleSubtotal)
+          : 0;
       const taxable = Math.max(0, lineTotal - lineDiscount);
       const gstPercent = normalizeGstPercent(item.gst);
       rates.add(gstPercent);

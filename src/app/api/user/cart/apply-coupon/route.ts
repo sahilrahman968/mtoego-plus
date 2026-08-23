@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
 import Product from "@/models/product.model";
+import { isCouponProductEligible } from "@/lib/pricing";
 
 // ─── POST /api/user/cart/apply-coupon — Apply a coupon to the cart ───────────
 
@@ -54,11 +55,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Check minimum order value ────────────────────────────────────────
+    // ── Check minimum order value (eligible products only when restricted) ─
     const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
     const saleIndex = await loadLiveSaleIndex();
-    let subtotal = 0;
+    let cartSubtotal = 0;
+    let eligibleSubtotal = 0;
+    let hasEligibleProduct = false;
     let saleBlocksCoupons = false;
+    const restricted = (coupon.applicableProducts || []).length > 0;
+
     for (const item of cart.items) {
       const product = await Product.findById(item.product);
       if (product && product.isActive) {
@@ -71,9 +76,14 @@ export async function POST(request: NextRequest) {
             product._id.toString(),
             variant.price
           );
-          subtotal += priced.price * item.quantity;
+          const lineTotal = priced.price * item.quantity;
+          cartSubtotal += lineTotal;
           if (priced.offer && !priced.offer.campaign.allowCoupons) {
             saleBlocksCoupons = true;
+          }
+          if (isCouponProductEligible(product._id.toString(), coupon.applicableProducts)) {
+            hasEligibleProduct = true;
+            eligibleSubtotal += lineTotal;
           }
         }
       }
@@ -83,9 +93,19 @@ export async function POST(request: NextRequest) {
       return errorResponse("This sale cannot be combined with a coupon", 400);
     }
 
-    if (subtotal < coupon.minOrderValue) {
+    if (restricted && !hasEligibleProduct) {
       return errorResponse(
-        `Minimum order value of ₹${coupon.minOrderValue} required. Current subtotal: ₹${subtotal.toFixed(2)}`,
+        "This coupon only applies to specific products that are not in your cart",
+        400
+      );
+    }
+
+    const minOrderBase = restricted ? eligibleSubtotal : cartSubtotal;
+    if (minOrderBase < coupon.minOrderValue) {
+      return errorResponse(
+        restricted
+          ? `Minimum of ₹${coupon.minOrderValue} in eligible products required. Current eligible subtotal: ₹${eligibleSubtotal.toFixed(2)}`
+          : `Minimum order value of ₹${coupon.minOrderValue} required. Current subtotal: ₹${cartSubtotal.toFixed(2)}`,
         400
       );
     }
@@ -101,6 +121,7 @@ export async function POST(request: NextRequest) {
         value: coupon.value,
         maxDiscount: coupon.maxDiscount,
         description: coupon.description,
+        applicableProducts: (coupon.applicableProducts || []).map((id) => id.toString()),
       },
       "Coupon applied successfully"
     );

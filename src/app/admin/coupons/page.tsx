@@ -24,6 +24,7 @@ interface Coupon {
   usageLimit: number;
   usedCount: number;
   perUserLimit: number;
+  applicableProducts?: string[];
   isActive: boolean;
   createdAt: string;
 }
@@ -177,6 +178,12 @@ export default function CouponsPage() {
                         <td className="px-4 py-2">
                           <code className="rounded bg-admin-subtle px-2 py-0.5 text-sm font-semibold text-admin-heading">{coupon.code}</code>
                           {coupon.description && <p className="mt-1 max-w-64 truncate text-xs text-admin-faint">{coupon.description}</p>}
+                          {(coupon.applicableProducts?.length ?? 0) > 0 && (
+                            <p className="mt-1 text-xs text-admin-muted">
+                              {coupon.applicableProducts!.length} product
+                              {coupon.applicableProducts!.length === 1 ? "" : "s"}
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-2">
                           <p className="whitespace-nowrap font-medium text-admin-heading">{coupon.type === "percentage" ? `${coupon.value}% off` : `₹${coupon.value} off`}</p>

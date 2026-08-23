@@ -28,7 +28,7 @@ import {
   generateIdempotencyKey,
   isProductUnavailable,
 } from "@/lib/utils";
-import { buildCartSummary, priceInclGst } from "@/lib/pricing";
+import { buildCartSummary, isCouponProductEligible, priceInclGst } from "@/lib/pricing";
 
 interface ShippingForm {
   name: string;
@@ -133,12 +133,17 @@ export default function CheckoutClient() {
   });
 
   const summary = useMemo(() => {
+    const applicable = cart?.coupon?.applicableProducts;
     const lineItems = availableItems.map((item) => {
       const variant = item.product!.variants?.find((v) => v._id === item.variant);
       return {
         price: variant?.price || item.priceAtAdd,
         quantity: item.quantity,
         gst: variant?.gst ?? 18,
+        couponEligible: isCouponProductEligible(
+          item.product!._id,
+          applicable
+        ),
       };
     });
 
