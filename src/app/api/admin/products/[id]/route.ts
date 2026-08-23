@@ -41,6 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const product = await Product.findById(id)
       .populate("category", "name slug")
+      .populate("relatedProducts", "title slug images")
       .lean();
 
     if (!product) {
@@ -118,6 +119,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    if (body.relatedProducts !== undefined) {
+      const relatedProducts: string[] = Array.isArray(body.relatedProducts)
+        ? body.relatedProducts
+        : [];
+      if (relatedProducts.includes(id)) {
+        return errorResponse("A product cannot be related to itself", 400);
+      }
+      if (relatedProducts.length > 0) {
+        const found = await Product.countDocuments({
+          _id: { $in: relatedProducts },
+        });
+        if (found !== relatedProducts.length) {
+          return errorResponse("One or more related products were not found", 404);
+        }
+      }
+    }
+
     // ── Handle image deletions ──────────────────────────────────────────
     // If images array is provided, identify removed images and delete from Cloudinary
     if (body.images !== undefined) {
@@ -165,12 +183,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
     if (body.isFeatured !== undefined) updateData.isFeatured = body.isFeatured;
     if (body.tags !== undefined) updateData.tags = body.tags;
+    if (body.relatedProducts !== undefined) updateData.relatedProducts = body.relatedProducts;
+    if (body.relatedProductsHeading !== undefined) {
+      updateData.relatedProductsHeading = body.relatedProductsHeading.trim();
+    }
 
     const product = await Product.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     })
       .populate("category", "name slug")
+      .populate("relatedProducts", "title slug images")
       .lean();
 
     if (product) {

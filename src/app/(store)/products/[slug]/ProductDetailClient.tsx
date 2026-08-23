@@ -89,8 +89,13 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           setSelectedVariant(initialVariant);
           setSelectedImage(imageIndexForColor(p.images, initialVariant.color));
         }
-        // Fetch related products
-        if (p.category?._id) {
+        // Prefer curated related products; fall back to same-category suggestions
+        const curated = (p.relatedProducts || []).filter(
+          (rp) => rp && typeof rp === "object" && "_id" in rp && rp._id !== p._id
+        );
+        if (curated.length > 0) {
+          setRelatedProducts(curated);
+        } else if (p.category?._id) {
           fetchProducts({ category: p.category._id, limit: 4 }).then((relRes) => {
             if (relRes.success && relRes.data) {
               setRelatedProducts(
@@ -772,7 +777,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       {relatedProducts.length > 0 && (
         <section className="mt-12 sm:mt-16">
           <h2 className="section-title mb-6 text-2xl text-foreground sm:text-3xl">
-            Related Products
+            {product.relatedProductsHeading?.trim() || "Related products"}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-14">
             {relatedProducts.map((p) => (

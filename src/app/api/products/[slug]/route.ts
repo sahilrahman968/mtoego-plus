@@ -21,16 +21,42 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     const product = await Product.findOne({ slug, isActive: true })
       .populate("category", "name slug")
+      .populate({
+        path: "relatedProducts",
+        match: { isActive: true },
+        select: "title slug images variants category tags isFeatured createdAt",
+        populate: { path: "category", select: "name slug" },
+      })
       .lean();
 
     if (!product) {
       return errorResponse("Product not found", 404);
     }
 
-    const { applySaleToProduct, loadLiveSaleIndex } = await import("@/lib/sales");
+    const { applySaleToProduct, applySaleToProducts, loadLiveSaleIndex } = await import(
+      "@/lib/sales"
+    );
     const saleIndex = await loadLiveSaleIndex();
 
-    return successResponse(applySaleToProduct(product as never, saleIndex));
+    const relatedRaw = (
+      Array.isArray(product.relatedProducts) ? product.relatedProducts : []
+    ).filter(
+      (item) => item && typeof item === "object" && "title" in item && "variants" in item
+    );
+
+    const relatedProducts = applySaleToProducts(relatedRaw as never[], saleIndex);
+
+    return successResponse(
+      applySaleToProduct(
+        {
+          ...product,
+          relatedProducts,
+          relatedProductsHeading:
+            product.relatedProductsHeading?.trim() || "Related products",
+        } as never,
+        saleIndex
+      )
+    );
   } catch (err) {
     console.error("[Products] Public get error:", err);
     return errorResponse("Failed to fetch product", 500);

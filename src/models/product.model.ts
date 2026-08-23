@@ -37,6 +37,8 @@ export interface IProductDocument extends Document {
   isActive: boolean;
   isFeatured: boolean;
   tags: string[];
+  relatedProducts: Types.ObjectId[];
+  relatedProductsHeading: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -186,6 +188,20 @@ const productSchema = new Schema<IProductDocument>(
         validator: (val: string[]) => val.length <= 20,
         message: "A product can have at most 20 tags",
       },
+    },
+    relatedProducts: {
+      type: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+      default: [],
+      validate: {
+        validator: (val: Types.ObjectId[]) => val.length <= 12,
+        message: "A product can have at most 12 related products",
+      },
+    },
+    relatedProductsHeading: {
+      type: String,
+      trim: true,
+      maxlength: [80, "Related products heading must be at most 80 characters"],
+      default: "Related products",
     },
   },
   {

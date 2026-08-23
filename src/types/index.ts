@@ -170,6 +170,8 @@ export interface IProduct {
   isActive: boolean;
   isFeatured: boolean;
   tags: string[];
+  relatedProducts: Types.ObjectId[];
+  relatedProductsHeading: string;
   priceRange?: { min: number; max: number } | null;
   createdAt: Date;
   updatedAt: Date;
@@ -185,6 +187,8 @@ export interface CreateProductBody {
   isActive?: boolean;
   isFeatured?: boolean;
   tags?: string[];
+  relatedProducts?: string[];
+  relatedProductsHeading?: string;
 }
 
 export interface UpdateProductBody extends Partial<CreateProductBody> {}

@@ -103,6 +103,21 @@ export async function POST(request: NextRequest) {
       return errorResponse("One or more SKUs already exist in another product", 409);
     }
 
+    const relatedProducts: string[] = Array.isArray(body.relatedProducts)
+      ? body.relatedProducts
+      : [];
+    if (relatedProducts.length > 0) {
+      const found = await Product.countDocuments({ _id: { $in: relatedProducts } });
+      if (found !== relatedProducts.length) {
+        return errorResponse("One or more related products were not found", 404);
+      }
+    }
+
+    const relatedProductsHeading =
+      typeof body.relatedProductsHeading === "string" && body.relatedProductsHeading.trim()
+        ? body.relatedProductsHeading.trim()
+        : "Related products";
+
     const product = await Product.create({
       title: body.title.trim(),
       slug: body.slug.toLowerCase().trim(),
@@ -122,10 +137,13 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive ?? true,
       isFeatured: body.isFeatured ?? false,
       tags: body.tags ?? [],
+      relatedProducts,
+      relatedProductsHeading,
     });
 
     const populated = await Product.findById(product._id)
       .populate("category", "name slug")
+      .populate("relatedProducts", "title slug images")
       .lean();
 
     if (populated) {

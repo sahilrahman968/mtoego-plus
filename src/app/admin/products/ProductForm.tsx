@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
 import { useToast } from "@/components/store/Toast";
@@ -9,12 +10,12 @@ import { validateProductColorImages } from "@/lib/validators";
 import { Button } from "../components/Button";
 import {
   CheckboxField,
-  FieldShell,
   FormSection,
   SelectField,
   TextAreaField,
   TextField,
   controlClassName,
+  FieldShell,
 } from "../components/Fields";
 import { AdminFormSkeleton } from "../components/FeedbackState";
 
@@ -42,8 +43,32 @@ interface Category {
   name: string;
 }
 
+interface RelatedProductOption {
+  _id: string;
+  title: string;
+  slug: string;
+  images?: { url: string }[];
+}
+
 interface ProductFormProps {
   productId?: string;
+}
+
+const MAX_RELATED_PRODUCTS = 12;
+const DEFAULT_RELATED_HEADING = "Related products";
+
+function ProductThumb({ url, title }: { url?: string; title: string }) {
+  return (
+    <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-admin-subtle">
+      {url ? (
+        <Image src={url} alt={title} fill className="object-cover" sizes="40px" />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] text-admin-faint">
+          —
+        </span>
+      )}
+    </span>
+  );
 }
 
 const COLOR_HEX_MAP: Record<string, string> = {
@@ -99,12 +124,25 @@ export default function ProductForm({ productId }: ProductFormProps) {
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState("");
+  const [relatedProducts, setRelatedProducts] = useState<RelatedProductOption[]>([]);
+  const [relatedProductsHeading, setRelatedProductsHeading] =
+    useState(DEFAULT_RELATED_HEADING);
+  const [relatedSearch, setRelatedSearch] = useState("");
+  const [relatedSearchResults, setRelatedSearchResults] = useState<RelatedProductOption[]>(
+    []
+  );
+  const [relatedSearching, setRelatedSearching] = useState(false);
   const [variants, setVariants] = useState<Variant[]>([{ ...emptyVariant }]);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [removingPublicId, setRemovingPublicId] = useState("");
   const persistedPublicIds = useRef(new Set<string>());
   const uploadedPublicIds = useRef(new Set<string>());
+
+  const relatedProductIds = useMemo(
+    () => new Set(relatedProducts.map((product) => product._id)),
+    [relatedProducts]
+  );
 
   // Fetch categories
   useEffect(() => {
@@ -131,6 +169,16 @@ export default function ProductForm({ productId }: ProductFormProps) {
           setIsActive(p.isActive);
           setIsFeatured(p.isFeatured);
           setTags(p.tags?.join(", ") || "");
+          setRelatedProductsHeading(
+            p.relatedProductsHeading?.trim() || DEFAULT_RELATED_HEADING
+          );
+          setRelatedProducts(
+            (p.relatedProducts || [])
+              .map((row: RelatedProductOption | string) =>
+                typeof row === "object" && row && "_id" in row ? row : null
+              )
+              .filter(Boolean) as RelatedProductOption[]
+          );
           setVariants(
             p.variants.map((v: Variant) => ({
               _id: v._id,
@@ -154,6 +202,58 @@ export default function ProductForm({ productId }: ProductFormProps) {
       .catch(console.error)
       .finally(() => setFetching(false));
   }, [isEdit, productId]);
+
+  const searchRelatedProducts = useCallback(
+    async (q: string) => {
+      if (!q.trim()) {
+        setRelatedSearchResults([]);
+        return;
+      }
+      setRelatedSearching(true);
+      try {
+        const res = await fetch(
+          `/api/admin/products?search=${encodeURIComponent(q.trim())}&limit=8&isActive=true`
+        );
+        const json = await res.json();
+        if (json.success) {
+          setRelatedSearchResults(
+            (json.data.items || []).filter(
+              (product: RelatedProductOption) => product._id !== productId
+            )
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setRelatedSearching(false);
+      }
+    },
+    [productId]
+  );
+
+  useEffect(() => {
+    const id = window.setTimeout(() => void searchRelatedProducts(relatedSearch), 280);
+    return () => window.clearTimeout(id);
+  }, [relatedSearch, searchRelatedProducts]);
+
+  const addRelatedProduct = (product: RelatedProductOption) => {
+    if (product._id === productId) {
+      toast("A product cannot be related to itself", "error");
+      return;
+    }
+    if (relatedProductIds.has(product._id)) return;
+    if (relatedProducts.length >= MAX_RELATED_PRODUCTS) {
+      toast(`You can select at most ${MAX_RELATED_PRODUCTS} related products`, "error");
+      return;
+    }
+    setRelatedProducts((prev) => [...prev, product]);
+    setRelatedSearch("");
+    setRelatedSearchResults([]);
+  };
+
+  const removeRelatedProduct = (id: string) => {
+    setRelatedProducts((prev) => prev.filter((product) => product._id !== id));
+  };
 
   // Auto-generate slug from title
   const handleTitleChange = (value: string) => {
@@ -376,6 +476,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      relatedProducts: relatedProducts.map((product) => product._id),
+      relatedProductsHeading:
+        relatedProductsHeading.trim() || DEFAULT_RELATED_HEADING,
       variants: variants.map((v) => ({
         ...v,
         price: Number(v.price),
@@ -578,7 +681,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="tag1, tag2, tag3"
-              hint="Comma separated. Used for search and related products."
+              hint="Comma separated. Used for search."
             />
             <div className="space-y-3">
               <CheckboxField
@@ -599,6 +702,92 @@ export default function ProductForm({ productId }: ProductFormProps) {
           </FormSection>
         </div>
       </div>
+
+      <FormSection
+        title="Related products"
+        description="Curate products shown under this item on the product details page. Leave empty to fall back to same-category suggestions."
+        columns={1}
+      >
+        <TextField
+          id="related-products-heading"
+          label="Section heading"
+          value={relatedProductsHeading}
+          onChange={(e) => setRelatedProductsHeading(e.target.value)}
+          placeholder={DEFAULT_RELATED_HEADING}
+          maxLength={80}
+          hint="Shown above the related products grid on the storefront."
+        />
+        <div>
+          <label
+            htmlFor="related-products-search"
+            className="block text-sm font-medium text-admin-body"
+          >
+            Add products
+          </label>
+          <div className="relative mt-1.5">
+            <input
+              id="related-products-search"
+              aria-label="Search products to add as related"
+              value={relatedSearch}
+              onChange={(e) => setRelatedSearch(e.target.value)}
+              placeholder="Search products to add…"
+              className={controlClassName}
+            />
+            {(relatedSearching || relatedSearchResults.length > 0) && (
+              <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-admin-line bg-admin-surface shadow-lg">
+                {relatedSearching && (
+                  <p className="px-3 py-2 text-xs text-admin-faint">Searching…</p>
+                )}
+                {relatedSearchResults.map((product) => (
+                  <button
+                    type="button"
+                    key={product._id}
+                    onClick={() => addRelatedProduct(product)}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-admin-hover"
+                  >
+                    <ProductThumb url={product.images?.[0]?.url} title={product.title} />
+                    <span className="text-sm text-admin-body">{product.title}</span>
+                    {relatedProductIds.has(product._id) && (
+                      <span className="ml-auto text-[11px] text-admin-faint">Added</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="mt-1.5 text-xs text-admin-muted">
+            Up to {MAX_RELATED_PRODUCTS}. Search by title.
+          </p>
+        </div>
+        {relatedProducts.length > 0 ? (
+          <ul className="divide-y divide-admin-line rounded-lg border border-admin-line">
+            {relatedProducts.map((product) => (
+              <li
+                key={product._id}
+                className="flex items-center gap-3 px-3 py-2"
+              >
+                <ProductThumb url={product.images?.[0]?.url} title={product.title} />
+                <span className="min-w-0 flex-1 truncate text-sm text-admin-body">
+                  {product.title}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeRelatedProduct(product._id)}
+                  aria-label={`Remove ${product.title}`}
+                  className="rounded-md p-1.5 text-admin-muted transition-colors hover:bg-admin-danger-soft hover:text-admin-danger"
+                >
+                  <X aria-hidden="true" className="size-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-admin-muted">
+            No curated related products yet — the storefront will suggest items from the same
+            category.
+          </p>
+        )}
+      </FormSection>
 
       <FormSection
         title="Pricing & inventory"

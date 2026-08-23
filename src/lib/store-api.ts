@@ -414,6 +414,8 @@ export interface ProductData {
   isActive: boolean;
   isFeatured: boolean;
   tags: string[];
+  relatedProducts?: ProductData[];
+  relatedProductsHeading?: string;
   priceRange?: { min: number; max: number } | null;
   createdAt: string;
   updatedAt: string;

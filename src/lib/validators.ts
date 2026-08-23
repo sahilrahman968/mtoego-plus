@@ -168,6 +168,37 @@ export function validateCreateProduct(body: Record<string, unknown>): Validation
     }
   }
 
+  if (body.relatedProducts !== undefined) {
+    if (!Array.isArray(body.relatedProducts)) {
+      errors.push("Related products must be an array of product IDs");
+    } else if (body.relatedProducts.length > 12) {
+      errors.push("A product can have at most 12 related products");
+    } else {
+      const seen = new Set<string>();
+      for (const id of body.relatedProducts) {
+        if (typeof id !== "string" || !isValidObjectId(id)) {
+          errors.push("Each related product must be a valid product ID");
+          break;
+        }
+        if (seen.has(id)) {
+          errors.push("Related products must not contain duplicates");
+          break;
+        }
+        seen.add(id);
+      }
+    }
+  }
+
+  if (body.relatedProductsHeading !== undefined) {
+    if (typeof body.relatedProductsHeading !== "string") {
+      errors.push("Related products heading must be a string");
+    } else if (body.relatedProductsHeading.trim().length === 0) {
+      errors.push("Related products heading cannot be empty");
+    } else if (body.relatedProductsHeading.length > 80) {
+      errors.push("Related products heading must be at most 80 characters");
+    }
+  }
+
   if (Array.isArray(body.variants) && Array.isArray(body.images)) {
     errors.push(
       ...validateProductColorImages(
@@ -261,6 +292,37 @@ export function validateUpdateProduct(body: Record<string, unknown>): Validation
       errors.push("Tags must be an array of strings");
     } else if (body.tags.length > 20) {
       errors.push("A product can have at most 20 tags");
+    }
+  }
+
+  if (body.relatedProducts !== undefined) {
+    if (!Array.isArray(body.relatedProducts)) {
+      errors.push("Related products must be an array of product IDs");
+    } else if (body.relatedProducts.length > 12) {
+      errors.push("A product can have at most 12 related products");
+    } else {
+      const seen = new Set<string>();
+      for (const id of body.relatedProducts) {
+        if (typeof id !== "string" || !isValidObjectId(id)) {
+          errors.push("Each related product must be a valid product ID");
+          break;
+        }
+        if (seen.has(id)) {
+          errors.push("Related products must not contain duplicates");
+          break;
+        }
+        seen.add(id);
+      }
+    }
+  }
+
+  if (body.relatedProductsHeading !== undefined) {
+    if (typeof body.relatedProductsHeading !== "string") {
+      errors.push("Related products heading must be a string");
+    } else if (body.relatedProductsHeading.trim().length === 0) {
+      errors.push("Related products heading cannot be empty");
+    } else if (body.relatedProductsHeading.length > 80) {
+      errors.push("Related products heading must be at most 80 characters");
     }
   }
 
