@@ -212,7 +212,7 @@ export default function OrdersPage() {
         id="order-search"
         value={searchInput}
         label="Search orders"
-        placeholder="Search by order number…"
+        placeholder="Search by order ID, name, or email…"
         onChange={setSearchInput}
       >
         <FilterSelect

@@ -338,18 +338,21 @@ export default function CheckoutClient() {
     );
   }
 
+  const fieldClassName =
+    "w-full min-w-0 max-w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary";
+
   return (
     <>
-      <div className="mx-auto w-full max-w-[92rem] px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
+      <div className="mx-auto w-full min-w-0 max-w-[92rem] overflow-x-clip px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
         {/* Progress steps */}
-        <div className="mb-8 flex items-center justify-center gap-3 border-b border-border/60 pb-6">
+        <div className="mb-8 flex flex-wrap items-center justify-center gap-2 border-b border-border/60 pb-6 sm:gap-3">
           <div
             className={`label-text flex items-center gap-2 ${
               step === "address" ? "text-primary" : "text-muted"
             }`}
           >
             <div
-              className={`tabular flex h-6 w-6 items-center justify-center text-[11px] font-semibold leading-none ${
+              className={`tabular flex h-6 w-6 shrink-0 items-center justify-center text-[11px] font-semibold leading-none ${
                 step === "address"
                   ? "bg-primary text-white"
                   : "border border-border bg-card text-muted"
@@ -359,14 +362,14 @@ export default function CheckoutClient() {
             </div>
             Shipping
           </div>
-          <ChevronRight size={16} className="text-muted" />
+          <ChevronRight size={16} className="shrink-0 text-muted" />
           <div
             className={`label-text flex items-center gap-2 ${
               step === "review" ? "text-primary" : "text-muted"
             }`}
           >
             <div
-              className={`tabular flex h-6 w-6 items-center justify-center text-[11px] font-semibold leading-none ${
+              className={`tabular flex h-6 w-6 shrink-0 items-center justify-center text-[11px] font-semibold leading-none ${
                 step === "review"
                   ? "bg-primary text-white"
                   : "border border-border bg-card text-muted"
@@ -378,20 +381,20 @@ export default function CheckoutClient() {
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-3">
           {/* Main content */}
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             {step === "address" ? (
-              <div className="border border-border bg-card/80 p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <MapPin size={20} className="text-primary" />
+              <div className="border border-border bg-card/80 p-4 sm:p-6">
+                <div className="mb-6 flex items-center gap-2">
+                  <MapPin size={20} className="shrink-0 text-primary" />
                   <h2 className="section-title text-lg text-foreground">
                     Shipping Address
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="min-w-0">
                     <label className="label-text mb-2 block text-muted">
                       Full Name *
                     </label>
@@ -399,11 +402,11 @@ export default function CheckoutClient() {
                       type="text"
                       value={address.name}
                       onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className={fieldClassName}
                       required
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="label-text mb-2 block text-muted">
                       Phone Number *
                     </label>
@@ -414,11 +417,11 @@ export default function CheckoutClient() {
                         setAddress({ ...address, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
                       }
                       placeholder="10-digit mobile number"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className={fieldClassName}
                       required
                     />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="min-w-0 sm:col-span-2">
                     <label className="label-text mb-2 block text-muted">
                       Address Line 1 *
                     </label>
@@ -427,11 +430,11 @@ export default function CheckoutClient() {
                       value={address.line1}
                       onChange={(e) => setAddress({ ...address, line1: e.target.value })}
                       placeholder="House no., Building, Street"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className={fieldClassName}
                       required
                     />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="min-w-0 sm:col-span-2">
                     <label className="label-text mb-2 block text-muted">
                       Address Line 2
                     </label>
@@ -440,10 +443,10 @@ export default function CheckoutClient() {
                       value={address.line2}
                       onChange={(e) => setAddress({ ...address, line2: e.target.value })}
                       placeholder="Area, Landmark (optional)"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className={fieldClassName}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="label-text mb-2 block text-muted">
                       City *
                     </label>
@@ -451,18 +454,18 @@ export default function CheckoutClient() {
                       type="text"
                       value={address.city}
                       onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className={fieldClassName}
                       required
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="label-text mb-2 block text-muted">
                       State *
                     </label>
                     <select
                       value={address.state}
                       onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                      className={fieldClassName}
                       required
                     >
                       <option value="">Select state</option>
@@ -473,7 +476,7 @@ export default function CheckoutClient() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="label-text mb-2 block text-muted">
                       Pincode *
                     </label>
@@ -484,7 +487,7 @@ export default function CheckoutClient() {
                         setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
                       }
                       placeholder="6-digit pincode"
-                      className="w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary"
+                      className={fieldClassName}
                       required
                     />
                   </div>
@@ -499,34 +502,34 @@ export default function CheckoutClient() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="min-w-0 space-y-6">
                 {/* Shipping summary */}
-                <div className="border border-border bg-card/80 p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={18} className="text-primary" />
+                <div className="border border-border bg-card/80 p-4 sm:p-6">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <MapPin size={18} className="shrink-0 text-primary" />
                       <h3 className="section-title text-base text-foreground">Shipping To</h3>
                     </div>
                     <button
                       onClick={() => setStep("address")}
-                      className="btn-text text-primary hover:underline"
+                      className="btn-text shrink-0 text-primary hover:underline"
                     >
                       Edit
                     </button>
                   </div>
-                  <p className="text-sm font-medium leading-relaxed text-foreground">{address.name}</p>
-                  <p className="meta-text text-muted">
+                  <p className="break-words text-sm font-medium leading-relaxed text-foreground">{address.name}</p>
+                  <p className="meta-text break-words text-muted">
                     {address.line1}
                     {address.line2 ? `, ${address.line2}` : ""}
                   </p>
-                  <p className="meta-text text-muted">
+                  <p className="meta-text break-words text-muted">
                     {address.city}, {address.state} - {address.pincode}
                   </p>
                   <p className="meta-text tabular text-muted">Phone: {address.phone}</p>
                 </div>
 
                 {/* Cart items */}
-                <div className="border border-border bg-card/80 p-6">
+                <div className="border border-border bg-card/80 p-4 sm:p-6">
                   <h3 className="section-title mb-4 text-base text-foreground">
                     Order Items ({items.length})
                   </h3>
@@ -629,60 +632,60 @@ export default function CheckoutClient() {
           </div>
 
           {/* Order Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-28 border border-border bg-card/90 p-6">
+          <div className="min-w-0 lg:col-span-1">
+            <div className="sticky top-28 border border-border bg-card/90 p-4 sm:p-6">
               <h2 className="section-title mb-5 text-lg text-foreground">
                 Order Summary
               </h2>
               <div className="tabular space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 text-muted">
                     Subtotal (excl. GST)
                   </span>
-                  <span className="font-medium">{formatPrice(subtotal)}</span>
+                  <span className="shrink-0 font-medium">{formatPrice(subtotal)}</span>
                 </div>
                 {cart?.coupon && discount > 0 && (
-                  <div className="flex justify-between text-success">
-                    <span className="flex items-center gap-1">
-                      <Tag size={14} aria-hidden="true" />
-                      {cart.coupon.code}
+                  <div className="flex items-start justify-between gap-3 text-success">
+                    <span className="flex min-w-0 items-center gap-1">
+                      <Tag size={14} className="shrink-0" aria-hidden="true" />
+                      <span className="truncate">{cart.coupon.code}</span>
                       <button
                         type="button"
                         onClick={handleRemoveCoupon}
                         disabled={couponLoading}
-                        className="ml-1 text-muted transition-colors hover:text-danger disabled:opacity-50"
+                        className="ml-1 shrink-0 text-muted transition-colors hover:text-danger disabled:opacity-50"
                         aria-label={`Remove coupon ${cart.coupon.code}`}
                       >
                         <X size={12} />
                       </button>
                     </span>
-                    <span>-{formatPrice(discount)}</span>
+                    <span className="shrink-0">-{formatPrice(discount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-muted">GST ({gst.gstLabel})</span>
-                  <span className="font-medium">{formatPrice(gst.totalTax)}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 text-muted">GST ({gst.gstLabel})</span>
+                  <span className="shrink-0 font-medium">{formatPrice(gst.totalTax)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">Shipping</span>
-                  <span className={shippingCost === 0 ? "text-success font-medium" : ""}>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 text-muted">Shipping</span>
+                  <span className={`shrink-0 ${shippingCost === 0 ? "font-medium text-success" : ""}`}>
                     {shippingCost === 0 ? "Free" : formatPrice(shippingCost)}
                   </span>
                 </div>
                 <hr className="border-border" />
-                <div className="flex justify-between text-base font-bold">
-                  <span>Estimated Total</span>
-                  <span>{formatPrice(estimatedTotal)}</span>
+                <div className="flex items-start justify-between gap-3 text-base font-bold">
+                  <span className="min-w-0">Estimated Total</span>
+                  <span className="shrink-0">{formatPrice(estimatedTotal)}</span>
                 </div>
                 <p className="eyebrow-xs text-muted">Total includes GST</p>
               </div>
 
               {!cart?.coupon && availableItems.length > 0 && (
-                <div className="mt-4">
+                <div className="mt-4 min-w-0">
                   <label htmlFor="checkout-coupon" className="label-text mb-2 block text-muted">
                     Coupon code
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex min-w-0 gap-2">
                     <input
                       id="checkout-coupon"
                       type="text"
@@ -696,13 +699,13 @@ export default function CheckoutClient() {
                       }}
                       placeholder="Enter code"
                       autoComplete="off"
-                      className="flex-1 border border-border bg-black/55 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="min-w-0 flex-1 border border-border bg-black/55 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                     <button
                       type="button"
                       onClick={() => void handleApplyCoupon()}
                       disabled={couponLoading || !couponCode.trim()}
-                      className="btn-text border border-border bg-black/50 px-4 py-2.5 text-foreground transition-colors hover:border-accent disabled:opacity-50"
+                      className="btn-text shrink-0 border border-border bg-black/50 px-3 py-2.5 text-foreground transition-colors hover:border-accent disabled:opacity-50 sm:px-4"
                     >
                       {couponLoading ? "..." : "Apply"}
                     </button>
@@ -710,9 +713,9 @@ export default function CheckoutClient() {
                 </div>
               )}
 
-              <div className="mt-4 flex items-center gap-2 border border-border bg-black/45 p-3">
-                <Shield size={16} className="shrink-0 text-primary" />
-                <p className="meta-text text-muted">
+              <div className="mt-4 flex items-start gap-2 border border-border bg-black/45 p-3">
+                <Shield size={16} className="mt-0.5 shrink-0 text-primary" />
+                <p className="meta-text min-w-0 break-words text-muted">
                   Your payment is secured with Razorpay&apos;s 256-bit encryption
                 </p>
               </div>
@@ -720,20 +723,20 @@ export default function CheckoutClient() {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3 border-y border-border/70 py-4 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-1 gap-3 border-y border-border/70 py-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: Truck, title: "Free Shipping", desc: "On orders above ₹999" },
             { icon: Shield, title: "Secure Payment", desc: "100% secure checkout" },
             { icon: RotateCcw, title: "Easy Returns", desc: "7-day return policy" },
             { icon: CreditCard, title: "Multiple Payment", desc: "UPI, Cards, Net Banking" },
           ].map((item) => (
-            <div key={item.title} className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center border border-primary/30 bg-primary/10">
+            <div key={item.title} className="flex min-w-0 items-start gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-primary/30 bg-primary/10">
                 <item.icon size={14} className="text-primary" />
               </div>
-              <div>
-                <p className="label-text text-foreground">{item.title}</p>
-                <p className="meta-text mt-0.5 text-muted">{item.desc}</p>
+              <div className="min-w-0">
+                <p className="label-text break-words text-foreground">{item.title}</p>
+                <p className="meta-text mt-0.5 break-words text-muted">{item.desc}</p>
               </div>
             </div>
           ))}

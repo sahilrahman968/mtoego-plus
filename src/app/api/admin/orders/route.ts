@@ -1,8 +1,14 @@
 import { NextRequest } from "next/server";
+import { Types } from "mongoose";
 import { connectDB } from "@/lib/db/mongoose";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { requirePermission } from "@/lib/auth/require-auth";
 import Order from "@/models/order.model";
+import User from "@/models/user.model";
+
+function isObjectId(value: string): boolean {
+  return Types.ObjectId.isValid(value) && new Types.ObjectId(value).toString() === value;
+}
 
 // ─── GET /api/admin/orders — List all orders (admin) ─────────────────────────
 
@@ -16,7 +22,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
     const status = searchParams.get("status");
     const userId = searchParams.get("userId");
-    const search = searchParams.get("search"); // order number search
+    const search = searchParams.get("search")?.trim() || "";
     const skip = (page - 1) * limit;
 
     await connectDB();
@@ -31,7 +37,28 @@ export async function GET(request: NextRequest) {
       filter.user = userId;
     }
     if (search) {
-      filter.orderNumber = { $regex: search.toUpperCase(), $options: "i" };
+      const nameEmailRegex = { $regex: search, $options: "i" };
+      const matchingUsers = await User.find({
+        $or: [{ name: nameEmailRegex }, { email: nameEmailRegex }],
+      })
+        .select("_id")
+        .limit(200)
+        .lean();
+
+      const orConditions: Record<string, unknown>[] = [
+        { orderNumber: { $regex: search, $options: "i" } },
+        { "shippingAddress.name": nameEmailRegex },
+      ];
+
+      if (matchingUsers.length > 0) {
+        orConditions.push({ user: { $in: matchingUsers.map((u) => u._id) } });
+      }
+
+      if (isObjectId(search)) {
+        orConditions.push({ _id: search });
+      }
+
+      filter.$or = orConditions;
     }
 
     const [orders, total] = await Promise.all([
