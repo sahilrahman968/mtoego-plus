@@ -20,7 +20,8 @@ import {
   getVariantLabel,
   isProductUnavailable,
 } from "@/lib/utils";
-import { buildCartSummary, isCouponProductEligible, priceInclGst } from "@/lib/pricing";
+import { buildCartSummary, priceInclGst } from "@/lib/pricing";
+import { isCouponLineEligible } from "@/lib/coupons/eligibility";
 import { CartItemSkeleton } from "@/components/store/skeletons";
 
 export default function CartClient() {
@@ -40,27 +41,36 @@ export default function CartClient() {
   });
 
   const summary = useMemo(() => {
-    const applicable = cart?.coupon?.applicableProducts;
+    const coupon = cart?.coupon;
     const lineItems = availableItems.map((item) => {
       const variant = item.product!.variants?.find((v) => v._id === item.variant);
+      const rawCategory = (item.product as { category?: string | { _id?: string } } | null)
+        ?.category;
+      const categoryId =
+        typeof rawCategory === "string"
+          ? rawCategory
+          : rawCategory?._id || null;
       return {
         price: variant?.price || item.priceAtAdd,
         quantity: item.quantity,
         gst: variant?.gst ?? 18,
-        couponEligible: isCouponProductEligible(
-          item.product!._id,
-          applicable
-        ),
+        couponEligible: isCouponLineEligible({
+          productId: item.product!._id,
+          categoryId,
+          applicableProducts: coupon?.applicableProducts,
+          applicableCategories: coupon?.applicableCategories,
+          excludedProducts: coupon?.excludedProducts,
+        }),
       };
     });
 
     return buildCartSummary(
       lineItems,
-      cart?.coupon
+      coupon
         ? {
-            type: cart.coupon.type,
-            value: cart.coupon.value,
-            maxDiscount: cart.coupon.maxDiscount ?? null,
+            type: coupon.type,
+            value: coupon.value,
+            maxDiscount: coupon.maxDiscount ?? null,
           }
         : null
     );

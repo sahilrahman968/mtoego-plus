@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
     const cart = await Cart.findOne({ user: auth.userId })
       .populate({
         path: "items.product",
-        select: "title slug images isActive variants",
+        select: "title slug images isActive variants category",
       })
       .populate({
         path: "coupon",
         select:
-          "code type value maxDiscount minOrderValue expiresAt isActive applicableProducts",
+          "code name type value maxDiscount minOrderValue startsAt expiresAt status isActive customerDescription applicableProducts applicableCategories excludedProducts firstOrderOnly",
       })
       .lean();
 
@@ -152,12 +152,12 @@ export async function POST(request: NextRequest) {
     const populated = await Cart.findById(cart._id)
       .populate({
         path: "items.product",
-        select: "title slug images isActive variants",
+        select: "title slug images isActive variants category",
       })
       .populate({
         path: "coupon",
         select:
-          "code type value maxDiscount minOrderValue expiresAt isActive applicableProducts",
+          "code name type value maxDiscount minOrderValue startsAt expiresAt status isActive customerDescription applicableProducts applicableCategories excludedProducts firstOrderOnly",
       })
       .lean();
 

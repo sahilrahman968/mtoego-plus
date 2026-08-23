@@ -6,7 +6,7 @@ import { notifyOrderPaid } from "@/lib/order-emails";
 import { recordSalePaymentStats } from "@/lib/sales";
 import Order from "@/models/order.model";
 import Cart from "@/models/cart.model";
-import Coupon from "@/models/coupon.model";
+import { redeemCouponForOrder } from "@/lib/coupons";
 
 // ─── POST /api/webhooks/razorpay ─────────────────────────────────────────────
 // Razorpay webhook handler. This is the fallback/secondary path for
@@ -156,25 +156,13 @@ async function handlePaymentSuccess(event: RazorpayWebhookEvent) {
       );
     }
 
-    // Increment coupon usage
+    // Redeem coupon (idempotent vs verify path)
     if (order.coupon?.code) {
       try {
-        const coupon = await Coupon.findOne({ code: order.coupon.code });
-        if (coupon) {
-          const userEntry = coupon.usedBy.find(
-            (u) => u.user.toString() === order.user.toString()
-          );
-          if (userEntry) {
-            userEntry.count += 1;
-          } else {
-            coupon.usedBy.push({ user: order.user, count: 1 });
-          }
-          coupon.usedCount += 1;
-          await coupon.save();
-        }
+        await redeemCouponForOrder(order);
       } catch (err) {
         console.error(
-          `[Webhook] Coupon update failed for order ${order.orderNumber}:`,
+          `[Webhook] Coupon redemption failed for order ${order.orderNumber}:`,
           err
         );
       }

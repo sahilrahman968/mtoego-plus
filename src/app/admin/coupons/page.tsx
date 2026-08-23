@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Pause, Play } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Pagination from "../components/Pagination";
@@ -15,16 +15,23 @@ import { Button, ButtonLink } from "../components/Button";
 interface Coupon {
   _id: string;
   code: string;
+  name?: string;
   description?: string;
+  customerDescription?: string;
   type: "percentage" | "flat";
   value: number;
   minOrderValue: number;
   maxDiscount: number | null;
+  startsAt?: string;
   expiresAt: string;
+  status: "draft" | "active" | "paused" | "disabled";
+  lifecycleStatus?: string;
   usageLimit: number;
   usedCount: number;
   perUserLimit: number;
   applicableProducts?: string[];
+  applicableCategories?: string[];
+  firstOrderOnly?: boolean;
   isActive: boolean;
   createdAt: string;
 }
@@ -36,7 +43,7 @@ interface PaginatedResponse {
   totalPages: number;
 }
 
-type ActiveFilter = "all" | "active" | "inactive";
+type StatusFilter = "all" | "draft" | "active" | "paused" | "disabled" | "scheduled" | "expired" | "exhausted";
 const PAGE_SIZE = 15;
 
 export default function CouponsPage() {
@@ -47,9 +54,10 @@ export default function CouponsPage() {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -65,7 +73,9 @@ export default function CouponsPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
       if (search) params.set("search", search);
-      if (activeFilter !== "all") params.set("isActive", String(activeFilter === "active"));
+      if (statusFilter !== "all") {
+        params.set("status", statusFilter);
+      }
       const res = await fetch(`/api/admin/coupons?${params}`);
       const json = await res.json();
       if (json.success) setData(json.data);
@@ -76,7 +86,7 @@ export default function CouponsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeFilter, page, search]);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     void fetchCoupons();
@@ -103,7 +113,21 @@ export default function CouponsPage() {
     }
   };
 
-  const isFiltered = Boolean(search || activeFilter !== "all");
+  const handlePauseResume = async (coupon: Coupon) => {
+    const action = coupon.status === "paused" ? "resume" : "pause";
+    setTogglingId(coupon._id);
+    try {
+      const res = await fetch(`/api/admin/coupons/${coupon._id}/${action}`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) void fetchCoupons();
+    } catch (err) {
+      console.error(`Failed to ${action} coupon:`, err);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const isFiltered = Boolean(search || statusFilter !== "all");
   const rangeStart = data?.total ? (data.page - 1) * PAGE_SIZE + 1 : 0;
   const rangeEnd = data ? Math.min(data.page * PAGE_SIZE, data.total) : 0;
 
@@ -111,23 +135,28 @@ export default function CouponsPage() {
     <div>
       <PageHeader
         title="Coupons"
-        description="Manage discount codes and promotions"
+        description="Promotion codes with eligibility rules, usage limits, and lifecycle control"
         action={{ label: "Add Coupon", href: "/admin/coupons/new" }}
       />
 
-      <SearchFilterBar id="coupon-search" value={searchInput} onChange={setSearchInput} label="Search coupons" placeholder="Search coupon codes…">
+      <SearchFilterBar id="coupon-search" value={searchInput} onChange={setSearchInput} label="Search coupons" placeholder="Search code or name…">
         <FilterSelect
           id="coupon-status"
           label="Filter coupons by status"
-          value={activeFilter}
+          value={statusFilter}
           onChange={(event) => {
-            setActiveFilter(event.target.value as ActiveFilter);
+            setStatusFilter(event.target.value as StatusFilter);
             setPage(1);
           }}
         >
           <option value="all">All statuses</option>
-          <option value="active">Active only</option>
-          <option value="inactive">Inactive only</option>
+          <option value="active">Active</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="draft">Draft</option>
+          <option value="paused">Paused</option>
+          <option value="expired">Expired</option>
+          <option value="exhausted">Exhausted</option>
+          <option value="disabled">Disabled</option>
         </FilterSelect>
       </SearchFilterBar>
 
@@ -165,25 +194,33 @@ export default function CouponsPage() {
                     <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-admin-muted">Code</th>
                     <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-admin-muted">Discount</th>
                     <th scope="col" className="hidden px-4 py-2 text-right text-xs font-medium text-admin-muted md:table-cell">Usage</th>
-                    <th scope="col" className="hidden px-4 py-2 text-left text-xs font-medium text-admin-muted lg:table-cell">Expires</th>
+                    <th scope="col" className="hidden px-4 py-2 text-left text-xs font-medium text-admin-muted lg:table-cell">Validity</th>
                     <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-admin-muted">Status</th>
                     <th scope="col" className="px-4 py-2 text-right"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-admin-line">
                   {data.items.map((coupon) => {
-                    const expired = new Date(coupon.expiresAt) < new Date();
+                    const lifecycle = coupon.lifecycleStatus || (coupon.isActive ? "active" : "inactive");
+                    const canPause = coupon.status === "active" || coupon.status === "paused";
                     return (
                       <tr key={coupon._id} className="transition-colors hover:bg-admin-hover">
                         <td className="px-4 py-2">
                           <code className="rounded bg-admin-subtle px-2 py-0.5 text-sm font-semibold text-admin-heading">{coupon.code}</code>
-                          {coupon.description && <p className="mt-1 max-w-64 truncate text-xs text-admin-faint">{coupon.description}</p>}
-                          {(coupon.applicableProducts?.length ?? 0) > 0 && (
-                            <p className="mt-1 text-xs text-admin-muted">
-                              {coupon.applicableProducts!.length} product
-                              {coupon.applicableProducts!.length === 1 ? "" : "s"}
+                          {(coupon.name || coupon.description) && (
+                            <p className="mt-1 max-w-64 truncate text-xs text-admin-faint">
+                              {coupon.name || coupon.description}
                             </p>
                           )}
+                          <div className="mt-1 flex flex-wrap gap-x-2 text-xs text-admin-muted">
+                            {(coupon.applicableProducts?.length ?? 0) > 0 && (
+                              <span>{coupon.applicableProducts!.length} product{coupon.applicableProducts!.length === 1 ? "" : "s"}</span>
+                            )}
+                            {(coupon.applicableCategories?.length ?? 0) > 0 && (
+                              <span>{coupon.applicableCategories!.length} categor{coupon.applicableCategories!.length === 1 ? "y" : "ies"}</span>
+                            )}
+                            {coupon.firstOrderOnly && <span>First order</span>}
+                          </div>
                         </td>
                         <td className="px-4 py-2">
                           <p className="whitespace-nowrap font-medium text-admin-heading">{coupon.type === "percentage" ? `${coupon.value}% off` : `₹${coupon.value} off`}</p>
@@ -193,16 +230,45 @@ export default function CouponsPage() {
                           </p>
                         </td>
                         <td className="hidden px-4 py-2 text-right tabular md:table-cell">
-                          <p className="text-admin-body">{coupon.usedCount} / {coupon.usageLimit}</p>
-                          <p className="text-xs text-admin-faint">{coupon.perUserLimit} per customer</p>
+                          <p className="text-admin-body">
+                            {coupon.usedCount} / {coupon.usageLimit === 0 ? "∞" : coupon.usageLimit}
+                          </p>
+                          <p className="text-xs text-admin-faint">
+                            {coupon.perUserLimit === 0 ? "Unlimited" : `${coupon.perUserLimit}`} per customer
+                          </p>
                         </td>
                         <td className="hidden whitespace-nowrap px-4 py-2 text-admin-muted lg:table-cell">
-                          {new Date(coupon.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                          {expired && <span className="ml-1 text-xs text-admin-danger">(expired)</span>}
+                          {coupon.startsAt && (
+                            <p className="text-xs text-admin-faint">
+                              From {new Date(coupon.startsAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                            </p>
+                          )}
+                          <p>
+                            Until {new Date(coupon.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                          </p>
                         </td>
-                        <td className="px-4 py-2"><StatusBadge status={coupon.isActive ? "active" : "inactive"} /></td>
+                        <td className="px-4 py-2"><StatusBadge status={lifecycle} /></td>
                         <td className="px-4 py-2">
                           <div className="flex items-center justify-end gap-1">
+                            {canPause && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="px-2"
+                                disabled={togglingId === coupon._id}
+                                onClick={() => void handlePauseResume(coupon)}
+                                aria-label={coupon.status === "paused" ? `Resume ${coupon.code}` : `Pause ${coupon.code}`}
+                                icon={
+                                  coupon.status === "paused" ? (
+                                    <Play aria-hidden="true" className="size-4" />
+                                  ) : (
+                                    <Pause aria-hidden="true" className="size-4" />
+                                  )
+                                }
+                              >
+                                <span className="hidden xl:inline">{coupon.status === "paused" ? "Resume" : "Pause"}</span>
+                              </Button>
+                            )}
                             <ButtonLink href={`/admin/coupons/${coupon._id}`} variant="ghost" size="sm" className="px-2" aria-label={`Edit ${coupon.code}`} icon={<Pencil aria-hidden="true" className="size-4" />}><span className="hidden lg:inline">Edit</span></ButtonLink>
                             <Button variant="ghost" size="sm" className="px-2 hover:bg-admin-danger-soft hover:text-admin-danger" onClick={() => { setDeleteTarget(coupon); setActionError(""); }} aria-label={`Delete ${coupon.code}`} icon={<Trash2 aria-hidden="true" className="size-4" />}><span className="hidden lg:inline">Delete</span></Button>
                           </div>
@@ -220,7 +286,7 @@ export default function CouponsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete Coupon"
-        message={actionError || `Are you sure you want to delete coupon "${deleteTarget?.code}"?`}
+        message={actionError || `Are you sure you want to delete coupon "${deleteTarget?.code}"? It will be soft-deleted and can no longer be redeemed.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}

@@ -60,15 +60,22 @@ export default function CouponForm({ couponId }: CouponFormProps) {
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState("");
   const [code, setCode] = useState("");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [customerDescription, setCustomerDescription] = useState("");
   const [type, setType] = useState<"percentage" | "flat">("percentage");
   const [value, setValue] = useState<number>(10);
   const [minOrderValue, setMinOrderValue] = useState<number>(0);
   const [maxDiscount, setMaxDiscount] = useState<string>("");
+  const [startsAt, setStartsAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [usageLimit, setUsageLimit] = useState<number>(100);
   const [perUserLimit, setPerUserLimit] = useState<number>(1);
-  const [isActive, setIsActive] = useState(true);
+  const [status, setStatus] = useState<"draft" | "active" | "paused" | "disabled">("active");
+  const [firstOrderOnly, setFirstOrderOnly] = useState(false);
+  const [restoreOnCancel, setRestoreOnCancel] = useState(true);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<{ _id: string; name: string }[]>([]);
   const [products, setProducts] = useState<PickedProduct[]>([]);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<PickedProduct[]>([]);
@@ -91,6 +98,20 @@ export default function CouponForm({ couponId }: CouponFormProps) {
         setCategories(json.data.categories || []);
       })
       .catch(console.error);
+
+    fetch("/api/admin/categories?limit=100")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) {
+          setAllCategories(
+            (json.data.items || json.data || []).map((c: { _id: string; name: string }) => ({
+              _id: c._id,
+              name: c.name,
+            }))
+          );
+        }
+      })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -101,15 +122,26 @@ export default function CouponForm({ couponId }: CouponFormProps) {
         if (json.success) {
           const c = json.data;
           setCode(c.code);
+          setName(c.name || "");
           setDescription(c.description || "");
+          setCustomerDescription(c.customerDescription || "");
           setType(c.type);
           setValue(c.value);
           setMinOrderValue(c.minOrderValue);
           setMaxDiscount(c.maxDiscount != null ? String(c.maxDiscount) : "");
+          setStartsAt(c.startsAt ? new Date(c.startsAt).toISOString().slice(0, 16) : "");
           setExpiresAt(c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 16) : "");
           setUsageLimit(c.usageLimit);
           setPerUserLimit(c.perUserLimit);
-          setIsActive(c.isActive);
+          setStatus(c.status || (c.isActive ? "active" : "disabled"));
+          setFirstOrderOnly(Boolean(c.firstOrderOnly));
+          setRestoreOnCancel(c.restoreOnCancel !== false);
+          setCategoryIds(
+            (c.applicableCategories || []).map(
+              (row: { _id: string } | string) =>
+                typeof row === "object" && row && "_id" in row ? row._id : String(row)
+            )
+          );
           setProducts(
             (c.applicableProducts || [])
               .map((row: PickedProduct | string) =>
@@ -223,16 +255,22 @@ export default function CouponForm({ couponId }: CouponFormProps) {
     setError("");
     const body = {
       code: code.toUpperCase(),
+      name: name.trim() || code.toUpperCase(),
       description: description || undefined,
+      customerDescription: customerDescription || undefined,
       type,
       value: Number(value),
       minOrderValue: Number(minOrderValue),
       maxDiscount: maxDiscount ? Number(maxDiscount) : null,
+      startsAt: startsAt ? new Date(startsAt).toISOString() : new Date().toISOString(),
       expiresAt: new Date(expiresAt).toISOString(),
       usageLimit: Number(usageLimit),
       perUserLimit: Number(perUserLimit),
-      isActive,
+      status,
+      firstOrderOnly,
+      restoreOnCancel,
       applicableProducts: products.map((p) => p._id),
+      applicableCategories: categoryIds,
     };
     try {
       const url = isEdit ? `/api/admin/coupons/${couponId}` : "/api/admin/coupons";
@@ -274,7 +312,16 @@ export default function CouponForm({ couponId }: CouponFormProps) {
               maxLength={40}
               className="font-mono uppercase"
               placeholder="SAVE20"
-              hint="Codes are always stored in uppercase."
+              hint="Codes are always stored in uppercase (case-insensitive matching)."
+            />
+            <TextField
+              id="coupon-name"
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={120}
+              placeholder="Welcome discount"
+              hint="Internal title shown in admin lists."
             />
             <SelectField
               id="coupon-type"
@@ -288,11 +335,21 @@ export default function CouponForm({ couponId }: CouponFormProps) {
             <div className="sm:col-span-2">
               <TextAreaField
                 id="coupon-description"
-                label="Description"
+                label="Internal description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                placeholder="Optional internal description"
+                placeholder="Notes for your team — not shown to customers"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <TextAreaField
+                id="coupon-customer-description"
+                label="Customer-facing description"
+                value={customerDescription}
+                onChange={(e) => setCustomerDescription(e.target.value)}
+                rows={2}
+                placeholder="Shown when the coupon is applied at cart/checkout"
               />
             </div>
             <TextField
@@ -315,8 +372,8 @@ export default function CouponForm({ couponId }: CouponFormProps) {
               min={0}
               step="any"
               hint={
-                products.length > 0
-                  ? "Applies to the subtotal of selected products only."
+                products.length > 0 || categoryIds.length > 0
+                  ? "Applies to the subtotal of eligible products only."
                   : "Use 0 when there is no minimum."
               }
             />
@@ -337,7 +394,7 @@ export default function CouponForm({ couponId }: CouponFormProps) {
 
           <FormSection
             title="Applicable products"
-            description="Leave empty to apply storewide. Or pick specific products — same merchandising groups used for sales."
+            description="Leave empty to apply storewide (or use categories below). Pick specific products — same merchandising groups used for sales."
             columns={1}
           >
             <div className="relative">
@@ -510,7 +567,7 @@ export default function CouponForm({ couponId }: CouponFormProps) {
 
             <p className="text-xs text-admin-faint">
               {products.length === 0
-                ? "No product restriction — coupon applies to the whole cart."
+                ? "No product restriction — coupon applies by category rules or storewide."
                 : `${products.length} / ${MAX_COUPON_PRODUCTS} products targeted`}
             </p>
 
@@ -541,7 +598,54 @@ export default function CouponForm({ couponId }: CouponFormProps) {
             )}
           </FormSection>
 
-          <FormSection title="Redemption limits" description="Control when the code expires and how often it can be used.">
+          <FormSection
+            title="Applicable categories"
+            description="Target whole categories instead of (or in addition to) individual products. A line item matches if its product or category is included."
+            columns={1}
+          >
+            {allCategories.length === 0 ? (
+              <p className="text-sm text-admin-faint">No categories available yet.</p>
+            ) : (
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {allCategories.map((category) => {
+                  const checked = categoryIds.includes(category._id);
+                  return (
+                    <li key={category._id}>
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-admin-line bg-admin-surface px-3 py-2 text-sm hover:bg-admin-hover">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setCategoryIds((prev) =>
+                              e.target.checked
+                                ? [...prev, category._id]
+                                : prev.filter((id) => id !== category._id)
+                            );
+                          }}
+                        />
+                        <span className="text-admin-body">{category.name}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <p className="text-xs text-admin-faint">
+              {categoryIds.length === 0
+                ? "No category restriction."
+                : `${categoryIds.length} categor${categoryIds.length === 1 ? "y" : "ies"} selected`}
+            </p>
+          </FormSection>
+
+          <FormSection title="Redemption limits" description="Control when the code is valid and how often it can be used.">
+            <TextField
+              id="coupon-starts"
+              label="Starts at"
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              hint="Leave blank to start immediately."
+            />
             <TextField
               id="coupon-expiry"
               label="Expires at"
@@ -557,7 +661,8 @@ export default function CouponForm({ couponId }: CouponFormProps) {
               value={usageLimit}
               onChange={(e) => setUsageLimit(Number(e.target.value))}
               required
-              min={1}
+              min={0}
+              hint="0 = unlimited redemptions."
             />
             <TextField
               id="coupon-per-user-limit"
@@ -565,25 +670,56 @@ export default function CouponForm({ couponId }: CouponFormProps) {
               type="number"
               value={perUserLimit}
               onChange={(e) => setPerUserLimit(Number(e.target.value))}
-              min={1}
+              min={0}
+              hint="0 = unlimited per customer."
             />
           </FormSection>
         </div>
 
-        <FormSection
-          title="Availability"
-          description="Choose whether customers can redeem this code."
-          columns={1}
-          className="h-fit"
-        >
-          <CheckboxField
-            id="coupon-active"
-            label="Active"
-            hint="Inactive coupons remain saved but cannot be redeemed."
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-        </FormSection>
+        <div className="space-y-5">
+          <FormSection
+            title="Lifecycle"
+            description="Draft coupons stay hidden. Active coupons become scheduled/expired automatically from dates."
+            columns={1}
+            className="h-fit"
+          >
+            <SelectField
+              id="coupon-status"
+              label="Status"
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value as "draft" | "active" | "paused" | "disabled")
+              }
+            >
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="disabled">Disabled</option>
+            </SelectField>
+          </FormSection>
+
+          <FormSection
+            title="Eligibility"
+            description="Customer and cancellation rules."
+            columns={1}
+            className="h-fit"
+          >
+            <CheckboxField
+              id="coupon-first-order"
+              label="First order only"
+              hint="Only customers with no prior paid orders can redeem."
+              checked={firstOrderOnly}
+              onChange={(e) => setFirstOrderOnly(e.target.checked)}
+            />
+            <CheckboxField
+              id="coupon-restore-on-cancel"
+              label="Restore usage on cancel"
+              hint="When an order is cancelled, return this redemption to the pool."
+              checked={restoreOnCancel}
+              onChange={(e) => setRestoreOnCancel(e.target.checked)}
+            />
+          </FormSection>
+        </div>
       </div>
 
       <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-admin-line bg-admin-canvas/95 py-3 backdrop-blur">

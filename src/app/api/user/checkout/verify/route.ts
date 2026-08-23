@@ -9,7 +9,7 @@ import { notifyOrderPaid } from "@/lib/order-emails";
 import { recordSalePaymentStats } from "@/lib/sales";
 import Order from "@/models/order.model";
 import Cart from "@/models/cart.model";
-import Coupon from "@/models/coupon.model";
+import { redeemCouponForOrder } from "@/lib/coupons";
 
 // ─── POST /api/user/checkout/verify ──────────────────────────────────────────
 // Called by the frontend after Razorpay Checkout returns successfully.
@@ -103,25 +103,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Increment coupon usage ───────────────────────────────────────────
+    // ── Redeem coupon (idempotent vs webhook path) ───────────────────────
     if (order.coupon?.code) {
       try {
-        const coupon = await Coupon.findOne({ code: order.coupon.code });
-        if (coupon) {
-          const userEntry = coupon.usedBy.find(
-            (u) => u.user.toString() === auth.userId
-          );
-          if (userEntry) {
-            userEntry.count += 1;
-          } else {
-            coupon.usedBy.push({ user: order.user, count: 1 });
-          }
-          coupon.usedCount += 1;
-          await coupon.save();
-        }
+        await redeemCouponForOrder(order);
       } catch (couponErr) {
         console.error(
-          `Coupon usage update failed for order ${order.orderNumber}:`,
+          `Coupon redemption failed for order ${order.orderNumber}:`,
           couponErr
         );
       }

@@ -527,13 +527,20 @@ export interface CartData {
   coupon?: {
     _id: string;
     code: string;
+    name?: string;
     type: "percentage" | "flat";
     value: number;
     maxDiscount: number | null;
     minOrderValue: number;
+    startsAt?: string;
     expiresAt: string;
+    status?: string;
     isActive: boolean;
+    customerDescription?: string;
     applicableProducts?: string[];
+    applicableCategories?: string[];
+    excludedProducts?: string[];
+    firstOrderOnly?: boolean;
   } | null;
 }
 

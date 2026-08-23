@@ -4,7 +4,8 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { validateCheckout } from "@/lib/validators";
 import { getRazorpayInstance } from "@/lib/razorpay";
-import { buildCartSummary, isCouponProductEligible } from "@/lib/pricing";
+import { buildCartSummary } from "@/lib/pricing";
+import { isCouponLineEligible, validateCouponForCart } from "@/lib/coupons";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
 import Product, { IProductDocument } from "@/models/product.model";
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
       sku: string;
       saleCampaign?: string;
       allowCoupons: boolean;
+      categoryId: string | null;
     }[] = [];
 
     for (const item of cart.items) {
@@ -117,69 +119,57 @@ export async function POST(request: NextRequest) {
         sku: variant.sku,
         saleCampaign: priced.offer?.campaign.id,
         allowCoupons: priced.offer ? priced.offer.campaign.allowCoupons : true,
+        categoryId: product.category?.toString() || null,
       });
     }
 
-    // ── Calculate pricing ────────────────────────────────────────────────
+    // ── Calculate pricing (apply only — redeem happens on payment) ───────
     let couponData: {
+      couponId: string;
       type: "percentage" | "flat";
       value: number;
       maxDiscount: number | null;
       code: string;
     } | null = null;
-    let applicableProducts: Array<{ toString(): string }> = [];
-
-    if (cart.coupon) {
-      const saleBlocksCoupons = validLineItems.some((li) => !li.allowCoupons);
-      if (saleBlocksCoupons) {
-        cart.coupon = null;
-        await cart.save();
-      }
-    }
+    let eligibleChecker: ((productId: string, categoryId: string | null) => boolean) | null =
+      null;
 
     if (cart.coupon) {
       const coupon = await Coupon.findById(cart.coupon);
-      if (
-        coupon &&
-        coupon.isActive &&
-        coupon.expiresAt > new Date() &&
-        coupon.usedCount < coupon.usageLimit
-      ) {
-        const userUsage = coupon.usedBy.find(
-          (u) => u.user.toString() === auth.userId
-        );
-        const withinLimit =
-          coupon.perUserLimit === 0 ||
-          !userUsage ||
-          userUsage.count < coupon.perUserLimit;
+      if (!coupon || coupon.deletedAt) {
+        cart.coupon = null;
+        await cart.save();
+      } else {
+        const result = await validateCouponForCart(coupon, {
+          userId: auth.userId,
+          lines: validLineItems.map((li) => ({
+            productId: li.product._id.toString(),
+            categoryId: li.categoryId,
+            price: li.price,
+            quantity: li.quantity,
+            allowCoupons: li.allowCoupons,
+          })),
+        });
 
-        if (withinLimit) {
-          const restricted = (coupon.applicableProducts || []).length > 0;
-          const eligibleItems = validLineItems.filter((li) =>
-            isCouponProductEligible(li.product._id.toString(), coupon.applicableProducts)
-          );
-
-          if (restricted && eligibleItems.length === 0) {
-            cart.coupon = null;
-            await cart.save();
-          } else {
-            const minOrderBase = restricted
-              ? eligibleItems.reduce((sum, li) => sum + li.price * li.quantity, 0)
-              : validLineItems.reduce((sum, li) => sum + li.price * li.quantity, 0);
-
-            if (minOrderBase < coupon.minOrderValue) {
-              cart.coupon = null;
-              await cart.save();
-            } else {
-              couponData = {
-                type: coupon.type as "percentage" | "flat",
-                value: coupon.value,
-                maxDiscount: coupon.maxDiscount,
-                code: coupon.code,
-              };
-              applicableProducts = coupon.applicableProducts || [];
-            }
-          }
+        if (!result.valid) {
+          cart.coupon = null;
+          await cart.save();
+        } else {
+          couponData = {
+            couponId: result.coupon._id.toString(),
+            type: result.discount.type,
+            value: result.discount.value,
+            maxDiscount: result.discount.maxDiscount,
+            code: result.coupon.code,
+          };
+          eligibleChecker = (productId, categoryId) =>
+            isCouponLineEligible({
+              productId,
+              categoryId,
+              applicableProducts: coupon.applicableProducts,
+              applicableCategories: coupon.applicableCategories,
+              excludedProducts: coupon.excludedProducts,
+            });
         }
       }
     }
@@ -188,10 +178,9 @@ export async function POST(request: NextRequest) {
       price: li.price,
       quantity: li.quantity,
       gst: li.gst,
-      couponEligible: isCouponProductEligible(
-        li.product._id.toString(),
-        applicableProducts
-      ),
+      couponEligible: eligibleChecker
+        ? eligibleChecker(li.product._id.toString(), li.categoryId)
+        : true,
     }));
 
     const summary = buildCartSummary(
@@ -267,9 +256,11 @@ export async function POST(request: NextRequest) {
       },
       coupon: couponData
         ? {
+            couponId: couponData.couponId,
             code: couponData.code,
             type: couponData.type,
             value: couponData.value,
+            maxDiscount: couponData.maxDiscount,
             discountAmount: summary.discount,
           }
         : undefined,

@@ -5,7 +5,8 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import Cart from "@/models/cart.model";
 import Coupon from "@/models/coupon.model";
 import Product, { IProductDocument } from "@/models/product.model";
-import { buildCartSummary, isCouponProductEligible } from "@/lib/pricing";
+import { buildCartSummary } from "@/lib/pricing";
+import { isCouponLineEligible, validateCouponForCart } from "@/lib/coupons";
 import { CartValidationResult } from "@/types";
 
 // ─── POST /api/user/cart/validate — Secure cart validation before checkout ───
@@ -44,12 +45,12 @@ export async function POST(request: NextRequest) {
       gst: number;
       allowCoupons: boolean;
       productId: string;
+      categoryId: string | null;
     }[] = [];
     const itemsToRemove: number[] = [];
     const { loadLiveSaleIndex, resolveUnitPrice } = await import("@/lib/sales");
     const saleIndex = await loadLiveSaleIndex();
 
-    // ── Validate each item ───────────────────────────────────────────────
     for (let i = 0; i < cart.items.length; i++) {
       const item = cart.items[i];
       const product: IProductDocument | null = await Product.findById(item.product);
@@ -70,7 +71,6 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Stock check
       if (variant.stock < item.quantity) {
         if (variant.stock === 0) {
           errors.push(`${product.title}: Out of stock`);
@@ -83,7 +83,6 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Price drift warning (includes live sale overlays)
       const priced = resolveUnitPrice(
         saleIndex,
         product._id.toString(),
@@ -102,22 +101,19 @@ export async function POST(request: NextRequest) {
         gst: typeof variant.gst === "number" ? variant.gst : 18,
         allowCoupons: priced.offer ? priced.offer.campaign.allowCoupons : true,
         productId: product._id.toString(),
+        categoryId: product.category?.toString() || null,
       });
     }
 
-    // ── Clean up invalid items ───────────────────────────────────────────
     if (itemsToRemove.length > 0) {
-      // Remove in reverse order to keep indexes stable
       for (let i = itemsToRemove.length - 1; i >= 0; i--) {
         cart.items.splice(itemsToRemove[i], 1);
       }
       await cart.save();
     } else if (warnings.length > 0) {
-      // Save updated price snapshots
       await cart.save();
     }
 
-    // ── If there are hard errors, fail ───────────────────────────────────
     if (errors.length > 0) {
       return successResponse<CartValidationResult>(
         { valid: false, errors, warnings, summary: null },
@@ -126,89 +122,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Validate coupon if applied ───────────────────────────────────────
     let couponData: {
       type: "percentage" | "flat";
       value: number;
       maxDiscount: number | null;
     } | null = null;
-    let applicableProducts: Array<{ toString(): string }> = [];
+    let eligibleChecker: ((productId: string, categoryId: string | null) => boolean) | null =
+      null;
 
-    const saleBlocksCoupons = validLineItems.some((item) => !item.allowCoupons);
-
-    if (cart.coupon && saleBlocksCoupons) {
-      warnings.push("This sale cannot be combined with coupons — coupon removed");
-      cart.coupon = null;
-      await cart.save();
-    } else if (cart.coupon) {
+    if (cart.coupon) {
       const coupon = await Coupon.findById(cart.coupon);
-
-      if (!coupon || !coupon.isActive) {
+      if (!coupon || coupon.deletedAt) {
         warnings.push("Applied coupon is no longer valid — removed");
         cart.coupon = null;
         await cart.save();
-      } else if (coupon.expiresAt < new Date()) {
-        warnings.push("Applied coupon has expired — removed");
-        cart.coupon = null;
-        await cart.save();
-      } else if (coupon.usedCount >= coupon.usageLimit) {
-        warnings.push("Applied coupon has reached its usage limit — removed");
-        cart.coupon = null;
-        await cart.save();
       } else {
-        // Check per-user limit
-        const userUsage = coupon.usedBy.find(
-          (u) => u.user.toString() === auth.userId
-        );
-        if (coupon.perUserLimit > 0 && userUsage && userUsage.count >= coupon.perUserLimit) {
-          warnings.push("You have already used this coupon the maximum number of times — removed");
+        const result = await validateCouponForCart(coupon, {
+          userId: auth.userId,
+          lines: validLineItems.map((li) => ({
+            productId: li.productId,
+            categoryId: li.categoryId,
+            price: li.price,
+            quantity: li.quantity,
+            allowCoupons: li.allowCoupons,
+          })),
+        });
+
+        if (!result.valid) {
+          warnings.push(`${result.message} — coupon removed`);
           cart.coupon = null;
           await cart.save();
         } else {
-          const restricted = (coupon.applicableProducts || []).length > 0;
-          const eligibleItems = validLineItems.filter((li) =>
-            isCouponProductEligible(li.productId, coupon.applicableProducts)
-          );
-
-          if (restricted && eligibleItems.length === 0) {
-            warnings.push(
-              "Applied coupon only covers products that are no longer in your cart — removed"
-            );
-            cart.coupon = null;
-            await cart.save();
-          } else {
-            const minOrderBase = restricted
-              ? eligibleItems.reduce((sum, li) => sum + li.price * li.quantity, 0)
-              : validLineItems.reduce((sum, li) => sum + li.price * li.quantity, 0);
-
-            if (minOrderBase < coupon.minOrderValue) {
-              warnings.push(
-                restricted
-                  ? `Eligible products subtotal ₹${minOrderBase.toFixed(2)} is below coupon minimum of ₹${coupon.minOrderValue} — coupon removed`
-                  : `Cart subtotal ₹${minOrderBase.toFixed(2)} is below coupon minimum of ₹${coupon.minOrderValue} — coupon removed`
-              );
-              cart.coupon = null;
-              await cart.save();
-            } else {
-              couponData = {
-                type: coupon.type as "percentage" | "flat",
-                value: coupon.value,
-                maxDiscount: coupon.maxDiscount,
-              };
-              applicableProducts = coupon.applicableProducts || [];
-            }
-          }
+          couponData = {
+            type: result.discount.type,
+            value: result.discount.value,
+            maxDiscount: result.discount.maxDiscount,
+          };
+          eligibleChecker = (productId, categoryId) =>
+            isCouponLineEligible({
+              productId,
+              categoryId,
+              applicableProducts: coupon.applicableProducts,
+              applicableCategories: coupon.applicableCategories,
+              excludedProducts: coupon.excludedProducts,
+            });
         }
       }
     }
 
-    // ── Build summary ────────────────────────────────────────────────────
     const summary = buildCartSummary(
       validLineItems.map((li) => ({
         price: li.price,
         quantity: li.quantity,
         gst: li.gst,
-        couponEligible: isCouponProductEligible(li.productId, applicableProducts),
+        couponEligible: eligibleChecker
+          ? eligibleChecker(li.productId, li.categoryId)
+          : true,
       })),
       couponData,
       {

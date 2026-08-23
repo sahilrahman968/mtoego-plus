@@ -457,92 +457,31 @@ export function validateWishlistItem(body: Record<string, unknown>): ValidationR
 
 // ─── Coupon Validators ───────────────────────────────────────────────────────
 
-export function validateCreateCoupon(body: Record<string, unknown>): ValidationResult {
-  const errors: string[] = [];
-
-  if (!body.code || typeof body.code !== "string" || body.code.trim().length < 3) {
-    errors.push("Code is required and must be at least 3 characters");
-  } else if (body.code.length > 30) {
-    errors.push("Code must be at most 30 characters");
-  } else if (!/^[A-Za-z0-9_-]+$/.test(body.code)) {
-    errors.push("Code must contain only letters, digits, hyphens, and underscores");
-  }
-
-  if (!body.type || !["percentage", "flat"].includes(body.type as string)) {
-    errors.push('Type is required and must be "percentage" or "flat"');
-  }
-
-  if (body.value === undefined || typeof body.value !== "number" || body.value < 0) {
-    errors.push("Value is required and must be a non-negative number");
-  }
-
-  if (body.type === "percentage" && typeof body.value === "number" && body.value > 100) {
-    errors.push("Percentage value cannot exceed 100");
-  }
-
-  if (body.minOrderValue !== undefined) {
-    if (typeof body.minOrderValue !== "number" || body.minOrderValue < 0) {
-      errors.push("Minimum order value must be a non-negative number");
-    }
-  }
-
-  if (body.maxDiscount !== undefined && body.maxDiscount !== null) {
-    if (typeof body.maxDiscount !== "number" || body.maxDiscount < 0) {
-      errors.push("Maximum discount must be a non-negative number");
-    }
-  }
-
-  if (!body.expiresAt || typeof body.expiresAt !== "string") {
-    errors.push("Expiry date is required (ISO date string)");
-  } else {
-    const expDate = new Date(body.expiresAt);
-    if (isNaN(expDate.getTime())) {
-      errors.push("Expiry date must be a valid date");
-    } else if (expDate <= new Date()) {
-      errors.push("Expiry date must be in the future");
-    }
-  }
-
-  if (body.usageLimit === undefined || typeof body.usageLimit !== "number") {
-    errors.push("Usage limit is required and must be a number");
-  } else if (!Number.isInteger(body.usageLimit) || body.usageLimit < 1) {
-    errors.push("Usage limit must be a positive integer");
-  }
-
-  if (body.perUserLimit !== undefined) {
-    if (typeof body.perUserLimit !== "number" || body.perUserLimit < 0) {
-      errors.push("Per-user limit must be a non-negative number");
-    }
-  }
-
-  if (body.description !== undefined && typeof body.description !== "string") {
-    errors.push("Description must be a string");
-  }
-
-  errors.push(...validateApplicableProducts(body.applicableProducts));
-
-  return { valid: errors.length === 0, errors };
-}
-
+const COUPON_CONTROL_STATUSES = ["draft", "active", "paused", "disabled"] as const;
 const MAX_COUPON_PRODUCTS = 100;
+const MAX_COUPON_CATEGORIES = 50;
 
-function validateApplicableProducts(value: unknown): string[] {
+function validateObjectIdList(
+  value: unknown,
+  label: string,
+  max: number
+): string[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) {
-    return ["Applicable products must be an array of product IDs"];
+    return [`${label} must be an array of IDs`];
   }
-  if (value.length > MAX_COUPON_PRODUCTS) {
-    return [`A coupon can target at most ${MAX_COUPON_PRODUCTS} products`];
+  if (value.length > max) {
+    return [`A coupon can target at most ${max} ${label.toLowerCase()}`];
   }
   const seen = new Set<string>();
   const errors: string[] = [];
   for (const id of value) {
     if (typeof id !== "string" || !isValidObjectId(id)) {
-      errors.push("Each applicable product must be a valid product ID");
+      errors.push(`Each ${label.toLowerCase().slice(0, -1)} must be a valid ID`);
       continue;
     }
     if (seen.has(id)) {
-      errors.push("Duplicate products are not allowed on a coupon");
+      errors.push(`Duplicate ${label.toLowerCase()} are not allowed on a coupon`);
       continue;
     }
     seen.add(id);
@@ -550,12 +489,16 @@ function validateApplicableProducts(value: unknown): string[] {
   return errors;
 }
 
-export function validateUpdateCoupon(body: Record<string, unknown>): ValidationResult {
+function validateCouponSharedFields(
+  body: Record<string, unknown>,
+  options: { requireCore: boolean }
+): string[] {
   const errors: string[] = [];
+  const { requireCore } = options;
 
-  if (body.code !== undefined) {
-    if (typeof body.code !== "string" || body.code.trim().length < 3) {
-      errors.push("Code must be at least 3 characters");
+  if (requireCore || body.code !== undefined) {
+    if (!body.code || typeof body.code !== "string" || body.code.trim().length < 3) {
+      errors.push("Code is required and must be at least 3 characters");
     } else if (body.code.length > 30) {
       errors.push("Code must be at most 30 characters");
     } else if (!/^[A-Za-z0-9_-]+$/.test(body.code)) {
@@ -563,35 +506,40 @@ export function validateUpdateCoupon(body: Record<string, unknown>): ValidationR
     }
   }
 
-  if (body.type !== undefined && !["percentage", "flat"].includes(body.type as string)) {
-    errors.push('Type must be "percentage" or "flat"');
-  }
-
-  if (body.value !== undefined) {
-    if (typeof body.value !== "number" || body.value < 0) {
-      errors.push("Value must be a non-negative number");
+  if (requireCore || body.type !== undefined) {
+    if (!body.type || !["percentage", "flat"].includes(body.type as string)) {
+      errors.push('Type is required and must be "percentage" or "flat"');
     }
   }
 
-  if (body.type === "percentage" && typeof body.value === "number" && body.value > 100) {
+  if (requireCore || body.value !== undefined) {
+    if (body.value === undefined || typeof body.value !== "number" || body.value < 0) {
+      errors.push("Value is required and must be a non-negative number");
+    }
+  }
+
+  const type = body.type as string | undefined;
+  if (type === "percentage" && typeof body.value === "number" && body.value > 100) {
     errors.push("Percentage value cannot exceed 100");
   }
 
-  if (body.expiresAt !== undefined) {
-    if (typeof body.expiresAt !== "string") {
-      errors.push("Expiry date must be a string");
-    } else {
-      const expDate = new Date(body.expiresAt);
-      if (isNaN(expDate.getTime())) {
-        errors.push("Expiry date must be a valid date");
-      }
-    }
+  if (body.name !== undefined && typeof body.name !== "string") {
+    errors.push("Name must be a string");
+  } else if (typeof body.name === "string" && body.name.length > 120) {
+    errors.push("Name must be at most 120 characters");
   }
 
-  if (body.usageLimit !== undefined) {
-    if (typeof body.usageLimit !== "number" || !Number.isInteger(body.usageLimit) || body.usageLimit < 1) {
-      errors.push("Usage limit must be a positive integer");
-    }
+  if (body.description !== undefined && typeof body.description !== "string") {
+    errors.push("Description must be a string");
+  }
+
+  if (body.customerDescription !== undefined && typeof body.customerDescription !== "string") {
+    errors.push("Customer description must be a string");
+  } else if (
+    typeof body.customerDescription === "string" &&
+    body.customerDescription.length > 280
+  ) {
+    errors.push("Customer description must be at most 280 characters");
   }
 
   if (body.minOrderValue !== undefined) {
@@ -606,14 +554,95 @@ export function validateUpdateCoupon(body: Record<string, unknown>): ValidationR
     }
   }
 
-  if (body.perUserLimit !== undefined) {
-    if (typeof body.perUserLimit !== "number" || body.perUserLimit < 0) {
-      errors.push("Per-user limit must be a non-negative number");
+  if (body.startsAt !== undefined) {
+    if (typeof body.startsAt !== "string") {
+      errors.push("Start date must be an ISO date string");
+    } else if (isNaN(new Date(body.startsAt).getTime())) {
+      errors.push("Start date must be a valid date");
     }
   }
 
-  errors.push(...validateApplicableProducts(body.applicableProducts));
+  if (requireCore || body.expiresAt !== undefined) {
+    if (!body.expiresAt || typeof body.expiresAt !== "string") {
+      errors.push("Expiry date is required (ISO date string)");
+    } else {
+      const expDate = new Date(body.expiresAt);
+      if (isNaN(expDate.getTime())) {
+        errors.push("Expiry date must be a valid date");
+      } else if (requireCore && expDate <= new Date()) {
+        errors.push("Expiry date must be in the future");
+      }
+    }
+  }
 
+  if (
+    typeof body.startsAt === "string" &&
+    typeof body.expiresAt === "string" &&
+    !isNaN(new Date(body.startsAt).getTime()) &&
+    !isNaN(new Date(body.expiresAt).getTime()) &&
+    new Date(body.startsAt) >= new Date(body.expiresAt)
+  ) {
+    errors.push("Expiry must be after the start date");
+  }
+
+  if (body.timezone !== undefined) {
+    if (typeof body.timezone !== "string" || body.timezone.trim().length === 0) {
+      errors.push("Timezone must be a non-empty string");
+    }
+  }
+
+  if (body.status !== undefined) {
+    if (!COUPON_CONTROL_STATUSES.includes(body.status as (typeof COUPON_CONTROL_STATUSES)[number])) {
+      errors.push(`Status must be one of: ${COUPON_CONTROL_STATUSES.join(", ")}`);
+    }
+  }
+
+  if (requireCore || body.usageLimit !== undefined) {
+    if (body.usageLimit === undefined || typeof body.usageLimit !== "number") {
+      errors.push("Usage limit is required and must be a number");
+    } else if (!Number.isInteger(body.usageLimit) || body.usageLimit < 0) {
+      errors.push("Usage limit must be a non-negative integer (0 = unlimited)");
+    }
+  }
+
+  if (body.perUserLimit !== undefined) {
+    if (
+      typeof body.perUserLimit !== "number" ||
+      !Number.isInteger(body.perUserLimit) ||
+      body.perUserLimit < 0
+    ) {
+      errors.push("Per-user limit must be a non-negative integer (0 = unlimited)");
+    }
+  }
+
+  if (body.firstOrderOnly !== undefined && typeof body.firstOrderOnly !== "boolean") {
+    errors.push("firstOrderOnly must be a boolean");
+  }
+
+  if (body.restoreOnCancel !== undefined && typeof body.restoreOnCancel !== "boolean") {
+    errors.push("restoreOnCancel must be a boolean");
+  }
+
+  if (body.isActive !== undefined && typeof body.isActive !== "boolean") {
+    errors.push("isActive must be a boolean");
+  }
+
+  errors.push(...validateObjectIdList(body.applicableProducts, "Products", MAX_COUPON_PRODUCTS));
+  errors.push(
+    ...validateObjectIdList(body.applicableCategories, "Categories", MAX_COUPON_CATEGORIES)
+  );
+  errors.push(...validateObjectIdList(body.excludedProducts, "Excluded products", MAX_COUPON_PRODUCTS));
+
+  return errors;
+}
+
+export function validateCreateCoupon(body: Record<string, unknown>): ValidationResult {
+  const errors = validateCouponSharedFields(body, { requireCore: true });
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateUpdateCoupon(body: Record<string, unknown>): ValidationResult {
+  const errors = validateCouponSharedFields(body, { requireCore: false });
   return { valid: errors.length === 0, errors };
 }
 

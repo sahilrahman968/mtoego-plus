@@ -115,17 +115,10 @@ export function calculateShipping(
 
 // ─── Coupon Discount Calculation ─────────────────────────────────────────────
 
-/**
- * Empty / missing applicableProducts means the coupon applies to every product.
- */
-export function isCouponProductEligible(
-  productId: string,
-  applicableProducts?: Array<string | { toString(): string }> | null
-): boolean {
-  if (!applicableProducts || applicableProducts.length === 0) return true;
-  const id = productId.toString();
-  return applicableProducts.some((entry) => entry.toString() === id);
-}
+export {
+  isCouponProductEligible,
+  isCouponLineEligible,
+} from "@/lib/coupons/eligibility";
 
 /**
  * Compute the discount amount for a given coupon and subtotal.

@@ -115,9 +115,11 @@ export interface IOrderDocument extends Document {
   pricing: IOrderPricing;
   payment: IPaymentDetail;
   coupon?: {
+    couponId?: Types.ObjectId;
     code: string;
     type: "percentage" | "flat";
     value: number;
+    maxDiscount?: number | null;
     discountAmount: number;
   };
   status: OrderStatus;
@@ -310,9 +312,11 @@ const orderSchema = new Schema<IOrderDocument>(
       required: [true, "Payment details are required"],
     },
     coupon: {
+      couponId: { type: Schema.Types.ObjectId, ref: "Coupon" },
       code: { type: String },
       type: { type: String, enum: ["percentage", "flat"] },
       value: { type: Number },
+      maxDiscount: { type: Number, default: null },
       discountAmount: { type: Number },
     },
     status: {

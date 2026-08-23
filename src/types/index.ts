@@ -79,7 +79,7 @@ export interface CreateCategoryBody {
   isActive?: boolean;
 }
 
-export interface UpdateCategoryBody extends Partial<CreateCategoryBody> {}
+export type UpdateCategoryBody = Partial<CreateCategoryBody>;
 
 // ─── Product Colors & Sizes ──────────────────────────────────────────────
 
@@ -191,7 +191,7 @@ export interface CreateProductBody {
   relatedProductsHeading?: string;
 }
 
-export interface UpdateProductBody extends Partial<CreateProductBody> {}
+export type UpdateProductBody = Partial<CreateProductBody>;
 
 // ─── Inventory ──────────────────────────────────────────────────────────────
 
@@ -242,38 +242,67 @@ export interface WishlistItemBody {
 // ─── Coupon ──────────────────────────────────────────────────────────────────
 
 export type CouponType = "percentage" | "flat";
+export type CouponStatus = "draft" | "active" | "paused" | "disabled";
+export type CouponLifecycleStatus =
+  | CouponStatus
+  | "scheduled"
+  | "expired"
+  | "exhausted";
 
 export interface ICoupon {
   _id: Types.ObjectId;
   code: string;
+  name: string;
   description?: string;
+  customerDescription?: string;
   type: CouponType;
   value: number;
   minOrderValue: number;
   maxDiscount: number | null;
+  startsAt: Date;
   expiresAt: Date;
+  timezone: string;
+  status: CouponStatus;
+  /** @deprecated Prefer status / lifecycleStatus */
+  isActive: boolean;
   usageLimit: number;
   usedCount: number;
   perUserLimit: number;
-  isActive: boolean;
+  applicableProducts?: Types.ObjectId[];
+  applicableCategories?: Types.ObjectId[];
+  excludedProducts?: Types.ObjectId[];
+  firstOrderOnly: boolean;
+  restoreOnCancel: boolean;
+  deletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CreateCouponBody {
   code: string;
+  name?: string;
   description?: string;
+  customerDescription?: string;
   type: CouponType;
   value: number;
   minOrderValue?: number;
   maxDiscount?: number | null;
-  expiresAt: string; // ISO date string
+  startsAt?: string;
+  expiresAt: string;
+  timezone?: string;
+  status?: CouponStatus;
+  /** @deprecated Prefer status */
+  isActive?: boolean;
   usageLimit: number;
   perUserLimit?: number;
-  isActive?: boolean;
+  applicableProducts?: string[];
+  applicableCategories?: string[];
+  excludedProducts?: string[];
+  firstOrderOnly?: boolean;
+  restoreOnCancel?: boolean;
 }
 
-export interface UpdateCouponBody extends Partial<CreateCouponBody> {}
+export type UpdateCouponBody = Partial<CreateCouponBody>;
 
 export interface ApplyCouponBody {
   code: string;

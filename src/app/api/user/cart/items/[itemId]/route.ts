@@ -84,11 +84,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const populated = await Cart.findById(cart._id)
       .populate({
         path: "items.product",
-        select: "title slug images isActive variants",
+        select: "title slug images isActive variants category",
       })
       .populate({
         path: "coupon",
-        select: "code type value maxDiscount minOrderValue expiresAt isActive",
+        select:
+          "code name type value maxDiscount minOrderValue startsAt expiresAt status isActive customerDescription applicableProducts applicableCategories excludedProducts firstOrderOnly",
       })
       .lean();
 
@@ -131,11 +132,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const populated = await Cart.findById(cart._id)
       .populate({
         path: "items.product",
-        select: "title slug images isActive variants",
+        select: "title slug images isActive variants category",
       })
       .populate({
         path: "coupon",
-        select: "code type value maxDiscount minOrderValue expiresAt isActive",
+        select:
+          "code name type value maxDiscount minOrderValue startsAt expiresAt status isActive customerDescription applicableProducts applicableCategories excludedProducts firstOrderOnly",
       })
       .lean();
 

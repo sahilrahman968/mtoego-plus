@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { requirePermission } from "@/lib/auth/require-auth";
 import { isValidObjectId } from "@/lib/validators";
 import { restoreInventoryForOrder } from "@/lib/inventory";
+import { restoreCouponForOrder } from "@/lib/coupons";
 import { notifyOrderDelivered, notifyOrderShipped } from "@/lib/order-emails";
 import Order, { STATUS_TRANSITIONS, OrderStatus, ORDER_STATUSES } from "@/models/order.model";
 
@@ -198,6 +199,15 @@ export async function PATCH(
             err
           );
         }
+      }
+
+      try {
+        await restoreCouponForOrder(order);
+      } catch (err) {
+        console.error(
+          `Coupon restoration failed for order ${order.orderNumber}:`,
+          err
+        );
       }
     }
 
