@@ -11,8 +11,8 @@ export function ProductCardSkeleton() {
     <div className="group relative overflow-hidden bg-transparent">
       <div className="relative aspect-[1/1.02] overflow-hidden bg-card/75">
         <div className="absolute inset-0 animate-pulse-slow bg-card-hover/80" />
-        <div className="absolute right-2 top-2 z-10 h-8 w-8 animate-pulse-slow bg-card-hover/80" />
-        <div className="absolute bottom-2 right-2 z-10 h-8 w-8 animate-pulse-slow bg-card-hover/80" />
+        <div className="absolute right-2 top-2 z-10 h-9 w-9 animate-pulse-slow bg-card-hover/80 sm:right-3 sm:top-3" />
+        <div className="absolute bottom-2 right-2 z-10 h-9 w-9 animate-pulse-slow bg-card-hover/80 sm:bottom-3 sm:right-3" />
       </div>
       <div className="pt-3 space-y-2">
         <SkeletonLine className="h-5 w-11/12" />

@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { AlertCircle, ArrowRight, RotateCcw } from "lucide-react";
 import {
   PeriodSelection,
   buildPeriodQuery,
 } from "@/lib/analytics/periods";
 import { MetricWithDelta } from "@/lib/analytics/format";
-import StatsCard from "./components/StatsCard";
+import StatsCard, { KpiGrid } from "./components/StatsCard";
+import { Button } from "./components/Button";
+import { KpiSkeleton } from "./analytics/components/Skeletons";
 import PeriodToggle from "./analytics/components/PeriodToggle";
 
 function formatCurrency(value: number): string {
@@ -22,13 +25,17 @@ function trendFromDelta(deltaPct: number | null | undefined) {
   };
 }
 
+// Narrower view of the pulse payload: performance metrics up top, then the
+// operational counters that link straight to the queue that needs work.
 interface PulseMetrics {
   revenue: MetricWithDelta;
   orders: MetricWithDelta;
   aov: MetricWithDelta;
   paymentSuccessPct: MetricWithDelta;
+  pendingRevenue: { value: number; count: number };
   abandonedCart: { count: number; value: number };
   lowStockCount: number;
+  openCallbacks: number;
 }
 
 export default function DashboardPulse() {
@@ -65,100 +72,125 @@ export default function DashboardPulse() {
   }, [load]);
 
   return (
-    <div className="mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+    <section aria-labelledby="pulse-heading" aria-busy={loading || undefined}>
+      <div className="mb-3 flex flex-col gap-3 border-b border-admin-line pb-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 id="pulse-heading" className="text-sm font-semibold text-admin-heading">
+            Performance
+          </h2>
+          <p className="mt-0.5 text-xs text-admin-muted">
+            Compared with the previous equal period
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
           <PeriodToggle value={selection} onChange={setSelection} />
-          {loading && (
-            <span className="text-xs text-admin-faint">Updating…</span>
-          )}
+          <Link
+            href="/admin/analytics"
+            className="inline-flex items-center gap-1 text-sm font-medium text-admin-heading hover:underline"
+          >
+            Full analytics
+            <ArrowRight aria-hidden="true" className="size-3.5" />
+          </Link>
         </div>
-        <Link
-          href="/admin/analytics"
-          className="text-sm font-medium text-admin-heading hover:underline"
+      </div>
+
+      {loading ? (
+        <KpiSkeleton count={4} columns={4} />
+      ) : error ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-admin-danger-line bg-admin-danger-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          View full analytics →
-        </Link>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-admin-subtle border border-admin-line rounded-lg text-sm text-admin-muted">
-          {error}
+          <p className="flex items-start gap-2 text-sm text-admin-danger">
+            <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{error}</span>
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={load}
+            className="shrink-0"
+            icon={<RotateCcw aria-hidden="true" className="size-3.5" />}
+          >
+            Retry
+          </Button>
         </div>
-      )}
+      ) : (
+        metrics && (
+          <div className="space-y-4">
+            <KpiGrid columns={4}>
+              <StatsCard
+                title="Revenue"
+                value={formatCurrency(metrics.revenue.value)}
+                trend={trendFromDelta(metrics.revenue.deltaPct)}
+                info="Total paid order revenue in the selected period, compared with the previous equal period."
+              />
+              <StatsCard
+                title="Orders"
+                value={metrics.orders.value.toLocaleString()}
+                trend={trendFromDelta(metrics.orders.deltaPct)}
+                info="Count of paid orders placed in the selected period."
+              />
+              <StatsCard
+                title="AOV"
+                value={formatCurrency(metrics.aov.value)}
+                trend={trendFromDelta(metrics.aov.deltaPct)}
+                info="Average order value — revenue divided by paid orders in the selected period."
+              />
+              <StatsCard
+                title="Payment success"
+                value={`${metrics.paymentSuccessPct.value.toFixed(1)}%`}
+                trend={trendFromDelta(metrics.paymentSuccessPct.deltaPct)}
+                info="Share of checkout attempts that completed payment successfully (paid vs cancelled unpaid)."
+              />
+            </KpiGrid>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatsCard
-          title="Revenue"
-          value={metrics ? formatCurrency(metrics.revenue.value) : "—"}
-          trend={metrics ? trendFromDelta(metrics.revenue.deltaPct) : undefined}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="Orders"
-          value={metrics ? metrics.orders.value.toLocaleString() : "—"}
-          trend={metrics ? trendFromDelta(metrics.orders.deltaPct) : undefined}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="AOV"
-          value={metrics ? formatCurrency(metrics.aov.value) : "—"}
-          trend={metrics ? trendFromDelta(metrics.aov.deltaPct) : undefined}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="Payment success"
-          value={metrics ? `${metrics.paymentSuccessPct.value.toFixed(1)}%` : "—"}
-          trend={
-            metrics
-              ? trendFromDelta(metrics.paymentSuccessPct.deltaPct)
-              : undefined
-          }
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="Abandoned carts"
-          value={metrics ? formatCurrency(metrics.abandonedCart.value) : "—"}
-          trend={
-            metrics
-              ? {
-                  value: `${metrics.abandonedCart.count} carts`,
-                  positive: false,
-                }
-              : undefined
-          }
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="Low-stock SKUs"
-          value={metrics ? metrics.lowStockCount : "—"}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          }
-        />
-      </div>
-    </div>
+            <div>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-admin-muted">
+                Needs attention
+              </h3>
+              <KpiGrid columns={4}>
+                <StatsCard
+                  title="Pending payment"
+                  value={formatCurrency(metrics.pendingRevenue.value)}
+                  trend={{
+                    value: `${metrics.pendingRevenue.count} orders`,
+                    positive: true,
+                  }}
+                  info="Value of orders that are still awaiting payment and have not been cancelled."
+                  href="/admin/orders"
+                  actionLabel="Chase payment"
+                />
+                <StatsCard
+                  title="Low-stock SKUs"
+                  value={metrics.lowStockCount}
+                  info="Number of product variants currently at or below the low-stock threshold."
+                  href="/admin/products"
+                  actionLabel="Restock"
+                />
+                <StatsCard
+                  title="Abandoned carts"
+                  value={formatCurrency(metrics.abandonedCart.value)}
+                  trend={{
+                    value: `${metrics.abandonedCart.count} carts`,
+                    positive: false,
+                  }}
+                  info="Estimated value of non-empty carts that never converted to a paid order."
+                  href="/admin/analytics"
+                  actionLabel="Recover"
+                />
+                <StatsCard
+                  title="Open callbacks"
+                  value={metrics.openCallbacks}
+                  info="Customisation / callback requests that are still open and need follow-up."
+                  href="/admin/callback-requests"
+                  actionLabel="Follow up"
+                />
+              </KpiGrid>
+            </div>
+          </div>
+        )
+      )}
+    </section>
   );
 }

@@ -453,7 +453,7 @@ export default function HomeClient() {
               <div>
                 <p className="eyebrow mb-3 text-primary/90">03 / Limited Drop</p>
                 <h2 className="section-title text-xl text-foreground sm:text-2xl lg:text-3xl">
-                  {flashCampaign?.homeHeadline || flashCampaign?.title || "Flash Cut"}
+                  {flashCampaign.title}
                 </h2>
                 {flashCampaign?.subtitle ? (
                   <p className="body-copy mt-2 max-w-xl text-muted">{flashCampaign.subtitle}</p>

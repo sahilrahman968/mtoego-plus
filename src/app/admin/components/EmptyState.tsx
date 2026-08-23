@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Inbox, Plus } from "lucide-react";
+import { Button, ButtonLink } from "./Button";
 
 interface EmptyStateProps {
   title: string;
@@ -12,35 +13,32 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ title, description, action, icon }: EmptyStateProps) {
-  const actionClassName =
-    "mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover transition-colors";
-
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-admin-subtle text-admin-faint mb-4">
+    <div className="flex flex-col items-center justify-center px-4 py-14 text-center">
+      <div className="mb-4 flex size-11 items-center justify-center rounded-xl border border-admin-line bg-admin-subtle text-admin-muted">
         {icon || (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
+          <Inbox aria-hidden="true" className="size-5" strokeWidth={1.75} />
         )}
       </div>
-      <h3 className="text-sm font-semibold text-admin-heading">{title}</h3>
-      <p className="mt-1 text-sm text-admin-muted text-center max-w-sm">{description}</p>
+      <h3 className="text-base font-semibold text-admin-heading">{title}</h3>
+      <p className="mt-1 max-w-sm text-sm text-admin-muted">{description}</p>
       {action?.href && (
-        <Link href={action.href} className={actionClassName}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+        <ButtonLink
+          href={action.href}
+          className="mt-5"
+          icon={<Plus aria-hidden="true" className="size-4" />}
+        >
           {action.label}
-        </Link>
+        </ButtonLink>
       )}
       {action?.onClick && !action.href && (
-        <button type="button" onClick={action.onClick} className={actionClassName}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+        <Button
+          onClick={action.onClick}
+          className="mt-5"
+          icon={<Plus aria-hidden="true" className="size-4" />}
+        >
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -14,6 +14,8 @@ import {
   Loader2,
   Lock,
   ArrowLeft,
+  Tag,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -90,11 +92,13 @@ function loadRazorpay(): Promise<void> {
 export default function CheckoutClient() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { items, cart, refresh: refreshCart } = useCart();
+  const { items, cart, applyCoupon, removeCoupon, refresh: refreshCart } = useCart();
   const { toast } = useToast();
 
   const [step, setStep] = useState<"address" | "review">("address");
   const [loading, setLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
   const [address, setAddress] = useState<ShippingForm>({
     name: "",
     phone: "",
@@ -152,6 +156,28 @@ export default function CheckoutClient() {
 
   const { subtotal, discount, shipping, gst, grandTotal: estimatedTotal } = summary;
   const shippingCost = shipping.cost;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || couponLoading) return;
+    setCouponLoading(true);
+    const res = await applyCoupon(couponCode.trim());
+    if (res.success) {
+      toast(res.message, "success");
+      setCouponCode("");
+    } else {
+      toast(res.message, "error");
+    }
+    setCouponLoading(false);
+  };
+
+  const handleRemoveCoupon = async () => {
+    if (couponLoading) return;
+    setCouponLoading(true);
+    const res = await removeCoupon();
+    if (res.success) toast("Coupon removed", "success");
+    else toast(res.message, "error");
+    setCouponLoading(false);
+  };
 
   const validateAddress = (): boolean => {
     if (!address.name.trim()) { toast("Name is required", "error"); return false; }
@@ -612,7 +638,19 @@ export default function CheckoutClient() {
                 </div>
                 {cart?.coupon && discount > 0 && (
                   <div className="flex justify-between text-success">
-                    <span>Coupon ({cart.coupon.code})</span>
+                    <span className="flex items-center gap-1">
+                      <Tag size={14} aria-hidden="true" />
+                      {cart.coupon.code}
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        disabled={couponLoading}
+                        className="ml-1 text-muted transition-colors hover:text-danger disabled:opacity-50"
+                        aria-label={`Remove coupon ${cart.coupon.code}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
                     <span>-{formatPrice(discount)}</span>
                   </div>
                 )}
@@ -633,6 +671,39 @@ export default function CheckoutClient() {
                 </div>
                 <p className="eyebrow-xs text-muted">Total includes GST</p>
               </div>
+
+              {!cart?.coupon && availableItems.length > 0 && (
+                <div className="mt-4">
+                  <label htmlFor="checkout-coupon" className="label-text mb-2 block text-muted">
+                    Coupon code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="checkout-coupon"
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void handleApplyCoupon();
+                        }
+                      }}
+                      placeholder="Enter code"
+                      autoComplete="off"
+                      className="flex-1 border border-border bg-black/55 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleApplyCoupon()}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="btn-text border border-border bg-black/50 px-4 py-2.5 text-foreground transition-colors hover:border-accent disabled:opacity-50"
+                    >
+                      {couponLoading ? "..." : "Apply"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 flex items-center gap-2 border border-border bg-black/45 p-3">
                 <Shield size={16} className="shrink-0 text-primary" />

@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { AlertTriangle } from "lucide-react";
 import { connectDB } from "@/lib/db/mongoose";
 import Product from "@/models/product.model";
 import Category from "@/models/category.model";
@@ -7,6 +8,7 @@ import Order from "@/models/order.model";
 import QuickActions from "./QuickActions";
 import DashboardClient from "./DashboardClient";
 import DashboardPulse from "./DashboardPulse";
+import PageHeader from "./components/PageHeader";
 import {
   getMonthlyRevenue,
   getOrdersByStatus,
@@ -73,57 +75,50 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-admin-heading">Dashboard</h1>
-        <p className="mt-1 text-sm text-admin-muted">
-          Overview of your store performance
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your store performance"
+      />
 
       {dbError && (
-        <div className="mb-6 p-4 bg-admin-warning-soft border border-admin-warning-line rounded-xl">
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-admin-warning flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-admin-warning">
-                Unable to connect to database
-              </p>
-              <p className="text-xs text-admin-warning/80 mt-0.5">
-                Stats are temporarily unavailable. Try refreshing the page.
-              </p>
-            </div>
+        <div
+          role="alert"
+          className="mb-5 flex items-start gap-2 rounded-lg border border-admin-warning-line bg-admin-warning-soft px-4 py-3"
+        >
+          <AlertTriangle
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-admin-warning"
+          />
+          <div>
+            <p className="text-sm font-medium text-admin-warning">
+              Unable to connect to database
+            </p>
+            <p className="mt-0.5 text-xs text-admin-warning/80">
+              Stats are temporarily unavailable. Try refreshing the page.
+            </p>
           </div>
         </div>
       )}
 
-      <DashboardPulse />
+      {/* Performance first, then the operational queues, then the tools. */}
+      <div className="space-y-8">
+        <DashboardPulse />
 
-      <QuickActions
-        isSuperAdmin={isSuperAdmin}
-        totalProducts={totalProducts}
-        totalCategories={totalCategories}
-        totalCoupons={totalCoupons}
-        totalOrders={totalOrders}
-      />
+        <DashboardClient
+          monthlyRevenue={monthlyRevenue}
+          ordersByStatus={ordersByStatus}
+          recentOrders={serializedRecentOrders}
+          totalCategories={totalCategories}
+        />
 
-      <DashboardClient
-        monthlyRevenue={monthlyRevenue}
-        ordersByStatus={ordersByStatus}
-        recentOrders={serializedRecentOrders}
-        totalCategories={totalCategories}
-      />
+        <QuickActions
+          isSuperAdmin={isSuperAdmin}
+          totalProducts={totalProducts}
+          totalCategories={totalCategories}
+          totalCoupons={totalCoupons}
+          totalOrders={totalOrders}
+        />
+      </div>
     </div>
   );
 }

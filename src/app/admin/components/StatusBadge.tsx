@@ -14,7 +14,9 @@ const statusStyles: Record<string, string> = {
   processing: INFO,
   shipped: INFO,
   delivered: SUCCESS,
+  success: SUCCESS,
   cancelled: DANGER,
+  failed: DANGER,
   refunded: DANGER,
   active: SUCCESS,
   inactive: INERT,
@@ -36,12 +38,15 @@ interface StatusBadgeProps {
 
 export default function StatusBadge({ status, className = "" }: StatusBadgeProps) {
   const style = statusStyles[status] || NEUTRAL;
+  const label = status.replace(/_/g, " ");
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ring-1 ring-inset capitalize ${style} ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${style} ${className}`}
     >
-      {status.replace("_", " ")}
+      <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden="true" />
+      <span className="sr-only">Status: </span>
+      {label}
     </span>
   );
 }

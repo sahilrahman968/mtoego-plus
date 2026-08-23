@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "./Button";
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -23,26 +26,36 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
   }
 
   return (
-    <div className="flex items-center justify-between px-1 py-3">
-      <p className="text-sm text-admin-muted">
+    <nav
+      className="flex flex-col items-center justify-between gap-3 py-3 sm:flex-row"
+      aria-label="Pagination"
+    >
+      <p className="text-sm tabular text-admin-muted" aria-live="polite">
         Page {page} of {totalPages}
       </p>
       <div className="flex items-center gap-1">
-        <button
+        <Button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-2.5 py-1.5 text-sm text-admin-muted bg-admin-surface border border-admin-line rounded-lg hover:bg-admin-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          variant="secondary"
+          size="sm"
+          className="px-2"
+          aria-label="Go to previous page"
+          icon={<ChevronLeft aria-hidden="true" className="size-4" />}
         >
-          Prev
-        </button>
+          <span className="hidden sm:inline">Previous</span>
+        </Button>
         {pages.map((p, i) =>
           p === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-admin-faint">...</span>
+            <span key={`ellipsis-${i}`} className="px-1.5 text-admin-faint" aria-hidden="true">…</span>
           ) : (
             <button
+              type="button"
               key={p}
               onClick={() => onPageChange(p)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              aria-label={`Go to page ${p}`}
+              aria-current={p === page ? "page" : undefined}
+              className={`size-9 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus ${
                 p === page
                   ? "bg-admin-primary text-white font-medium"
                   : "text-admin-muted hover:bg-admin-hover"
@@ -52,14 +65,18 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
             </button>
           )
         )}
-        <button
+        <Button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-2.5 py-1.5 text-sm text-admin-muted bg-admin-surface border border-admin-line rounded-lg hover:bg-admin-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          variant="secondary"
+          size="sm"
+          className="px-2"
+          aria-label="Go to next page"
         >
-          Next
-        </button>
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight aria-hidden="true" className="size-4" />
+        </Button>
       </div>
-    </div>
+    </nav>
   );
 }

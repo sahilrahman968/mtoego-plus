@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "../../components/PageHeader";
+import { Button } from "../../components/Button";
+import { FormSection, SelectField, TextField } from "../../components/Fields";
+import { AdminErrorState, AdminFormSkeleton } from "../../components/FeedbackState";
 
 interface AdminRoleOption {
   slug: string;
@@ -39,6 +42,8 @@ export default function NewStaffPage() {
           } else if (list[0]) {
             setRole(list[0].slug);
           }
+        } else {
+          setError(json.message || "Failed to load roles");
         }
       } catch {
         setError("Failed to load roles");
@@ -79,65 +84,70 @@ export default function NewStaffPage() {
         description="Authorize an email for admin access. They sign in with Google."
       />
 
+      {rolesLoading ? (
+        <AdminFormSkeleton sections={1} />
+      ) : roles.length === 0 ? (
+        <AdminErrorState
+          title="Roles are unavailable"
+          message={error || "At least one admin role is required before onboarding staff."}
+          onRetry={() => window.location.reload()}
+        />
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
         {error && (
-          <div className="p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="rounded-lg border border-admin-danger-line bg-admin-danger-soft p-3 text-sm text-admin-danger"
+          >
+            {error}
+          </div>
         )}
 
-        <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-admin-body mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                placeholder="john@example.com"
-              />
-              <p className="mt-1.5 text-xs text-admin-faint">
-                Name is filled in when they sign in with Google using this email.
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-admin-body mb-1.5">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                disabled={rolesLoading || roles.length === 0}
-                className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface disabled:opacity-50"
-              >
-                {roles.map((r) => (
-                  <option key={r.slug} value={r.slug}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1.5 text-xs text-admin-faint">
-                Permissions for each role are managed under Roles &amp; Permissions.
-              </p>
-            </div>
-          </div>
-        </div>
+        <FormSection title="Staff access" description="Assign access to an existing Google account.">
+          <TextField
+            id="staff-email"
+            type="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            placeholder="john@example.com"
+            hint="Their name is filled in when they first sign in with Google."
+          />
+          <SelectField
+            id="staff-role"
+            label="Role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            disabled={rolesLoading || roles.length === 0}
+            hint="Permissions are managed under Roles & Permissions."
+          >
+            {roles.map((r) => (
+              <option key={r.slug} value={r.slug}>
+                {r.name}
+              </option>
+            ))}
+          </SelectField>
+        </FormSection>
 
         <div className="flex items-center gap-3 pt-2">
-          <button
+          <Button
             type="submit"
             disabled={loading || rolesLoading || !role}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
           >
             {loading ? "Creating..." : "Create Staff Member"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={() => router.push("/admin/staff")}
-            className="px-5 py-2.5 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover transition-colors"
+            variant="secondary"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
+      )}
     </div>
   );
 }

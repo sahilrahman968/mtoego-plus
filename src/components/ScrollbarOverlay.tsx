@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 // The viewBox is padded well beyond the bike so the headlight flare has room.
@@ -11,6 +12,10 @@ const IDLE_HIDE_MS = 900;
 const WHEEL_EDGE_OFFSET = 3;
 
 export default function ScrollbarOverlay() {
+  const pathname = usePathname();
+  const isAdminPanel =
+    pathname.startsWith("/admin") && pathname !== "/admin/login";
+
   const railRef = useRef<HTMLDivElement>(null);
   const puffLayerRef = useRef<HTMLDivElement>(null);
   const bikeRef = useRef<HTMLDivElement>(null);
@@ -20,6 +25,8 @@ export default function ScrollbarOverlay() {
   const frontWheelRef = useRef<SVGGElement>(null);
 
   useEffect(() => {
+    if (isAdminPanel) return;
+
     const rail = railRef.current;
     const puffLayer = puffLayerRef.current;
     const bike = bikeRef.current;
@@ -149,7 +156,9 @@ export default function ScrollbarOverlay() {
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [isAdminPanel]);
+
+  if (isAdminPanel) return null;
 
   return (
     <div ref={railRef} className="cr-rail" aria-hidden="true">

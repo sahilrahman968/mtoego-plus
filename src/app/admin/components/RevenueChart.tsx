@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -27,18 +28,45 @@ function formatCurrency(value: number): string {
   return `₹${value}`;
 }
 
+function formatFullCurrency(value: number): string {
+  return `₹${Math.round(value).toLocaleString("en-IN")}`;
+}
+
 export default function RevenueChart({ data }: RevenueChartProps) {
+  const id = useId();
+  const titleId = `${id}-title`;
+  const summaryId = `${id}-summary`;
+
+  const total = data.reduce((sum, point) => sum + (point.revenue || 0), 0);
+  const orders = data.reduce((sum, point) => sum + (point.orders || 0), 0);
+  const peak = data.reduce<ChartData | null>(
+    (best, point) => (!best || point.revenue > best.revenue ? point : best),
+    null
+  );
+  const summary = peak
+    ? `${formatFullCurrency(total)} from ${orders.toLocaleString(
+        "en-IN"
+      )} orders · best month ${peak.month} at ${formatFullCurrency(peak.revenue)}`
+    : "No revenue recorded in the last 12 months";
+
   return (
-    <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-base font-semibold text-admin-heading">Revenue Overview</h3>
-          <p className="text-sm text-admin-muted">Monthly revenue for the last 12 months</p>
-        </div>
-      </div>
-      <div className="h-72">
+    <figure className="rounded-xl border border-admin-line bg-admin-surface p-4">
+      <figcaption>
+        <h3 id={titleId} className="text-sm font-semibold text-admin-heading">
+          Revenue overview
+        </h3>
+        <p id={summaryId} className="mt-0.5 text-xs text-admin-muted">
+          Last 12 months · {summary}
+        </p>
+      </figcaption>
+      <div
+        role="img"
+        aria-labelledby={titleId}
+        aria-describedby={summaryId}
+        className="mt-3 h-60"
+      >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={chart.series} stopOpacity={0.2} />
@@ -50,12 +78,12 @@ export default function RevenueChart({ data }: RevenueChartProps) {
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: chart.axis, fontSize: 12 }}
+              tick={{ fill: chart.axis, fontSize: 11 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: chart.axis, fontSize: 12 }}
+              tick={{ fill: chart.axis, fontSize: 11 }}
               tickFormatter={formatCurrency}
             />
             <Tooltip
@@ -78,6 +106,6 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </figure>
   );
 }

@@ -3,7 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Upload, X } from "lucide-react";
 import { useToast } from "@/components/store/Toast";
+import { Button } from "../components/Button";
+import {
+  CheckboxField,
+  FormSection,
+  SelectField,
+  TextAreaField,
+  TextField,
+} from "../components/Fields";
+import { AdminFormSkeleton } from "../components/FeedbackState";
 
 interface Category {
   _id: string;
@@ -242,142 +252,141 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
   };
 
   if (fetching) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-admin-line border-t-gray-900 rounded-full animate-spin" />
-      </div>
-    );
+    return <AdminFormSkeleton sections={1} />;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
+        <div
+          role="alert"
+          className="rounded-lg border border-admin-danger-line bg-admin-danger-soft px-3.5 py-3 text-sm text-admin-danger"
+        >
+          {error}
+        </div>
       )}
 
-      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-        <h2 className="text-base font-semibold text-admin-heading mb-4">Category Details</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Name</label>
-            <input
-              type="text"
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <FormSection
+            title="Basic details"
+            description="How the category is named across the storefront."
+          >
+            <TextField
+              id="category-name"
+              label="Name"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
               placeholder="Category name"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Slug</label>
-            <input
-              type="text"
+            <TextField
+              id="category-slug"
+              label="Slug"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
               placeholder="category-slug"
+              hint="Used in the storefront URL. The stored image is renamed to match on save."
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus resize-y"
-              placeholder="Optional description..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Parent Category</label>
-            <select
+            <div className="sm:col-span-2">
+              <TextAreaField
+                id="category-description"
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Optional description…"
+                hint="Shown on the category page when present."
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Media"
+            description="Recommended: square image, at least 256×256px."
+            columns={1}
+          >
+            <div>
+              {image ? (
+                <div className="relative size-32 overflow-hidden rounded-lg border border-admin-line">
+                  <Image
+                    src={image.url}
+                    alt={name || "Category image"}
+                    fill
+                    className="object-cover"
+                    sizes="128px"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    aria-label="Remove category image"
+                    className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full border border-admin-line bg-admin-surface/95 text-admin-muted shadow-sm transition-colors hover:border-admin-danger-line hover:bg-admin-danger-soft hover:text-admin-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus"
+                  >
+                    <X aria-hidden="true" className="size-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex size-32 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-admin-line text-admin-faint transition-colors hover:border-admin-line-strong hover:bg-admin-hover focus-within:border-admin-primary focus-within:ring-2 focus-within:ring-admin-focus/50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="sr-only"
+                    disabled={uploading}
+                  />
+                  {uploading ? (
+                    <div className="size-5 animate-spin rounded-full border-2 border-admin-line border-t-admin-primary" />
+                  ) : (
+                    <>
+                      <Upload aria-hidden="true" className="size-5" />
+                      <span className="text-xs font-medium">Upload</span>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
+          </FormSection>
+        </div>
+
+        <div className="space-y-5">
+          <FormSection
+            title="Organization"
+            description="Where the category sits in the catalog tree."
+            columns={1}
+          >
+            <SelectField
+              id="category-parent"
+              label="Parent category"
               value={parent}
               onChange={(e) => setParent(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface"
+              hint="Leave as top-level unless this is a subcategory."
             >
               <option value="">None (Top-level)</option>
               {categories.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
               ))}
-            </select>
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
+            </SelectField>
+            <CheckboxField
+              id="category-active"
+              label="Active"
+              hint="Visible in storefront navigation and browsing."
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
             />
-            <span className="text-sm text-admin-body">Active</span>
-          </label>
+          </FormSection>
         </div>
       </div>
 
-      {/* Category Image */}
-      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-        <h2 className="text-base font-semibold text-admin-heading mb-4">Category Image</h2>
-        <div className="flex items-start gap-4">
-          {image ? (
-            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-admin-line group">
-              <Image
-                src={image.url}
-                alt={name || "Category image"}
-                fill
-                className="object-cover"
-                sizes="128px"
-              />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-1 right-1 w-6 h-6 bg-admin-surface/90 rounded-full flex items-center justify-center text-admin-muted hover:text-admin-danger opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <label className="w-32 h-32 rounded-lg border-2 border-dashed border-admin-line flex flex-col items-center justify-center cursor-pointer hover:border-admin-line-strong transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-              {uploading ? (
-                <div className="w-5 h-5 border-2 border-admin-line border-t-gray-900 rounded-full animate-spin" />
-              ) : (
-                <>
-                  <svg className="w-6 h-6 text-admin-faint mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span className="text-xs text-admin-faint">Upload</span>
-                </>
-              )}
-            </label>
-          )}
-        </div>
-        <p className="text-xs text-admin-faint mt-2">Recommended: square image, at least 256x256px</p>
-      </div>
-
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-5 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
-        >
+      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-admin-line bg-admin-canvas/95 py-3 backdrop-blur">
+        <Button type="submit" disabled={loading}>
           {loading ? "Saving..." : isEdit ? "Update Category" : "Create Category"}
-        </button>
-        <button
-          type="button"
-          onClick={handleCancel}
-          className="px-5 py-2.5 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover transition-colors"
-        >
+        </Button>
+        <Button variant="secondary" onClick={() => void handleCancel()}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

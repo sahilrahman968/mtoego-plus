@@ -1,4 +1,18 @@
 import Link from "next/link";
+import {
+  Boxes,
+  FolderTree,
+  LayoutGrid,
+  Package,
+  Plus,
+  ShieldCheck,
+  ShoppingBag,
+  Tag,
+  Ticket,
+  UserPlus,
+  Users,
+  Zap,
+} from "lucide-react";
 
 interface QuickActionsProps {
   isSuperAdmin: boolean;
@@ -13,125 +27,124 @@ interface Shortcut {
   description: string;
   href: string;
   icon: React.ReactNode;
+  group: "create" | "manage";
   superAdminOnly?: boolean;
 }
+
+const iconClass = "size-4 shrink-0";
 
 const shortcuts: Shortcut[] = [
   {
     label: "Add Product",
     description: "Create a new product listing",
     href: "/admin/products/new",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
+    group: "create",
+    icon: <Package aria-hidden="true" className={iconClass} />,
   },
   {
     label: "Add Category",
     description: "Organize product catalog",
     href: "/admin/categories/new",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-      </svg>
-    ),
+    group: "create",
+    icon: <Tag aria-hidden="true" className={iconClass} />,
   },
   {
     label: "Create Sale",
     description: "Launch a timed campaign",
     href: "/admin/sales/new",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
+    group: "create",
+    icon: <Zap aria-hidden="true" className={iconClass} />,
   },
   {
     label: "Add Coupon",
     description: "Create a discount code",
     href: "/admin/coupons/new",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-      </svg>
-    ),
-  },
-  {
-    label: "View Orders",
-    description: "Manage customer orders",
-    href: "/admin/orders",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01" />
-      </svg>
-    ),
-  },
-  {
-    label: "All Products",
-    description: "Browse & edit products",
-    href: "/admin/products",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-      </svg>
-    ),
-  },
-  {
-    label: "All Categories",
-    description: "Manage category tree",
-    href: "/admin/categories",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    label: "All Coupons",
-    description: "View active promotions",
-    href: "/admin/coupons",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-      </svg>
-    ),
-  },
-  {
-    label: "Manage Staff",
-    description: "Add or remove team members",
-    href: "/admin/staff",
-    superAdminOnly: true,
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    ),
+    group: "create",
+    icon: <Ticket aria-hidden="true" className={iconClass} />,
   },
   {
     label: "Add Staff",
     description: "Invite new team member",
     href: "/admin/staff/new",
+    group: "create",
     superAdminOnly: true,
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-      </svg>
-    ),
+    icon: <UserPlus aria-hidden="true" className={iconClass} />,
+  },
+  {
+    label: "View Orders",
+    description: "Manage customer orders",
+    href: "/admin/orders",
+    group: "manage",
+    icon: <ShoppingBag aria-hidden="true" className={iconClass} />,
+  },
+  {
+    label: "All Products",
+    description: "Browse & edit products",
+    href: "/admin/products",
+    group: "manage",
+    icon: <LayoutGrid aria-hidden="true" className={iconClass} />,
+  },
+  {
+    label: "All Categories",
+    description: "Manage category tree",
+    href: "/admin/categories",
+    group: "manage",
+    icon: <FolderTree aria-hidden="true" className={iconClass} />,
+  },
+  {
+    label: "All Coupons",
+    description: "View active promotions",
+    href: "/admin/coupons",
+    group: "manage",
+    icon: <Boxes aria-hidden="true" className={iconClass} />,
+  },
+  {
+    label: "Manage Staff",
+    description: "Add or remove team members",
+    href: "/admin/staff",
+    group: "manage",
+    superAdminOnly: true,
+    icon: <Users aria-hidden="true" className={iconClass} />,
   },
   {
     label: "Roles & Permissions",
     description: "Create roles and edit ACL",
     href: "/admin/roles",
+    group: "manage",
     superAdminOnly: true,
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-    ),
+    icon: <ShieldCheck aria-hidden="true" className={iconClass} />,
   },
 ];
 
+function ActionLink({
+  shortcut,
+  emphasis,
+}: {
+  shortcut: Shortcut;
+  emphasis: boolean;
+}) {
+  return (
+    <Link
+      href={shortcut.href}
+      title={shortcut.description}
+      className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus focus-visible:ring-offset-2 focus-visible:ring-offset-admin-surface ${
+        emphasis
+          ? "border-admin-line-strong bg-admin-surface text-admin-body hover:bg-admin-hover hover:text-admin-heading"
+          : "border-transparent text-admin-muted hover:bg-admin-hover hover:text-admin-heading"
+      }`}
+    >
+      {emphasis ? (
+        <Plus aria-hidden="true" className="size-3.5 shrink-0" />
+      ) : (
+        shortcut.icon
+      )}
+      {shortcut.label}
+    </Link>
+  );
+}
+
+// Shortcuts are a toolbar, not a feature grid: creates first as outlined
+// buttons, then destinations as quiet links, so the row stays scannable.
 export default function QuickActions({
   isSuperAdmin,
   totalProducts,
@@ -140,46 +153,49 @@ export default function QuickActions({
   totalOrders,
 }: QuickActionsProps) {
   const visible = shortcuts.filter((s) => !s.superAdminOnly || isSuperAdmin);
+  const creates = visible.filter((s) => s.group === "create");
+  const manages = visible.filter((s) => s.group === "manage");
+
+  const counts = [
+    { label: "products", value: totalProducts },
+    { label: "categories", value: totalCategories },
+    { label: "coupons", value: totalCoupons },
+    { label: "orders", value: totalOrders },
+  ];
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-admin-heading">Quick Actions</h2>
-        <div className="flex items-center gap-3 text-xs text-admin-faint">
-          <span>{totalProducts} products</span>
-          <span className="w-1 h-1 rounded-full bg-admin-line-strong" />
-          <span>{totalCategories} categories</span>
-          <span className="w-1 h-1 rounded-full bg-admin-line-strong" />
-          <span>{totalCoupons} coupons</span>
-          <span className="w-1 h-1 rounded-full bg-admin-line-strong" />
-          <span>{totalOrders} orders</span>
+    <section aria-labelledby="quick-actions-heading" className="space-y-3">
+      <div className="flex flex-col gap-2 border-b border-admin-line pb-2 sm:flex-row sm:items-end sm:justify-between">
+        <h2
+          id="quick-actions-heading"
+          className="text-sm font-semibold text-admin-heading"
+        >
+          Quick actions
+        </h2>
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-admin-muted">
+          {counts.map((count) => (
+            <li key={count.label}>
+              <span className="font-medium text-admin-body tabular-nums">
+                {count.value.toLocaleString("en-IN")}
+              </span>{" "}
+              {count.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-xl border border-admin-line bg-admin-surface p-3">
+        <div className="flex flex-wrap gap-2">
+          {creates.map((shortcut) => (
+            <ActionLink key={shortcut.href} shortcut={shortcut} emphasis />
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1 border-t border-admin-line pt-2">
+          {manages.map((shortcut) => (
+            <ActionLink key={shortcut.href} shortcut={shortcut} emphasis={false} />
+          ))}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {visible.map((shortcut) => (
-          <Link
-            key={shortcut.href}
-            href={shortcut.href}
-            className="group flex items-center gap-3.5 p-4 bg-admin-surface rounded-xl border border-admin-line hover:border-admin-line-strong hover:shadow-sm transition-all"
-          >
-            <div className="flex-shrink-0 p-2.5 rounded-lg ring-1 bg-admin-subtle text-admin-body ring-admin-line group-hover:text-admin-heading transition-colors">
-              {shortcut.icon}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-admin-heading">{shortcut.label}</p>
-              <p className="text-xs text-admin-muted truncate">{shortcut.description}</p>
-            </div>
-            <svg
-              className="w-4 h-4 text-admin-faint group-hover:text-admin-body ml-auto flex-shrink-0 transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }

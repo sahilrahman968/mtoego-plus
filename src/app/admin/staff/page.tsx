@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Pagination from "../components/Pagination";
 import EmptyState from "../components/EmptyState";
-import LoadingSpinner from "../components/LoadingSpinner";
 import ConfirmDialog from "../components/ConfirmDialog";
+import DataTableShell from "../components/DataTableShell";
+import SearchFilterBar from "../components/SearchFilterBar";
+import { AdminErrorState, AdminTableSkeleton } from "../components/FeedbackState";
+import { Button } from "../components/Button";
 
 interface StaffMember {
   _id: string;
@@ -137,25 +141,43 @@ export default function StaffPage() {
         action={{ label: "Add Staff", href: "/admin/staff/new" }}
       />
 
-      {error && (
-        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
+      {error && data && (
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-admin-danger-line bg-admin-danger-soft p-3 text-sm text-admin-danger"
+        >
           {error}
         </div>
       )}
 
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search staff..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full sm:w-80 px-4 py-2.5 text-sm border border-admin-line rounded-lg bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus focus:border-transparent"
-        />
-      </div>
+      <SearchFilterBar
+        id="staff-search"
+        label="Search staff"
+        placeholder="Search by name or email…"
+        value={search}
+        onChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+      />
 
-      <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
+      {error && !data && !loading ? (
+        <AdminErrorState
+          title="Unable to load staff"
+          message={error}
+          onRetry={fetchStaff}
+        />
+      ) : (
+      <DataTableShell
+        label="Staff members"
+        footer={
+          data && data.totalPages > 1 ? (
+            <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
+          ) : undefined
+        }
+      >
         {loading ? (
-          <LoadingSpinner />
+          <AdminTableSkeleton rows={8} columns={6} />
         ) : !data || data.items.length === 0 ? (
           <EmptyState
             title="No staff members found"
@@ -164,8 +186,7 @@ export default function StaffPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[52rem] text-sm">
                 <thead>
                   <tr className="border-b border-admin-line bg-admin-subtle/50">
                     <th className="text-left font-medium text-admin-muted px-4 py-3">Name</th>
@@ -195,10 +216,11 @@ export default function StaffPage() {
                       </td>
                       <td className="px-4 py-3">
                         <select
+                          aria-label={`Role for ${member.name}`}
                           value={member.role}
                           disabled={updatingRole === member._id}
                           onChange={(e) => changeRole(member, e.target.value)}
-                          className="max-w-[11rem] px-2 py-1.5 text-xs border border-admin-line rounded-md bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus disabled:opacity-50"
+                          className="min-h-9 max-w-[11rem] rounded-md border border-admin-line-strong bg-admin-surface px-2 py-1.5 text-xs outline-none focus:border-admin-primary focus:ring-2 focus:ring-admin-focus/50 disabled:opacity-50"
                           title={roleLabel(member.role)}
                         >
                           {data.roles.map((role) => (
@@ -222,32 +244,39 @@ export default function StaffPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button
+                          <Button
                             onClick={() => toggleActive(member)}
                             disabled={toggling === member._id}
-                            className="px-2.5 py-1.5 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md transition-colors disabled:opacity-50"
+                            variant="ghost"
+                            size="sm"
+                            className="px-2 text-xs"
+                            aria-label={`${member.isActive ? "Deactivate" : "Activate"} ${member.name}`}
+                            icon={member.isActive
+                              ? <UserRoundX aria-hidden="true" className="size-3.5" />
+                              : <UserRoundCheck aria-hidden="true" className="size-3.5" />}
                           >
                             {member.isActive ? "Deactivate" : "Activate"}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => setDeleteTarget(member)}
-                            className="px-2.5 py-1.5 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            className="px-2 text-xs"
+                            aria-label={`Delete ${member.name}`}
+                            icon={<Trash2 aria-hidden="true" className="size-3.5" />}
                           >
                             Delete
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="px-4 border-t border-admin-line">
-              <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
-            </div>
           </>
         )}
-      </div>
+      </DataTableShell>
+      )}
 
       <ConfirmDialog
         open={!!deleteTarget}

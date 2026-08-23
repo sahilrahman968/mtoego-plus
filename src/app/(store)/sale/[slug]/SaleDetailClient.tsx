@@ -401,7 +401,7 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
       ? "Sale ended"
       : "Ends in";
   const showCountdown = (campaign.status === "live" || isScheduled) && !countdown.ended;
-  const headline = campaign.homeHeadline || campaign.title;
+  const headline = campaign.title;
   const banner = campaign.banner?.url ? campaign.banner : null;
   const secondaryCta =
     campaign.bannerCtaHref && campaign.bannerCtaHref !== `/sale/${campaign.slug}`

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Plus } from "lucide-react";
+import { Button, ButtonLink } from "./Button";
 
 interface PageHeaderProps {
   title: string;
@@ -11,32 +12,31 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, description, action }: PageHeaderProps) {
-  const actionClassName =
-    "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm whitespace-nowrap";
-
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl font-bold text-admin-heading">{title}</h1>
+    <div className="mb-6 flex flex-col gap-4 border-b border-admin-line pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <h1 className="text-2xl font-semibold tracking-tight text-admin-heading">{title}</h1>
         {description && (
-          <p className="mt-1 text-sm text-admin-muted">{description}</p>
+          <p className="mt-1 max-w-2xl text-sm text-admin-muted">{description}</p>
         )}
       </div>
       {action?.href && (
-        <Link href={action.href} className={actionClassName}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+        <ButtonLink
+          href={action.href}
+          className="shrink-0"
+          icon={<Plus aria-hidden="true" className="size-4" />}
+        >
           {action.label}
-        </Link>
+        </ButtonLink>
       )}
       {action?.onClick && !action.href && (
-        <button type="button" onClick={action.onClick} className={actionClassName}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+        <Button
+          onClick={action.onClick}
+          className="shrink-0"
+          icon={<Plus aria-hidden="true" className="size-4" />}
+        >
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

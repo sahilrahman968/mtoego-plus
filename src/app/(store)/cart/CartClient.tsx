@@ -8,8 +8,6 @@ import {
   Plus,
   Trash2,
   ShoppingCart,
-  Tag,
-  X,
   ArrowRight,
   Truck,
 } from "lucide-react";
@@ -27,11 +25,8 @@ import { CartItemSkeleton } from "@/components/store/skeletons";
 
 export default function CartClient() {
   const { isAuthenticated } = useAuth();
-  const { items, cart, updateItem, removeItem, applyCoupon, removeCoupon, isLoading } =
-    useCart();
+  const { items, cart, updateItem, removeItem, isLoading } = useCart();
   const { toast } = useToast();
-  const [couponCode, setCouponCode] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
   const availableItems = useMemo(
@@ -90,24 +85,6 @@ export default function CartClient() {
       next.delete(itemId);
       return next;
     });
-  };
-
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
-    setCouponLoading(true);
-    const res = await applyCoupon(couponCode.trim());
-    if (res.success) {
-      toast(res.message, "success");
-      setCouponCode("");
-    } else {
-      toast(res.message, "error");
-    }
-    setCouponLoading(false);
-  };
-
-  const handleRemoveCoupon = async () => {
-    const res = await removeCoupon();
-    if (res.success) toast("Coupon removed", "success");
   };
 
   if (!isAuthenticated) {
@@ -339,19 +316,9 @@ export default function CartClient() {
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
 
-              {/* Coupon discount */}
               {cart?.coupon && discount > 0 && (
                 <div className="flex justify-between text-success">
-                  <span className="flex items-center gap-1">
-                    <Tag size={14} />
-                    {cart.coupon.code}
-                    <button
-                      onClick={handleRemoveCoupon}
-                      className="text-muted hover:text-danger ml-1"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
+                  <span>Coupon ({cart.coupon.code})</span>
                   <span>-{formatPrice(discount)}</span>
                 </div>
               )}
@@ -385,28 +352,6 @@ export default function CartClient() {
                 Total includes GST
               </p>
             </div>
-
-            {/* Coupon Input */}
-            {!cart?.coupon && availableItems.length > 0 && (
-              <div className="mt-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="Coupon code"
-                    className="flex-1 border border-border bg-black/45 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                  <button
-                    onClick={handleApplyCoupon}
-                    disabled={couponLoading || !couponCode.trim()}
-                    className="btn-text border border-border bg-black/50 px-4 py-2.5 text-foreground transition-colors hover:border-accent disabled:opacity-50"
-                  >
-                    {couponLoading ? "..." : "Apply"}
-                  </button>
-                </div>
-              </div>
-            )}
 
             {availableItems.length > 0 &&
             !hasUnavailableItems &&

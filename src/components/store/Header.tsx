@@ -125,7 +125,7 @@ export default function Header() {
                 href={`/sale/${navSale.slug}`}
                 className={`eyebrow transition-colors ${isActive("/sale") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
               >
-                Sale
+                {navSale.title}
               </Link>
             ) : null}
           </nav>
@@ -262,7 +262,7 @@ export default function Header() {
                   {[
                     { href: "/categories", label: "Categories" },
                     { href: "/products", label: "Products" },
-                    ...(navSale ? [{ href: `/sale/${navSale.slug}`, label: "Sale" }] : []),
+                    ...(navSale ? [{ href: `/sale/${navSale.slug}`, label: navSale.title }] : []),
                     { href: "/wishlist", label: "Wishlist" },
                     { href: "/search", label: "Search" },
                     { href: "/cart", label: "Cart" },

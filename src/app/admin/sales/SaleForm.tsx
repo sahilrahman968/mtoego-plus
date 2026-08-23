@@ -12,6 +12,8 @@ import {
   isBannerCtaPosition,
   type BannerCtaPosition,
 } from "@/lib/banner-cta";
+import { Button } from "../components/Button";
+import { AdminFormSkeleton } from "../components/FeedbackState";
 
 interface SaleFormProps {
   saleId?: string;
@@ -150,7 +152,10 @@ export default function SaleForm({ saleId }: SaleFormProps) {
     fetch("/api/admin/sales/product-collections")
       .then((r) => r.json())
       .then((json) => {
-        if (!json.success) return;
+        if (!json.success) {
+          setError(json.error || json.message || "Failed to load sale");
+          return;
+        }
         setCollections(json.data.collections || []);
         setCategories(json.data.categories || []);
       })
@@ -205,7 +210,10 @@ export default function SaleForm({ saleId }: SaleFormProps) {
             .filter(Boolean)
         );
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load sale");
+      })
       .finally(() => setFetching(false));
   }, [isEdit, saleId]);
 
@@ -481,19 +489,40 @@ export default function SaleForm({ saleId }: SaleFormProps) {
   };
 
   if (fetching) {
-    return <p className="text-sm text-admin-muted">Loading sale…</p>;
+    return <AdminFormSkeleton sections={4} />;
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-admin-danger-line bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
+        <div role="alert" className="rounded-lg border border-admin-danger-line bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
           {error}
         </div>
       )}
 
-      <section className="rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-admin-heading">Campaign</h2>
+      <nav aria-label="Sale form sections" className="sticky top-0 z-20 -mx-1 overflow-x-auto border-y border-admin-line bg-admin-canvas/95 px-1 py-2 backdrop-blur">
+        <ol className="flex min-w-max items-center gap-1 text-sm">
+          {[
+            ["campaign", "1. Campaign"],
+            ["schedule", "2. Schedule"],
+            ["banner", "3. Banner"],
+            ["products", "4. Products"],
+            ["seo", "5. SEO"],
+          ].map(([id, label]) => (
+            <li key={id}>
+              <a href={`#${id}`} className="inline-flex min-h-9 items-center rounded-lg px-3 font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus">
+                {label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      <section id="campaign" className="scroll-mt-20 rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-admin-heading">Campaign details</h2>
+          <p className="mt-1 text-sm text-admin-muted">Name the campaign and set the public landing URL.</p>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-admin-body">Title</span>
@@ -536,8 +565,11 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-admin-heading">Schedule & merchandising</h2>
+      <section id="schedule" className="scroll-mt-20 rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-admin-heading">Schedule & merchandising</h2>
+          <p className="mt-1 text-sm text-admin-muted">Set the live window, storefront placements, and campaign priority.</p>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-admin-body">Starts</span>
@@ -619,9 +651,12 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
+      <section id="banner" className="scroll-mt-20 rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-admin-heading">Banner</h2>
+          <div>
+            <h2 className="text-base font-semibold text-admin-heading">Banner</h2>
+            <p className="mt-1 text-sm text-admin-muted">Preview the exact sale-page scrim and position the homepage CTA.</p>
+          </div>
           {banner?.url && (
             <div className="flex items-center gap-2">
               <button
@@ -790,9 +825,12 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         </p>
       </section>
 
-      <section className="rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
+      <section id="products" className="scroll-mt-20 rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-sm font-semibold text-admin-heading">Discount & products</h2>
+          <div>
+            <h2 className="text-base font-semibold text-admin-heading">Discount & products</h2>
+            <p className="mt-1 text-sm text-admin-muted">Add up to {MAX_SALE_ITEMS} products, then tune any product override.</p>
+          </div>
           <button
             type="button"
             onClick={applyDefaultToAll}
@@ -829,6 +867,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
 
         <div className="relative">
           <input
+            aria-label="Search products to add"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products to add…"
@@ -868,6 +907,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
                 key={collection.key}
                 type="button"
                 onClick={() => void loadCollection(collection.key)}
+                aria-pressed={activeCollection === collection.key}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
                   activeCollection === collection.key
                     ? "border-admin-heading bg-admin-heading text-white"
@@ -967,6 +1007,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
                           <input
                             type="checkbox"
                             checked={checked}
+                            aria-label={`Select ${product.title}`}
                             onChange={(e) => {
                               setPickedIds((prev) =>
                                 e.target.checked
@@ -1002,11 +1043,11 @@ export default function SaleForm({ saleId }: SaleFormProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-admin-line text-left text-admin-muted">
-                <th className="py-2 font-medium">Product</th>
-                <th className="py-2 font-medium">Type</th>
-                <th className="py-2 font-medium">Value</th>
-                <th className="py-2 font-medium">From / sale</th>
-                <th />
+                <th scope="col" className="py-2 font-medium">Product</th>
+                <th scope="col" className="py-2 font-medium">Type</th>
+                <th scope="col" className="py-2 font-medium">Value</th>
+                <th scope="col" className="py-2 font-medium">From / sale</th>
+                <th scope="col"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -1040,6 +1081,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
                     <td className="py-2 pr-3">
                       <select
                         value={item.discountType}
+                        aria-label={`Discount type for ${item.title}`}
                         onChange={(e) => {
                           const next = [...items];
                           next[index] = {
@@ -1057,6 +1099,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
                     <td className="py-2 pr-3">
                       <input
                         type="number"
+                        aria-label={`Discount value for ${item.title}`}
                         min={item.discountType === "percentage" ? 1 : 0.01}
                         max={item.discountType === "percentage" ? 90 : undefined}
                         step="any"
@@ -1076,6 +1119,7 @@ export default function SaleForm({ saleId }: SaleFormProps) {
                       <button
                         type="button"
                         onClick={() => setItems(items.filter((p) => p._id !== item._id))}
+                        aria-label={`Remove ${item.title} from sale`}
                         className="text-xs text-admin-danger"
                       >
                         Remove
@@ -1092,8 +1136,11 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-admin-heading">SEO</h2>
+      <section id="seo" className="scroll-mt-20 rounded-xl border border-admin-line bg-admin-surface p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-admin-heading">Search appearance</h2>
+          <p className="mt-1 text-sm text-admin-muted">Optional metadata for the public sale landing page.</p>
+        </div>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-admin-body">SEO title</span>
           <input
@@ -1113,21 +1160,13 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         </label>
       </section>
 
-      <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => void handleCancel()}
-          className="rounded-lg border border-admin-line px-4 py-2.5 text-sm"
-        >
+      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-2 border-t border-admin-line bg-admin-canvas/95 py-3 backdrop-blur">
+        <Button type="button" variant="secondary" onClick={() => void handleCancel()}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-admin-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" disabled={loading || uploading}>
           {loading ? "Saving…" : isEdit ? "Update sale" : "Launch sale"}
-        </button>
+        </Button>
       </div>
     </form>
   );

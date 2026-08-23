@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "../components/Button";
+import {
+  CheckboxField,
+  FormSection,
+  SelectField,
+  TextAreaField,
+  TextField,
+} from "../components/Fields";
+import { AdminFormSkeleton } from "../components/FeedbackState";
 
 interface CouponFormProps {
   couponId?: string;
@@ -10,11 +19,9 @@ interface CouponFormProps {
 export default function CouponForm({ couponId }: CouponFormProps) {
   const router = useRouter();
   const isEdit = !!couponId;
-
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState("");
-
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<"percentage" | "flat">("percentage");
@@ -26,7 +33,6 @@ export default function CouponForm({ couponId }: CouponFormProps) {
   const [perUserLimit, setPerUserLimit] = useState<number>(1);
   const [isActive, setIsActive] = useState(true);
 
-  // Fetch coupon for edit
   useEffect(() => {
     if (!isEdit) return;
     fetch(`/api/admin/coupons/${couponId}`)
@@ -44,9 +50,11 @@ export default function CouponForm({ couponId }: CouponFormProps) {
           setUsageLimit(c.usageLimit);
           setPerUserLimit(c.perUserLimit);
           setIsActive(c.isActive);
+        } else {
+          setError(json.message || "Failed to load coupon");
         }
       })
-      .catch(console.error)
+      .catch(() => setError("Failed to load coupon"))
       .finally(() => setFetching(false));
   }, [isEdit, couponId]);
 
@@ -54,7 +62,6 @@ export default function CouponForm({ couponId }: CouponFormProps) {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const body = {
       code: code.toUpperCase(),
       description: description || undefined,
@@ -67,7 +74,6 @@ export default function CouponForm({ couponId }: CouponFormProps) {
       perUserLimit: Number(perUserLimit),
       isActive,
     };
-
     try {
       const url = isEdit ? `/api/admin/coupons/${couponId}` : "/api/admin/coupons";
       const method = isEdit ? "PUT" : "POST";
@@ -77,11 +83,8 @@ export default function CouponForm({ couponId }: CouponFormProps) {
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (json.success) {
-        router.push("/admin/coupons");
-      } else {
-        setError(json.message || "Failed to save coupon");
-      }
+      if (json.success) router.push("/admin/coupons");
+      else setError(json.message || "Failed to save coupon");
     } catch {
       setError("Something went wrong");
     } finally {
@@ -89,152 +92,135 @@ export default function CouponForm({ couponId }: CouponFormProps) {
     }
   };
 
-  if (fetching) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-admin-line border-t-gray-900 rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (fetching) return <AdminFormSkeleton sections={2} />;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
+        <div role="alert" className="rounded-lg border border-admin-danger-line bg-admin-danger-soft px-3.5 py-3 text-sm text-admin-danger">
+          {error}
+        </div>
       )}
 
-      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-        <h2 className="text-base font-semibold text-admin-heading mb-4">Coupon Details</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Code</label>
-            <input
-              type="text"
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <FormSection title="Coupon details" description="Set the code customers enter and the discount it applies.">
+            <TextField
+              id="coupon-code"
+              label="Code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               required
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus uppercase"
-              placeholder="e.g. SAVE20"
+              maxLength={40}
+              className="font-mono uppercase"
+              placeholder="SAVE20"
+              hint="Codes are always stored in uppercase."
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Type</label>
-            <select
+            <SelectField
+              id="coupon-type"
+              label="Discount type"
               value={type}
               onChange={(e) => setType(e.target.value as "percentage" | "flat")}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface"
             >
               <option value="percentage">Percentage (%)</option>
-              <option value="flat">Flat (₹)</option>
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Description</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
-              placeholder="Optional description"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">
-              Value {type === "percentage" ? "(%)" : "(₹)"}
-            </label>
-            <input
+              <option value="flat">Flat amount (₹)</option>
+            </SelectField>
+            <div className="sm:col-span-2">
+              <TextAreaField
+                id="coupon-description"
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                placeholder="Optional internal description"
+              />
+            </div>
+            <TextField
+              id="coupon-value"
+              label={`Value ${type === "percentage" ? "(%)" : "(₹)"}`}
               type="number"
               value={value}
               onChange={(e) => setValue(Number(e.target.value))}
               required
               min={0}
               max={type === "percentage" ? 100 : undefined}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
+              step="any"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Min Order Value (₹)</label>
-            <input
+            <TextField
+              id="coupon-minimum"
+              label="Minimum order value (₹)"
               type="number"
               value={minOrderValue}
               onChange={(e) => setMinOrderValue(Number(e.target.value))}
               min={0}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
+              step="any"
+              hint="Use 0 when there is no minimum."
             />
-          </div>
-          {type === "percentage" && (
-            <div>
-              <label className="block text-sm font-medium text-admin-body mb-1.5">Max Discount (₹)</label>
-              <input
+            {type === "percentage" && (
+              <TextField
+                id="coupon-max-discount"
+                label="Maximum discount (₹)"
                 type="number"
                 value={maxDiscount}
                 onChange={(e) => setMaxDiscount(e.target.value)}
                 min={0}
-                className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
+                step="any"
                 placeholder="No limit"
+                hint="Optional cap for percentage discounts."
               />
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Expires At</label>
-            <input
+            )}
+          </FormSection>
+
+          <FormSection title="Redemption limits" description="Control when the code expires and how often it can be used.">
+            <TextField
+              id="coupon-expiry"
+              label="Expires at"
               type="datetime-local"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Usage Limit</label>
-            <input
+            <TextField
+              id="coupon-usage-limit"
+              label="Total usage limit"
               type="number"
               value={usageLimit}
               onChange={(e) => setUsageLimit(Number(e.target.value))}
               required
               min={1}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Per User Limit</label>
-            <input
+            <TextField
+              id="coupon-per-user-limit"
+              label="Per-customer limit"
               type="number"
               value={perUserLimit}
               onChange={(e) => setPerUserLimit(Number(e.target.value))}
               min={1}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
             />
-          </div>
-          <div className="flex items-end">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
-              />
-              <span className="text-sm text-admin-body">Active</span>
-            </label>
-          </div>
+          </FormSection>
         </div>
+
+        <FormSection
+          title="Availability"
+          description="Choose whether customers can redeem this code."
+          columns={1}
+          className="h-fit"
+        >
+          <CheckboxField
+            id="coupon-active"
+            label="Active"
+            hint="Inactive coupons remain saved but cannot be redeemed."
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+          />
+        </FormSection>
       </div>
 
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-5 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
-        >
+      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-admin-line bg-admin-canvas/95 py-3 backdrop-blur">
+        <Button type="submit" disabled={loading}>
           {loading ? "Saving..." : isEdit ? "Update Coupon" : "Create Coupon"}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/admin/coupons")}
-          className="px-5 py-2.5 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover transition-colors"
-        >
-          Cancel
-        </button>
+        </Button>
+        <Button variant="secondary" onClick={() => router.push("/admin/coupons")}>Cancel</Button>
       </div>
     </form>
   );

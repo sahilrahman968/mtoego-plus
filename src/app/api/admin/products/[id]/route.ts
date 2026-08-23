@@ -18,6 +18,10 @@ import Cart from "@/models/cart.model";
 import Wishlist from "@/models/wishlist.model";
 import Order from "@/models/order.model";
 import { IProductImage } from "@/models/product.model";
+import {
+  ensureProductPriceBaseline,
+  recordProductPriceChanges,
+} from "@/lib/product-price-history";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -168,6 +172,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
       .populate("category", "name slug")
       .lean();
+
+    if (product) {
+      await ensureProductPriceBaseline(
+        product._id,
+        existingProduct.variants,
+        existingProduct.createdAt
+      );
+
+      if (body.variants !== undefined) {
+        await recordProductPriceChanges(
+          product._id,
+          existingProduct.variants,
+          product.variants,
+          auth.email
+        );
+      }
+    }
 
     return successResponse(product, "Product updated successfully");
   } catch (err) {

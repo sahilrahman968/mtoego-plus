@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import StatusBadge from "../../components/StatusBadge";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import { AdminErrorState, AdminFormSkeleton } from "../../components/FeedbackState";
+import { Button, ButtonLink } from "../../components/Button";
+import { Surface, Section } from "../../components/Surface";
+import { TextField } from "../../components/Fields";
 import { getProductImage } from "@/lib/utils";
 
 interface StatusHistoryEntry {
@@ -88,6 +92,209 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   refunded: [],
 };
 
+const RISKY_STATUSES = new Set(["cancelled", "refunded"]);
+
+type Tone = "success" | "warning" | "danger" | "info" | "inert";
+
+const toneClass: Record<Tone, string> = {
+  success: "bg-admin-success-soft text-admin-success ring-admin-success-line",
+  warning: "bg-admin-warning-soft text-admin-warning ring-admin-warning-line",
+  danger: "bg-admin-danger-soft text-admin-danger ring-admin-danger-line",
+  info: "bg-admin-info-soft text-admin-info ring-admin-info-line",
+  inert: "bg-admin-subtle text-admin-faint ring-admin-line",
+};
+
+function Chip({ tone, children }: { tone: Tone; children: string }) {
+  return (
+    <span
+      className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${toneClass[tone]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function asString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function parseUser(value: unknown): OrderDetail["user"] {
+  if (!isRecord(value)) return undefined;
+  const id = asString(value._id);
+  if (!id) return undefined;
+  return {
+    _id: id,
+    name: asString(value.name, "N/A"),
+    email: asString(value.email),
+  };
+}
+
+function parseOrder(raw: unknown): OrderDetail | null {
+  if (!isRecord(raw)) return null;
+  const id = asString(raw._id);
+  const orderNumber = asString(raw.orderNumber);
+  if (!id || !orderNumber) return null;
+
+  const pricing = isRecord(raw.pricing) ? raw.pricing : {};
+  const payment = isRecord(raw.payment) ? raw.payment : {};
+  const address = isRecord(raw.shippingAddress) ? raw.shippingAddress : {};
+  const coupon = isRecord(raw.coupon) ? raw.coupon : null;
+
+  const items = Array.isArray(raw.items)
+    ? raw.items.map((item) => {
+        const row = isRecord(item) ? item : {};
+        const product = isRecord(row.product) ? row.product : null;
+        const images = product && Array.isArray(product.images)
+          ? product.images
+              .filter(isRecord)
+              .map((image) => ({
+                url: asString(image.url),
+                alt: asString(image.alt) || undefined,
+              }))
+              .filter((image) => image.url)
+          : undefined;
+        return {
+          title: asString(row.title, "Item"),
+          variantLabel: asString(row.variantLabel),
+          sku: asString(row.sku),
+          price: asNumber(row.price),
+          gst: typeof row.gst === "number" ? row.gst : undefined,
+          quantity: asNumber(row.quantity, 1),
+          total: asNumber(row.total),
+          product: product
+            ? { slug: asString(product.slug) || undefined, images }
+            : null,
+        };
+      })
+    : [];
+
+  const statusHistory = Array.isArray(raw.statusHistory)
+    ? raw.statusHistory.map((entry) => {
+        const row = isRecord(entry) ? entry : {};
+        return {
+          status: asString(row.status),
+          timestamp: asString(row.timestamp),
+          note: asString(row.note) || undefined,
+          trackingNumber: asString(row.trackingNumber) || undefined,
+          trackingUrl: asString(row.trackingUrl) || undefined,
+        };
+      })
+    : [];
+
+  return {
+    _id: id,
+    orderNumber,
+    user: parseUser(raw.user),
+    items,
+    shippingAddress: {
+      name: asString(address.name),
+      phone: asString(address.phone),
+      line1: asString(address.line1),
+      line2: asString(address.line2) || undefined,
+      city: asString(address.city),
+      state: asString(address.state),
+      pincode: asString(address.pincode),
+      country: asString(address.country),
+    },
+    pricing: {
+      subtotal: asNumber(pricing.subtotal),
+      discount: asNumber(pricing.discount),
+      subtotalAfterDiscount: asNumber(pricing.subtotalAfterDiscount),
+      cgst: asNumber(pricing.cgst),
+      sgst: asNumber(pricing.sgst),
+      igst: asNumber(pricing.igst),
+      totalTax: asNumber(pricing.totalTax),
+      shippingCost: asNumber(pricing.shippingCost),
+      grandTotal: asNumber(pricing.grandTotal),
+    },
+    payment: {
+      razorpayOrderId: asString(payment.razorpayOrderId),
+      razorpayPaymentId: asString(payment.razorpayPaymentId) || undefined,
+      method: asString(payment.method) || undefined,
+      amountPaid: asNumber(payment.amountPaid),
+      currency: asString(payment.currency, "INR"),
+      paidAt: asString(payment.paidAt) || undefined,
+    },
+    coupon: coupon
+      ? {
+          code: asString(coupon.code),
+          type: asString(coupon.type),
+          value: asNumber(coupon.value),
+          discountAmount: asNumber(coupon.discountAmount),
+        }
+      : undefined,
+    status: asString(raw.status, "pending"),
+    statusHistory,
+    trackingNumber: asString(raw.trackingNumber) || undefined,
+    trackingUrl: asString(raw.trackingUrl) || undefined,
+    notes: asString(raw.notes) || undefined,
+    cancelReason: asString(raw.cancelReason) || undefined,
+    createdAt: asString(raw.createdAt),
+  };
+}
+
+function paymentChip(order: OrderDetail): { tone: Tone; label: string } {
+  if (order.status === "refunded") return { tone: "danger", label: "Refunded" };
+  const captured =
+    Boolean(order.payment.paidAt) ||
+    Boolean(order.payment.razorpayPaymentId) ||
+    ["paid", "processing", "shipped", "delivered"].includes(order.status);
+  if (captured) return { tone: "success", label: "Paid" };
+  return { tone: "warning", label: "Unpaid" };
+}
+
+function fulfillmentChip(order: OrderDetail): { tone: Tone; label: string } {
+  switch (order.status) {
+    case "processing":
+      return { tone: "info", label: "Preparing" };
+    case "shipped":
+      return { tone: "info", label: "In transit" };
+    case "delivered":
+      return { tone: "success", label: "Delivered" };
+    case "cancelled":
+    case "refunded":
+      return { tone: "inert", label: "Not fulfilled" };
+    default:
+      return { tone: "inert", label: "Unfulfilled" };
+  }
+}
+
+function money(value: number) {
+  return `₹${value.toLocaleString("en-IN")}`;
+}
+
+function validateTracking(trackingNumber: string, trackingUrl: string): string | null {
+  if (trackingNumber.trim().length < 3) {
+    return "AWB / tracking number is required (min 3 characters)";
+  }
+  if (!trackingUrl.trim()) {
+    return "Tracking URL is required";
+  }
+  try {
+    const parsed = new URL(trackingUrl.trim());
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return "Tracking URL must use http or https";
+    }
+  } catch {
+    return "Tracking URL must be a valid URL";
+  }
+  return null;
+}
+
+function statusLabel(status: string) {
+  if (status === "cancelled") return "Cancel";
+  if (status === "refunded") return "Refund";
+  return `Mark ${status}`;
+}
+
 export default function OrderDetailPage({
   params,
 }: {
@@ -97,39 +304,66 @@ export default function OrderDetailPage({
   const router = useRouter();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
   const [statusNote, setStatusNote] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
-  const [copiedTracking, setCopiedTracking] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadOrder = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
     fetch(`/api/admin/orders/${orderId}`)
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((json) => {
-        if (json.success) {
-          setOrder(json.data);
-          setTrackingNumber(json.data.trackingNumber || "");
-          setTrackingUrl(json.data.trackingUrl || "");
+        const parsed = json.success ? parseOrder(json.data) : null;
+        if (parsed) {
+          setOrder(parsed);
+          setTrackingNumber(parsed.trackingNumber || "");
+          setTrackingUrl(parsed.trackingUrl || "");
+        } else {
+          setOrder(null);
+          setLoadError(Boolean(json.success) || json.message !== "Order not found");
         }
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, [orderId]);
 
-  const copyTrackingNumber = async (value: string) => {
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  const copyValue = async (value: string, key: string, failureMessage: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      setCopiedTracking(value);
-      setTimeout(() => setCopiedTracking(null), 2000);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
     } catch {
-      setError("Failed to copy tracking number");
+      setError(failureMessage);
     }
   };
 
+  const applyOrder = (next: OrderDetail) => {
+    setOrder(next);
+    setTrackingNumber(next.trackingNumber || "");
+    setTrackingUrl(next.trackingUrl || "");
+  };
+
   const saveTracking = async () => {
+    const trackingError = validateTracking(trackingNumber, trackingUrl);
+    if (trackingError) {
+      setError(trackingError);
+      return;
+    }
+
     setUpdating(true);
     setError("");
 
@@ -143,8 +377,9 @@ export default function OrderDetailPage({
         }),
       });
       const json = await res.json();
-      if (json.success) {
-        setOrder(json.data);
+      const parsed = json.success ? parseOrder(json.data) : null;
+      if (parsed) {
+        applyOrder(parsed);
       } else {
         setError(json.message || "Failed to update tracking details");
       }
@@ -160,28 +395,26 @@ export default function OrderDetailPage({
     setError("");
 
     if (newStatus === "shipped") {
-      if (trackingNumber.trim().length < 3) {
-        setError("AWB / tracking number is required (min 3 characters)");
+      const trackingError = validateTracking(trackingNumber, trackingUrl);
+      if (trackingError) {
+        setError(trackingError);
         setUpdating(false);
+        document.getElementById("order-status-actions")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
         return;
       }
-      if (!trackingUrl.trim()) {
-        setError("Tracking URL is required");
-        setUpdating(false);
-        return;
-      }
-      try {
-        const parsed = new URL(trackingUrl.trim());
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-          setError("Tracking URL must use http or https");
-          setUpdating(false);
-          return;
-        }
-      } catch {
-        setError("Tracking URL must be a valid URL");
-        setUpdating(false);
-        return;
-      }
+    }
+
+    if (newStatus === "cancelled" && cancelReason.trim().length < 3) {
+      setError("Cancel reason is required (min 3 characters)");
+      setUpdating(false);
+      document.getElementById("order-status-actions")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      return;
     }
 
     const body: Record<string, string> = { status: newStatus };
@@ -199,12 +432,12 @@ export default function OrderDetailPage({
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (json.success) {
-        setOrder(json.data);
+      const parsed = json.success ? parseOrder(json.data) : null;
+      if (parsed) {
+        applyOrder(parsed);
         setStatusNote("");
         setCancelReason("");
-        setTrackingNumber(json.data.trackingNumber || "");
-        setTrackingUrl(json.data.trackingUrl || "");
+        setPendingStatus(null);
       } else {
         setError(json.message || "Failed to update status");
       }
@@ -215,442 +448,610 @@ export default function OrderDetailPage({
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  const requestStatusChange = (newStatus: string) => {
+    if (RISKY_STATUSES.has(newStatus)) {
+      if (newStatus === "cancelled" && cancelReason.trim().length < 3) {
+        setError("Cancel reason is required (min 3 characters)");
+        document.getElementById("order-status-actions")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        return;
+      }
+      setPendingStatus(newStatus);
+      return;
+    }
+    void updateStatus(newStatus);
+  };
+
+  if (loading) return <AdminFormSkeleton sections={3} />;
+
+  if (loadError) {
+    return (
+      <AdminErrorState
+        title="Unable to load order"
+        message="This order could not be fetched. Check your connection and try again."
+        onRetry={loadOrder}
+      />
+    );
+  }
+
   if (!order) {
     return (
-      <div className="text-center py-20">
+      <div className="py-16 text-center">
         <p className="text-admin-muted">Order not found</p>
-        <button onClick={() => router.push("/admin/orders")} className="mt-4 text-admin-heading hover:underline text-sm">
+        <Button
+          variant="secondary"
+          className="mt-4"
+          onClick={() => router.push("/admin/orders")}
+        >
           Back to orders
-        </button>
+        </Button>
       </div>
     );
   }
 
   const allowedTransitions = STATUS_TRANSITIONS[order.status] || [];
+  const payment = paymentChip(order);
+  const fulfillment = fulfillmentChip(order);
+  const placedOn = order.createdAt
+    ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "Unknown date";
+
+  const renderStatusButtons = () => (
+    <>
+      {allowedTransitions.map((status) => (
+        <Button
+          key={status}
+          onClick={() => requestStatusChange(status)}
+          disabled={updating}
+          size="sm"
+          variant={RISKY_STATUSES.has(status) ? "secondary" : "primary"}
+          aria-label={`${statusLabel(status)} order ${order.orderNumber}`}
+          className="capitalize"
+        >
+          {statusLabel(status)}
+        </Button>
+      ))}
+    </>
+  );
 
   return (
-    <div>
+    <div className="pb-28 lg:pb-0">
+      <ButtonLink
+        href="/admin/orders"
+        variant="ghost"
+        size="sm"
+        className="mb-3 -ml-2 w-fit px-2"
+        aria-label="Back to orders"
+        icon={<ArrowLeft aria-hidden="true" className="size-4" />}
+      >
+        Orders
+      </ButtonLink>
+
       <PageHeader
         title={`Order ${order.orderNumber}`}
-        description={`Placed on ${new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`}
+        description={`Placed on ${placedOn}`}
       />
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-admin-line bg-admin-subtle p-3 text-sm text-admin-body"
+        >
+          {error}
+        </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Items */}
-          <div className="bg-admin-surface rounded-xl border border-admin-line overflow-hidden">
-            <div className="px-5 py-4 border-b border-admin-line">
-              <h3 className="text-sm font-semibold text-admin-heading">Order Items</h3>
-            </div>
-            <div className="divide-y divide-admin-line">
-              {order.items.map((item, i) => {
-                const gst = typeof item.gst === "number" ? item.gst : 18;
-                const unitIncl = Math.round(item.price * (1 + gst / 100) * 100) / 100;
-                const lineIncl = Math.round(unitIncl * item.quantity * 100) / 100;
-                return (
-                <div key={i} className="px-5 py-3 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-admin-line bg-admin-subtle">
-                      <Image
-                        src={getProductImage(item.product?.images)}
-                        alt={item.title}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-admin-heading truncate">{item.title}</p>
-                      <p className="text-xs text-admin-muted">
-                        {item.variantLabel && <span>{item.variantLabel} · </span>}
-                        SKU: {item.sku} · Qty: {item.quantity} · GST: {gst}%
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-medium text-admin-heading">₹{lineIncl.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-admin-faint">
-                      ₹{unitIncl.toLocaleString("en-IN")} each (incl. GST)
-                    </p>
-                    <p className="text-xs text-admin-faint">
-                      Base ₹{item.price.toLocaleString("en-IN")} + GST
-                    </p>
-                  </div>
-                </div>
-                );
-              })}
-            </div>
-            {/* Pricing summary */}
-            <div className="px-5 py-4 border-t border-admin-line bg-admin-subtle/50 space-y-1.5">
-              <div className="flex justify-between text-sm">
-                <span className="text-admin-muted">Subtotal (excl. GST)</span>
-                <span className="text-admin-body">₹{order.pricing.subtotal.toLocaleString("en-IN")}</span>
-              </div>
-              {order.pricing.discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-admin-muted">Discount</span>
-                  <span className="text-admin-body">-₹{order.pricing.discount.toLocaleString("en-IN")}</span>
-                </div>
-              )}
-              {order.pricing.discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-admin-muted">Taxable amount</span>
-                  <span className="text-admin-body">₹{order.pricing.subtotalAfterDiscount.toLocaleString("en-IN")}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span className="text-admin-muted">GST</span>
-                <span className="text-admin-body">₹{order.pricing.totalTax.toLocaleString("en-IN")}</span>
-              </div>
-              {order.pricing.cgst > 0 && (
-                <div className="flex justify-between text-xs text-admin-faint pl-2">
-                  <span>CGST</span>
-                  <span>₹{order.pricing.cgst.toLocaleString("en-IN")}</span>
-                </div>
-              )}
-              {order.pricing.sgst > 0 && (
-                <div className="flex justify-between text-xs text-admin-faint pl-2">
-                  <span>SGST</span>
-                  <span>₹{order.pricing.sgst.toLocaleString("en-IN")}</span>
-                </div>
-              )}
-              {order.pricing.igst > 0 && (
-                <div className="flex justify-between text-xs text-admin-faint pl-2">
-                  <span>IGST</span>
-                  <span>₹{order.pricing.igst.toLocaleString("en-IN")}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span className="text-admin-muted">Shipping</span>
-                <span className="text-admin-body">
-                  {order.pricing.shippingCost === 0 ? "Free" : `₹${order.pricing.shippingCost.toLocaleString("en-IN")}`}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm font-semibold pt-1.5 border-t border-admin-line">
-                <span className="text-admin-heading">Grand Total (incl. GST)</span>
-                <span className="text-admin-heading">₹{order.pricing.grandTotal.toLocaleString("en-IN")}</span>
-              </div>
-            </div>
+      <Surface className="mb-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-admin-muted">
+              Summary
+            </p>
+            <p className="mt-1 text-xl font-semibold tabular text-admin-heading">
+              {money(order.pricing.grandTotal)}
+            </p>
+            <p className="mt-0.5 text-sm text-admin-muted">
+              {order.items.reduce((sum, item) => sum + item.quantity, 0)} item
+              {order.items.reduce((sum, item) => sum + item.quantity, 0) === 1 ? "" : "s"}
+              {" · "}
+              {order.user?.name || "N/A"}
+            </p>
           </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StatusBadge status={order.status} />
+            <Chip tone={payment.tone}>{`Payment: ${payment.label}`}</Chip>
+            <Chip tone={fulfillment.tone}>{`Fulfillment: ${fulfillment.label}`}</Chip>
+          </div>
+        </div>
+      </Surface>
 
-          {/* Status History */}
-          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-            <h3 className="text-sm font-semibold text-admin-heading mb-4">Status History</h3>
-            <div className="space-y-3">
-              {order.statusHistory.map((entry, i) => {
-                const awb =
-                  entry.trackingNumber ||
-                  (entry.status === "shipped" ? order.trackingNumber : undefined);
-                const trackUrl =
-                  entry.trackingUrl ||
-                  (entry.status === "shipped" ? order.trackingUrl : undefined);
-
-                return (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="mt-0.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-admin-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={entry.status} />
-                        <span className="text-xs text-admin-faint">
-                          {new Date(entry.timestamp).toLocaleString("en-IN")}
-                        </span>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Section title="Items">
+            <Surface padded={false} className="overflow-hidden">
+              <ul className="divide-y divide-admin-line">
+                {order.items.map((item, index) => {
+                  const gst = typeof item.gst === "number" ? item.gst : 18;
+                  const unitIncl = Math.round(item.price * (1 + gst / 100) * 100) / 100;
+                  const lineIncl = Math.round(unitIncl * item.quantity * 100) / 100;
+                  return (
+                    <li key={`${item.sku}-${index}`} className="flex items-center justify-between gap-4 px-4 py-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-admin-line bg-admin-subtle">
+                          <Image
+                            src={getProductImage(item.product?.images)}
+                            alt={item.title}
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-admin-heading">{item.title}</p>
+                          <p className="text-xs text-admin-muted">
+                            {item.variantLabel && <span>{item.variantLabel} · </span>}
+                            SKU: {item.sku} · Qty: {item.quantity} · GST: {gst}%
+                          </p>
+                        </div>
                       </div>
-                      {entry.note && <p className="text-xs text-admin-muted mt-0.5">{entry.note}</p>}
-                      {entry.status === "shipped" && (awb || trackUrl) && (
-                        <div className="mt-2 space-y-1.5 rounded-lg border border-admin-line bg-admin-subtle px-3 py-2">
-                          {awb && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-admin-muted shrink-0">AWB / Tracking</span>
-                              <code className="text-xs font-medium text-admin-body truncate">
-                                {awb}
-                              </code>
-                              <button
-                                type="button"
-                                onClick={() => copyTrackingNumber(awb)}
-                                className="shrink-0 p-1 rounded text-admin-faint hover:text-admin-body hover:bg-admin-hover transition-colors"
-                                title="Copy tracking number"
-                              >
-                                {copiedTracking === awb ? (
-                                  <Check size={12} className="text-admin-success" />
-                                ) : (
-                                  <Copy size={12} />
-                                )}
-                              </button>
-                            </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-medium tabular text-admin-heading">{money(lineIncl)}</p>
+                        <p className="text-xs text-admin-faint">
+                          {money(unitIncl)} each (incl. GST)
+                        </p>
+                        <p className="text-xs text-admin-faint">
+                          Base {money(item.price)} + GST
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="space-y-1.5 border-t border-admin-line bg-admin-subtle/50 px-4 py-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-admin-muted">Subtotal (excl. GST)</span>
+                  <span className="tabular text-admin-body">{money(order.pricing.subtotal)}</span>
+                </div>
+                {order.pricing.discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-admin-muted">Discount</span>
+                    <span className="tabular text-admin-body">-{money(order.pricing.discount)}</span>
+                  </div>
+                )}
+                {order.pricing.discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-admin-muted">Taxable amount</span>
+                    <span className="tabular text-admin-body">
+                      {money(order.pricing.subtotalAfterDiscount)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-admin-muted">GST</span>
+                  <span className="tabular text-admin-body">{money(order.pricing.totalTax)}</span>
+                </div>
+                {order.pricing.cgst > 0 && (
+                  <div className="flex justify-between pl-2 text-xs text-admin-faint">
+                    <span>CGST</span>
+                    <span className="tabular">{money(order.pricing.cgst)}</span>
+                  </div>
+                )}
+                {order.pricing.sgst > 0 && (
+                  <div className="flex justify-between pl-2 text-xs text-admin-faint">
+                    <span>SGST</span>
+                    <span className="tabular">{money(order.pricing.sgst)}</span>
+                  </div>
+                )}
+                {order.pricing.igst > 0 && (
+                  <div className="flex justify-between pl-2 text-xs text-admin-faint">
+                    <span>IGST</span>
+                    <span className="tabular">{money(order.pricing.igst)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-admin-muted">Shipping</span>
+                  <span className="tabular text-admin-body">
+                    {order.pricing.shippingCost === 0
+                      ? "Free"
+                      : money(order.pricing.shippingCost)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-admin-line pt-1.5 text-sm font-semibold">
+                  <span className="text-admin-heading">Grand Total (incl. GST)</span>
+                  <span className="tabular text-admin-heading">{money(order.pricing.grandTotal)}</span>
+                </div>
+              </div>
+            </Surface>
+          </Section>
+
+          <Section title="Timeline">
+            <Surface>
+              {order.statusHistory.length === 0 ? (
+                <p className="text-sm text-admin-muted">No status history yet.</p>
+              ) : (
+                <ol className="space-y-3">
+                  {order.statusHistory.map((entry, index) => {
+                    const awb =
+                      entry.trackingNumber ||
+                      (entry.status === "shipped" ? order.trackingNumber : undefined);
+                    const trackUrl =
+                      entry.trackingUrl ||
+                      (entry.status === "shipped" ? order.trackingUrl : undefined);
+                    const copyKey = `history-${index}-${awb}`;
+
+                    return (
+                      <li key={`${entry.status}-${entry.timestamp}-${index}`} className="flex items-start gap-3">
+                        <div className="mt-1.5 size-2.5 shrink-0 rounded-full bg-admin-primary" aria-hidden="true" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge status={entry.status} />
+                            <time
+                              className="text-xs text-admin-faint"
+                              dateTime={entry.timestamp}
+                            >
+                              {entry.timestamp
+                                ? new Date(entry.timestamp).toLocaleString("en-IN")
+                                : "—"}
+                            </time>
+                          </div>
+                          {entry.note && (
+                            <p className="mt-0.5 text-xs text-admin-muted">{entry.note}</p>
                           )}
-                          {trackUrl && (
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-xs text-admin-muted shrink-0">Track</span>
-                              <a
-                                href={trackUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-admin-heading hover:underline truncate min-w-0"
-                              >
-                                <span className="truncate">{trackUrl}</span>
-                                <ExternalLink size={11} className="shrink-0" />
-                              </a>
+                          {entry.status === "shipped" && (awb || trackUrl) && (
+                            <div className="mt-2 space-y-1.5 rounded-lg border border-admin-line bg-admin-subtle px-3 py-2">
+                              {awb && (
+                                <div className="flex items-center gap-2">
+                                  <span className="shrink-0 text-xs text-admin-muted">
+                                    AWB / Tracking
+                                  </span>
+                                  <code className="truncate text-xs font-medium text-admin-body">
+                                    {awb}
+                                  </code>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      copyValue(awb, copyKey, "Failed to copy tracking number")
+                                    }
+                                    className="shrink-0 rounded p-1 text-admin-faint transition-colors hover:bg-admin-hover hover:text-admin-body"
+                                    aria-label={
+                                      copiedKey === copyKey
+                                        ? "Tracking number copied"
+                                        : "Copy tracking number"
+                                    }
+                                  >
+                                    {copiedKey === copyKey ? (
+                                      <Check aria-hidden="true" size={12} className="text-admin-success" />
+                                    ) : (
+                                      <Copy aria-hidden="true" size={12} />
+                                    )}
+                                  </button>
+                                </div>
+                              )}
+                              {trackUrl && (
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <span className="shrink-0 text-xs text-admin-muted">Track</span>
+                                  <a
+                                    href={trackUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-admin-heading hover:underline"
+                                    aria-label="Open tracking page in a new tab"
+                                  >
+                                    <span className="truncate">{trackUrl}</span>
+                                    <ExternalLink aria-hidden="true" size={11} className="shrink-0" />
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </Surface>
+          </Section>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Status + Actions */}
-          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-            <h3 className="text-sm font-semibold text-admin-heading mb-3">Order Status</h3>
-            <div className="mb-4">
-              <StatusBadge status={order.status} className="text-sm" />
-            </div>
+        <div className="space-y-5">
+          <Section title="Status">
+            <Surface id="order-status-actions">
+              <div className="mb-4 flex flex-wrap items-center gap-1.5">
+                <StatusBadge status={order.status} className="text-sm" />
+                <Chip tone={payment.tone}>{payment.label}</Chip>
+                <Chip tone={fulfillment.tone}>{fulfillment.label}</Chip>
+              </div>
 
-            {allowedTransitions.length > 0 && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Note (optional)</label>
-                  <input
+              {allowedTransitions.length > 0 && (
+                <div className="space-y-3">
+                  <TextField
+                    id="status-note"
+                    label="Note (optional)"
                     type="text"
                     value={statusNote}
-                    onChange={(e) => setStatusNote(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                    placeholder="Add a note..."
+                    onChange={(event) => setStatusNote(event.target.value)}
+                    placeholder="Add a note…"
                   />
-                </div>
-                {allowedTransitions.includes("shipped") && (
-                  <div className="space-y-2 rounded-lg border border-admin-line bg-admin-subtle/80 p-3">
-                    <p className="text-xs font-medium text-admin-body">
-                      Shipping details required to mark as shipped
-                    </p>
-                    <div>
-                      <label className="block text-xs text-admin-muted mb-1">
-                        AWB / Tracking number
-                      </label>
-                      <input
+                  {allowedTransitions.includes("shipped") && (
+                    <div className="space-y-3 rounded-lg border border-admin-line bg-admin-subtle/80 p-3">
+                      <p className="text-xs font-medium text-admin-body">
+                        Shipping details required to mark as shipped
+                      </p>
+                      <TextField
+                        id="ship-tracking-number"
+                        label="AWB / Tracking number"
                         type="text"
                         value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
+                        onChange={(event) => setTrackingNumber(event.target.value)}
                         placeholder="e.g. BLUEDART123456"
+                        required
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-admin-muted mb-1">Tracking URL</label>
-                      <input
+                      <TextField
+                        id="ship-tracking-url"
+                        label="Tracking URL"
                         type="url"
                         value={trackingUrl}
-                        onChange={(e) => setTrackingUrl(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md bg-admin-surface focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                        placeholder="https://..."
+                        onChange={(event) => setTrackingUrl(event.target.value)}
+                        placeholder="https://…"
+                        required
                       />
                     </div>
-                  </div>
-                )}
-                {allowedTransitions.includes("cancelled") && (
-                  <div>
-                    <label className="block text-xs text-admin-muted mb-1">Cancel reason</label>
-                    <input
+                  )}
+                  {allowedTransitions.includes("cancelled") && (
+                    <TextField
+                      id="cancel-reason"
+                      label="Cancel reason"
                       type="text"
                       value={cancelReason}
-                      onChange={(e) => setCancelReason(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                      placeholder="Reason for cancellation..."
+                      onChange={(event) => setCancelReason(event.target.value)}
+                      placeholder="Reason for cancellation…"
+                      required
                     />
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {allowedTransitions.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => updateStatus(s)}
-                      disabled={updating}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors capitalize ${
-                        s === "cancelled" || s === "refunded"
-                          ? "text-admin-muted border border-admin-line hover:bg-admin-hover"
-                          : "text-white bg-admin-primary hover:bg-admin-primary-hover"
-                      }`}
-                    >
-                      {s === "cancelled" ? "Cancel" : s === "refunded" ? "Refund" : `Mark ${s}`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {order.cancelReason && (
-              <div className="mt-3 p-2.5 bg-admin-subtle rounded-lg">
-                <p className="text-xs font-medium text-admin-body">Cancel Reason</p>
-                <p className="text-xs text-admin-muted">{order.cancelReason}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Tracking (shipped / delivered orders) */}
-          {(order.status === "shipped" || order.status === "delivered") && (
-            <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-              <h3 className="text-sm font-semibold text-admin-heading mb-3">Tracking</h3>
-
-              {order.trackingNumber ? (
-                <div className="mb-3 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm font-medium text-admin-body truncate">
-                      {order.trackingNumber}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={() => copyTrackingNumber(order.trackingNumber!)}
-                      className="shrink-0 p-1 rounded text-admin-faint hover:text-admin-body hover:bg-admin-hover transition-colors"
-                      title="Copy tracking number"
-                    >
-                      {copiedTracking === order.trackingNumber ? (
-                        <Check size={13} className="text-admin-success" />
-                      ) : (
-                        <Copy size={13} />
-                      )}
-                    </button>
-                  </div>
-                  {order.trackingUrl && (
-                    <a
-                      href={order.trackingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-admin-heading hover:underline"
-                    >
-                      Open tracking page
-                      <ExternalLink size={11} />
-                    </a>
                   )}
+                  <div className="hidden flex-wrap gap-2 lg:flex">{renderStatusButtons()}</div>
                 </div>
-              ) : (
-                <p className="mb-3 text-xs text-admin-muted">
-                  No tracking details saved for this order yet.
-                </p>
               )}
 
-              <div className="space-y-2 border-t border-admin-line pt-3">
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">
-                    AWB / Tracking number
-                  </label>
-                  <input
+              {order.cancelReason && (
+                <div className="mt-3 rounded-lg bg-admin-subtle p-2.5">
+                  <p className="text-xs font-medium text-admin-body">Cancel reason</p>
+                  <p className="text-xs text-admin-muted">{order.cancelReason}</p>
+                </div>
+              )}
+            </Surface>
+          </Section>
+
+          {(order.status === "shipped" || order.status === "delivered") && (
+            <Section title="Shipping / tracking">
+              <Surface>
+                {order.trackingNumber ? (
+                  <div className="mb-3 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <code className="truncate text-sm font-medium text-admin-body">
+                        {order.trackingNumber}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyValue(
+                            order.trackingNumber!,
+                            "saved-tracking",
+                            "Failed to copy tracking number"
+                          )
+                        }
+                        className="shrink-0 rounded p-1 text-admin-faint transition-colors hover:bg-admin-hover hover:text-admin-body"
+                        aria-label={
+                          copiedKey === "saved-tracking"
+                            ? "Tracking number copied"
+                            : "Copy tracking number"
+                        }
+                      >
+                        {copiedKey === "saved-tracking" ? (
+                          <Check aria-hidden="true" size={13} className="text-admin-success" />
+                        ) : (
+                          <Copy aria-hidden="true" size={13} />
+                        )}
+                      </button>
+                    </div>
+                    {order.trackingUrl && (
+                      <a
+                        href={order.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-admin-heading hover:underline"
+                        aria-label="Open tracking page in a new tab"
+                      >
+                        Open tracking page
+                        <ExternalLink aria-hidden="true" size={11} />
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mb-3 text-xs text-admin-muted">
+                    No tracking details saved for this order yet.
+                  </p>
+                )}
+
+                <div className="space-y-3 border-t border-admin-line pt-3">
+                  <TextField
+                    id="edit-tracking-number"
+                    label="AWB / Tracking number"
                     type="text"
                     value={trackingNumber}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
+                    onChange={(event) => setTrackingNumber(event.target.value)}
                     placeholder="e.g. BLUEDART123456"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Tracking URL</label>
-                  <input
+                  <TextField
+                    id="edit-tracking-url"
+                    label="Tracking URL"
                     type="url"
                     value={trackingUrl}
-                    onChange={(e) => setTrackingUrl(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                    placeholder="https://..."
+                    onChange={(event) => setTrackingUrl(event.target.value)}
+                    placeholder="https://…"
                   />
+                  <Button
+                    type="button"
+                    onClick={saveTracking}
+                    disabled={updating}
+                    className="w-full"
+                    aria-label={
+                      order.trackingNumber
+                        ? "Update tracking details"
+                        : "Save tracking details"
+                    }
+                  >
+                    {order.trackingNumber ? "Update tracking" : "Save tracking"}
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  onClick={saveTracking}
-                  disabled={updating}
-                  className="w-full px-3 py-1.5 text-xs font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
-                >
-                  {order.trackingNumber ? "Update tracking" : "Save tracking"}
-                </button>
-              </div>
-            </div>
+              </Surface>
+            </Section>
           )}
 
-          {/* Customer */}
-          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-            <h3 className="text-sm font-semibold text-admin-heading mb-3">Customer</h3>
-            <p className="text-sm text-admin-body">{order.user?.name || "N/A"}</p>
-            <p className="text-xs text-admin-faint">{order.user?.email || ""}</p>
-          </div>
-
-          {/* Shipping Address */}
-          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-            <h3 className="text-sm font-semibold text-admin-heading mb-3">Shipping Address</h3>
-            <div className="text-sm text-admin-muted space-y-0.5">
-              <p className="font-medium text-admin-body">{order.shippingAddress.name}</p>
-              <p>{order.shippingAddress.line1}</p>
-              {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
-              <p>
-                {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.pincode}
-              </p>
-              <p className="text-admin-faint">{order.shippingAddress.phone}</p>
-            </div>
-          </div>
-
-          {/* Payment */}
-          <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-            <h3 className="text-sm font-semibold text-admin-heading mb-3">Payment</h3>
-            <div className="space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-admin-muted">Method</span>
-                <span className="text-admin-body capitalize">{order.payment.method || "N/A"}</span>
+          <Section title="Customer">
+            <Surface>
+              <p className="text-sm text-admin-body">{order.user?.name || "N/A"}</p>
+              <p className="text-xs text-admin-faint">{order.user?.email || ""}</p>
+              <div className="mt-4 border-t border-admin-line pt-3 text-sm text-admin-muted">
+                <p className="text-xs font-medium uppercase tracking-wide text-admin-faint">
+                  Shipping address
+                </p>
+                <p className="mt-1.5 font-medium text-admin-body">{order.shippingAddress.name}</p>
+                <p>{order.shippingAddress.line1}</p>
+                {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
+                <p>
+                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                  {order.shippingAddress.pincode}
+                </p>
+                <p className="text-admin-faint">{order.shippingAddress.phone}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-admin-muted">Amount</span>
-                <span className="text-admin-body">
-                  {order.payment.currency} {(order.payment.amountPaid / 100).toLocaleString("en-IN")}
-                </span>
-              </div>
-              {order.payment.paidAt && (
+            </Surface>
+          </Section>
+
+          <Section title="Payment">
+            <Surface>
+              <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-admin-muted">Paid at</span>
-                  <span className="text-admin-body text-xs">
-                    {new Date(order.payment.paidAt).toLocaleString("en-IN")}
+                  <span className="text-admin-muted">Method</span>
+                  <span className="capitalize text-admin-body">{order.payment.method || "N/A"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-admin-muted">Amount</span>
+                  <span className="tabular text-admin-body">
+                    {order.payment.currency}{" "}
+                    {(order.payment.amountPaid / 100).toLocaleString("en-IN")}
                   </span>
                 </div>
+                {order.payment.paidAt && (
+                  <div className="flex justify-between">
+                    <span className="text-admin-muted">Paid at</span>
+                    <span className="text-xs text-admin-body">
+                      {new Date(order.payment.paidAt).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                )}
+                <div className="mt-1.5 flex items-start justify-between gap-2 border-t border-admin-line pt-1.5">
+                  <p className="break-all text-xs text-admin-faint">
+                    ID: {order.payment.razorpayPaymentId || "—"}
+                  </p>
+                  {order.payment.razorpayPaymentId && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyValue(
+                          order.payment.razorpayPaymentId!,
+                          "payment-id",
+                          "Failed to copy payment ID"
+                        )
+                      }
+                      className="shrink-0 rounded p-1 text-admin-faint transition-colors hover:bg-admin-hover hover:text-admin-body"
+                      aria-label={
+                        copiedKey === "payment-id" ? "Payment ID copied" : "Copy payment ID"
+                      }
+                    >
+                      {copiedKey === "payment-id" ? (
+                        <Check aria-hidden="true" size={12} className="text-admin-success" />
+                      ) : (
+                        <Copy aria-hidden="true" size={12} />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {order.coupon && (
+                <div className="mt-4 border-t border-admin-line pt-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-admin-faint">
+                    Coupon
+                  </p>
+                  <code className="mt-1.5 inline-block rounded bg-admin-subtle px-2 py-0.5 text-sm font-semibold text-admin-heading">
+                    {order.coupon.code}
+                  </code>
+                  <p className="mt-1 text-sm text-admin-muted">
+                    {order.coupon.type === "percentage"
+                      ? `${order.coupon.value}%`
+                      : money(order.coupon.value)}{" "}
+                    off
+                  </p>
+                  <p className="text-sm font-medium text-admin-body">
+                    -{money(order.coupon.discountAmount)}
+                  </p>
+                </div>
               )}
-              <div className="pt-1.5 mt-1.5 border-t border-admin-line">
-                <p className="text-xs text-admin-faint break-all">ID: {order.payment.razorpayPaymentId || "—"}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Coupon */}
-          {order.coupon && (
-            <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-              <h3 className="text-sm font-semibold text-admin-heading mb-3">Coupon Applied</h3>
-              <div className="space-y-1 text-sm">
-                <code className="text-sm font-semibold text-admin-heading bg-admin-subtle px-2 py-0.5 rounded">
-                  {order.coupon.code}
-                </code>
-                <p className="text-admin-muted">
-                  {order.coupon.type === "percentage" ? `${order.coupon.value}%` : `₹${order.coupon.value}`} off
-                </p>
-                <p className="text-admin-body font-medium">
-                  -₹{order.coupon.discountAmount.toLocaleString("en-IN")}
-                </p>
-              </div>
-            </div>
-          )}
+            </Surface>
+          </Section>
 
           {order.notes && (
-            <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-              <h3 className="text-sm font-semibold text-admin-heading mb-2">Notes</h3>
-              <p className="text-sm text-admin-muted">{order.notes}</p>
-            </div>
+            <Section title="Notes">
+              <Surface>
+                <p className="text-sm text-admin-muted">{order.notes}</p>
+              </Surface>
+            </Section>
           )}
         </div>
       </div>
+
+      {allowedTransitions.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-admin-line bg-admin-surface/95 p-3 backdrop-blur lg:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex max-w-[90rem] flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-admin-muted">
+                Status: <span className="font-medium capitalize text-admin-heading">{order.status}</span>
+              </p>
+              <StatusBadge status={order.status} />
+            </div>
+            <div className="flex flex-wrap gap-2">{renderStatusButtons()}</div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={pendingStatus === "cancelled"}
+        title="Cancel this order?"
+        message="Cancelling cannot be undone from this screen. Inventory may be restored if it was deducted. Confirm only if this order should not be fulfilled."
+        confirmLabel="Cancel order"
+        cancelLabel="Keep order"
+        variant="danger"
+        loading={updating}
+        onConfirm={() => void updateStatus("cancelled")}
+        onCancel={() => !updating && setPendingStatus(null)}
+      />
+      <ConfirmDialog
+        open={pendingStatus === "refunded"}
+        title="Mark this order as refunded?"
+        message="This records a refund in the order status machine. It does not by itself send money back through the payment provider."
+        confirmLabel="Mark refunded"
+        cancelLabel="Go back"
+        variant="danger"
+        loading={updating}
+        onConfirm={() => void updateStatus("refunded")}
+        onCancel={() => !updating && setPendingStatus(null)}
+      />
     </div>
   );
 }

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader";
-import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { AdminSkeleton } from "../components/FeedbackState";
+import { Button } from "../components/Button";
+import { TextField } from "../components/Fields";
 import type { PermissionMeta } from "@/lib/auth/permissions";
 
 interface RoleRow {
@@ -252,12 +254,19 @@ export default function RolesPage() {
       />
 
       {error && (
-        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-admin-danger-line bg-admin-danger-soft p-3 text-sm text-admin-danger"
+        >
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 rounded-lg border border-admin-success-line bg-admin-success-soft p-3 text-sm text-admin-success"
+        >
           {success}
         </div>
       )}
@@ -268,51 +277,41 @@ export default function RolesPage() {
           className="mb-6 bg-admin-surface rounded-xl border border-admin-line p-5 space-y-4 max-w-xl"
         >
           <h2 className="text-sm font-semibold text-admin-heading">Create role</h2>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">
-              Name
-            </label>
-            <input
+          <TextField
+              id="new-role-name"
+              label="Name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               required
               minLength={2}
               placeholder="e.g. Inventory Manager"
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">
-              Description
-            </label>
-            <input
+          />
+          <TextField
+              id="new-role-description"
+              label="Description"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               placeholder="Optional short description"
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
-            />
-          </div>
+          />
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
               disabled={creating}
-              className="px-4 py-2 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50"
             >
               {creating ? "Creating..." : "Create"}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={() => setShowCreate(false)}
-              className="px-4 py-2 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover"
+              variant="secondary"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
 
       {loading ? (
-        <LoadingSpinner />
+        <AdminSkeleton />
       ) : roles.length === 0 ? (
         <EmptyState
           title="No roles yet"
@@ -331,7 +330,8 @@ export default function RolesPage() {
                   <button
                     type="button"
                     onClick={() => selectRole(role)}
-                    className={`w-full text-left px-4 py-3 transition-colors ${
+                    aria-pressed={selectedSlug === role.slug}
+                    className={`w-full px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-admin-focus ${
                       selectedSlug === role.slug
                         ? "bg-admin-subtle"
                         : "hover:bg-admin-hover"
@@ -374,10 +374,11 @@ export default function RolesPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-admin-muted mb-1">
+                        <label htmlFor="role-display-name" className="block text-xs font-medium text-admin-muted mb-1">
                           Display name
                         </label>
                         <input
+                          id="role-display-name"
                           value={draftName}
                           onChange={(e) => setDraftName(e.target.value)}
                           disabled={isLocked}
@@ -385,10 +386,11 @@ export default function RolesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-admin-muted mb-1">
+                        <label htmlFor="role-description" className="block text-xs font-medium text-admin-muted mb-1">
                           Description
                         </label>
                         <input
+                          id="role-description"
                           value={draftDescription}
                           onChange={(e) => setDraftDescription(e.target.value)}
                           disabled={isLocked}
@@ -398,42 +400,55 @@ export default function RolesPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {!selected.isSystem && (
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => setDeleteTarget(selected)}
-                          className="px-3 py-2 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-lg"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
                         >
                           Delete
-                        </button>
+                        </Button>
                       )}
-                      <button
-                        type="button"
+                      <Button
                         onClick={handleSave}
                         disabled={saving || !dirty || isLocked}
-                        className="px-4 py-2 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50"
                       >
                         {saving ? "Saving..." : "Save ACL"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   {isLocked && (
-                    <p className="text-xs text-admin-muted">
+                    <p role="status" className="text-xs text-admin-muted">
                       Super Admin always has full access and cannot be edited.
                     </p>
                   )}
+                  {!isLocked && dirty && (
+                    <p role="status" className="text-xs font-medium text-admin-warning">
+                      Unsaved changes
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
+                    <Button
                       onClick={allCollapsed ? expandAll : collapseAll}
-                      className="px-2.5 py-1 text-xs font-medium text-admin-muted hover:bg-admin-hover rounded-md"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
                     >
                       {allCollapsed ? "Expand all" : "Collapse all"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div
+                  className="overflow-x-auto"
+                  role="region"
+                  aria-label={`${selected.name} permission matrix`}
+                  tabIndex={0}
+                >
+                  <table className="w-full min-w-[34rem] text-sm">
+                    <caption className="sr-only">
+                      Permission access control list for {selected.name}
+                    </caption>
                     <thead>
                       <tr className="border-b border-admin-line bg-admin-subtle/50">
                         <th className="text-left font-medium text-admin-muted px-5 py-3 w-12">
@@ -543,7 +558,7 @@ function AclGroup({
           <button
             type="button"
             onClick={onToggleCollapsed}
-            className="flex items-center gap-2 w-full text-left group"
+            className="group flex w-full items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus"
             aria-expanded={!collapsed}
           >
             <svg
@@ -580,6 +595,7 @@ function AclGroup({
             <td className="px-5 py-2.5">
               <input
                 type="checkbox"
+                aria-label={`${item.label}: ${item.description}`}
                 checked={locked || draftPermissions.includes(item.key)}
                 disabled={locked}
                 onChange={() => onToggle(item.key)}

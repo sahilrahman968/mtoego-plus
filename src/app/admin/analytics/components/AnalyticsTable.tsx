@@ -28,24 +28,35 @@ export default function AnalyticsTable<T>({
   rowKey,
 }: AnalyticsTableProps<T>) {
   return (
-    <div className="bg-admin-surface rounded-xl border border-admin-line overflow-visible">
-      <div className="px-5 py-4 border-b border-admin-line overflow-visible">
+    <div className="flex flex-col overflow-visible rounded-xl border border-admin-line bg-admin-surface">
+      <div className="flex items-center justify-between gap-2 overflow-visible border-b border-admin-line px-4 py-2.5">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-admin-heading">
           {title}
           {info && <InfoTooltip text={info} />}
         </h3>
+        {rows.length > 0 && (
+          <span className="shrink-0 text-xs text-admin-faint tabular-nums">
+            {rows.length}
+          </span>
+        )}
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-sm text-admin-muted text-center">{emptyMessage}</p>
+        <p className="px-4 py-8 text-center text-sm text-admin-muted">{emptyMessage}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto"
+          role="region"
+          aria-label={title}
+          tabIndex={0}
+        >
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-admin-line bg-admin-subtle/80">
+              <tr className="border-b border-admin-line bg-admin-subtle/60">
                 {columns.map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-2.5 font-medium text-admin-muted ${
+                    scope="col"
+                    className={`whitespace-nowrap px-4 py-2 text-xs font-medium text-admin-muted ${
                       col.align === "right" ? "text-right" : "text-left"
                     }`}
                   >
@@ -54,14 +65,16 @@ export default function AnalyticsTable<T>({
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-admin-line">
               {rows.map((row) => (
-                <tr key={rowKey(row)} className="border-b border-admin-line last:border-0">
+                <tr key={rowKey(row)} className="transition-colors hover:bg-admin-hover">
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`px-4 py-2.5 text-admin-body ${
-                        col.align === "right" ? "text-right" : "text-left"
+                      className={`px-4 py-2 text-admin-body ${
+                        col.align === "right"
+                          ? "whitespace-nowrap text-right tabular-nums"
+                          : "text-left"
                       }`}
                     >
                       {col.render(row)}
@@ -87,7 +100,7 @@ export function ProductLink({
   return (
     <Link
       href={`/admin/products/${id}`}
-      className="text-admin-heading hover:underline font-medium"
+      className="font-medium text-admin-heading hover:underline"
     >
       {label}
     </Link>
@@ -104,7 +117,7 @@ export function OrderLink({
   return (
     <Link
       href={`/admin/orders/${id}`}
-      className="text-admin-heading hover:underline font-medium"
+      className="font-medium text-admin-heading hover:underline"
     >
       {label}
     </Link>

@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import { validateCreateProduct } from "@/lib/validators";
 import Product from "@/models/product.model";
 import Category from "@/models/category.model";
+import { ensureProductPriceBaseline } from "@/lib/product-price-history";
 
 // ─── GET /api/admin/products — List all products (including inactive) ───────
 
@@ -126,6 +127,14 @@ export async function POST(request: NextRequest) {
     const populated = await Product.findById(product._id)
       .populate("category", "name slug")
       .lean();
+
+    if (populated) {
+      await ensureProductPriceBaseline(
+        populated._id,
+        populated.variants,
+        populated.createdAt
+      );
+    }
 
     return successResponse(populated, "Product created successfully", 201);
   } catch (err) {

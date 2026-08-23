@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthBackdrop from "@/components/store/AuthBackdrop";
 import GoogleSignInButton from "@/components/store/GoogleSignInButton";
@@ -43,41 +44,65 @@ export default function AdminLoginPage() {
     setError(message);
   }, []);
 
-  if (authLoading) return null;
+  if (authLoading) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-admin-canvas text-sm text-admin-muted"
+        role="status"
+        aria-live="polite"
+      >
+        Checking admin session…
+      </div>
+    );
+  }
 
   return (
     <AuthBackdrop>
-      <div className="text-center mb-8">
-        <div className="relative mx-auto mb-4 h-10 w-[11.25rem] overflow-hidden">
-          <Image
-            src="/logo.svg"
-            alt="Motoego"
-            fill
-            sizes="180px"
-            className="object-contain object-left"
-            priority
-          />
-        </div>
-        <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
-        <p className="text-sm text-muted mt-1">Sign in to manage your store</p>
-      </div>
-
-      <div className="auth-form">
-        <GoogleSignInButton
-          onSuccess={handleGoogleSuccess}
-          onError={handleGoogleError}
-        />
-
-        {error && (
-          <div className="p-3 mt-4 bg-danger/10 border border-danger/25 rounded-lg text-sm text-danger animate-slide-up">
-            {error}
+      <main className="admin-theme rounded-2xl border border-white/70 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <div className="mb-7 text-center">
+          <div className="relative mx-auto mb-5 h-9 w-[10rem] overflow-hidden">
+            <Image
+              src="/logo.svg"
+              alt="Motoego"
+              fill
+              sizes="160px"
+              className="object-contain"
+              priority
+            />
           </div>
-        )}
-      </div>
+          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl border border-admin-line bg-admin-subtle text-admin-heading">
+            <LockKeyhole aria-hidden="true" className="size-5" />
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight text-admin-heading">
+            Admin sign in
+          </h1>
+          <p className="mt-1.5 text-sm text-admin-muted">
+            Continue with your authorized Google account.
+          </p>
+        </div>
 
-      <p className="mt-6 text-center text-xs text-muted">
-        Only authorized admin accounts can access this panel.
-      </p>
+        <div>
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+          />
+
+          {error && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mt-4 rounded-lg border border-admin-danger-line bg-admin-danger-soft p-3 text-sm text-admin-danger"
+            >
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex items-start gap-2 border-t border-admin-line pt-5 text-xs text-admin-muted">
+          <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-admin-faint" />
+          <p>Access is restricted to approved admin accounts and recorded for security.</p>
+        </div>
+      </main>
     </AuthBackdrop>
   );
 }

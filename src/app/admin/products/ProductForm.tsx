@@ -2,9 +2,21 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Plus, Trash2, Upload, X } from "lucide-react";
 import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
 import { useToast } from "@/components/store/Toast";
 import { validateProductColorImages } from "@/lib/validators";
+import { Button } from "../components/Button";
+import {
+  CheckboxField,
+  FieldShell,
+  FormSection,
+  SelectField,
+  TextAreaField,
+  TextField,
+  controlClassName,
+} from "../components/Fields";
+import { AdminFormSkeleton } from "../components/FeedbackState";
 
 interface Variant {
   _id?: string;
@@ -409,294 +421,304 @@ export default function ProductForm({ productId }: ProductFormProps) {
   };
 
   if (fetching) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-admin-line border-t-gray-900 rounded-full animate-spin" />
-      </div>
-    );
+    return <AdminFormSkeleton />;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-3 text-sm text-admin-body bg-admin-subtle border border-admin-line rounded-lg">{error}</div>
+        <div
+          role="alert"
+          className="rounded-lg border border-admin-danger-line bg-admin-danger-soft px-3.5 py-3 text-sm text-admin-danger"
+        >
+          {error}
+        </div>
       )}
 
-      {/* Basic Info */}
-      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-        <h2 className="text-base font-semibold text-admin-heading mb-4">Basic Information</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              required
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
-              placeholder="Product title"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Slug</label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              required
-              disabled={images.length > 0}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus disabled:bg-admin-subtle disabled:text-admin-muted"
-              placeholder="product-slug"
-            />
-            {images.length > 0 && (
-              <p className="mt-1 text-xs text-admin-muted">
-                Remove all images before changing the slug.
+      <div className="grid gap-5 xl:grid-cols-3">
+        <div className="space-y-5 xl:col-span-2">
+          <FormSection
+            title="Basic details"
+            description="How the product is named and described in the storefront."
+          >
+            <div className="sm:col-span-2">
+              <TextField
+                id="product-title"
+                label="Title"
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                required
+                placeholder="Product title"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <TextField
+                id="product-slug"
+                label="Slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                required
+                disabled={images.length > 0}
+                placeholder="product-slug"
+                hint={
+                  images.length > 0
+                    ? "Remove all images before changing the slug — uploaded files are stored under it."
+                    : "Used in the storefront URL and as the image folder name."
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <TextAreaField
+                id="product-description"
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                rows={5}
+                placeholder="Product description…"
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Media"
+            description="Tag an image with a color so the storefront gallery follows the shopper's colorway. Untagged images show for every color, and the first image is the thumbnail."
+            columns={1}
+          >
+            <div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {images.map((img, index) => (
+                  <div key={img.publicId || index}>
+                    <div className="relative">
+                      <img
+                        src={img.url}
+                        alt={img.alt || `Product image ${index + 1}`}
+                        className="aspect-square w-full rounded-lg border border-admin-line object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void removeImage(index)}
+                        disabled={!!removingPublicId}
+                        aria-label={`Remove image ${index + 1}`}
+                        className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full border border-admin-line bg-admin-surface/95 text-admin-muted shadow-sm transition-colors hover:border-admin-danger-line hover:bg-admin-danger-soft hover:text-admin-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus disabled:opacity-50"
+                      >
+                        <X aria-hidden="true" className="size-4" />
+                      </button>
+                    </div>
+                    <select
+                      value={img.color || ""}
+                      onChange={(e) =>
+                        setImages((prev) =>
+                          prev.map((image, i) =>
+                            i === index ? { ...image, color: e.target.value || undefined } : image
+                          )
+                        )
+                      }
+                      className="mt-1.5 w-full rounded-md border border-admin-line-strong bg-admin-surface px-2 py-1.5 text-xs text-admin-body outline-none transition focus:border-admin-primary focus:ring-2 focus:ring-admin-focus/50"
+                      aria-label={`Color for image ${index + 1}`}
+                    >
+                      <option value="">Any color</option>
+                      {PRODUCT_COLORS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-admin-line text-admin-faint transition-colors hover:border-admin-line-strong hover:bg-admin-hover focus-within:border-admin-primary focus-within:ring-2 focus-within:ring-admin-focus/50">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="sr-only"
+                    disabled={uploading}
+                  />
+                  {uploading ? (
+                    <div className="size-5 animate-spin rounded-full border-2 border-admin-line border-t-admin-primary" />
+                  ) : (
+                    <>
+                      <Upload aria-hidden="true" className="size-5" />
+                      <span className="text-xs font-medium">Upload</span>
+                    </>
+                  )}
+                </label>
+              </div>
+              <p className="mt-3 text-xs text-admin-muted tabular">
+                {images.length} of 10 images used
               </p>
-            )}
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              rows={4}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus resize-y"
-              placeholder="Product description..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Category</label>
-            <select
+            </div>
+          </FormSection>
+        </div>
+
+        <div className="space-y-5">
+          <FormSection
+            title="Organization"
+            description="Where the product sits in the catalog."
+            columns={1}
+          >
+            <SelectField
+              id="product-category"
+              label="Category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface"
+              hint="Products need a category to appear in storefront browsing."
             >
               <option value="">Select category</option>
               {categories.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
               ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-admin-body mb-1.5">Tags</label>
-            <input
-              type="text"
+            </SelectField>
+            <TextField
+              id="product-tags"
+              label="Tags"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-admin-line rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-focus"
               placeholder="tag1, tag2, tag3"
+              hint="Comma separated. Used for search and related products."
             />
-          </div>
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
+            <div className="space-y-3">
+              <CheckboxField
+                id="product-active"
+                label="Active"
+                hint="Visible and purchasable in the store."
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
               />
-              <span className="text-sm text-admin-body">Active</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
+              <CheckboxField
+                id="product-featured"
+                label="Featured"
+                hint="Highlighted on the storefront home page."
                 checked={isFeatured}
                 onChange={(e) => setIsFeatured(e.target.checked)}
-                className="w-4 h-4 rounded border-admin-line-strong text-admin-heading focus:ring-admin-focus"
               />
-              <span className="text-sm text-admin-body">Featured</span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* Images */}
-      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-        <h2 className="text-base font-semibold text-admin-heading mb-1">Images</h2>
-        <p className="text-xs text-admin-muted mb-4">
-          Tag images with a color so the storefront gallery updates when shoppers pick that colorway.
-          Untagged images are shown for every color.
-        </p>
-        <div className="flex flex-wrap gap-3 mb-4">
-          {images.map((img, index) => (
-            <div key={img.publicId || index} className="relative group w-24">
-              <img
-                src={img.url}
-                alt={img.alt || "Product"}
-                className="w-24 h-24 rounded-lg object-cover border border-admin-line"
-              />
-              <button
-                type="button"
-                onClick={() => void removeImage(index)}
-                disabled={!!removingPublicId}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-admin-danger text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:opacity-50 transition-opacity"
-              >
-                ×
-              </button>
-              <select
-                value={img.color || ""}
-                onChange={(e) =>
-                  setImages((prev) =>
-                    prev.map((image, i) =>
-                      i === index ? { ...image, color: e.target.value || undefined } : image
-                    )
-                  )
-                }
-                className="mt-1.5 w-full rounded-md border border-admin-line bg-admin-surface px-1.5 py-1 text-[11px] text-admin-body"
-                aria-label={`Color for image ${index + 1}`}
-              >
-                <option value="">Any color</option>
-                {PRODUCT_COLORS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
             </div>
-          ))}
-          <label className="w-24 h-24 rounded-lg border-2 border-dashed border-admin-line flex items-center justify-center cursor-pointer hover:border-admin-line-strong hover:bg-admin-hover transition-colors self-start">
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-              disabled={uploading}
-            />
-            {uploading ? (
-              <div className="w-5 h-5 border-2 border-admin-line border-t-gray-900 rounded-full animate-spin" />
-            ) : (
-              <svg className="w-6 h-6 text-admin-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-              </svg>
-            )}
-          </label>
+          </FormSection>
         </div>
       </div>
 
-      {/* Variants */}
-      <div className="bg-admin-surface rounded-xl border border-admin-line p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-admin-heading">Variants</h2>
-          <button
-            type="button"
-            onClick={addVariant}
-            className="px-3 py-1.5 text-xs font-medium text-admin-heading border border-admin-line rounded-lg hover:bg-admin-hover transition-colors"
-          >
-            + Add Variant
-          </button>
-        </div>
-        <div className="space-y-4">
+      <FormSection
+        title="Pricing & inventory"
+        description="Each variant carries its own SKU, price, GST rate, and stock. Stock is tracked here — there is no separate inventory screen."
+        columns={1}
+      >
+        <div className="space-y-3">
           {variants.map((variant, index) => (
-            <div key={index} className="p-4 bg-admin-subtle rounded-lg border border-admin-line">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-admin-muted">Variant {index + 1}</span>
+            <div
+              key={index}
+              className="rounded-lg border border-admin-line bg-admin-subtle/50 p-3.5"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-admin-muted">
+                  Variant {index + 1}
+                </span>
                 {variants.length > 1 && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => removeVariant(index)}
-                    className="text-xs text-admin-muted hover:text-admin-body"
+                    aria-label={`Remove variant ${index + 1}`}
+                    className="hover:bg-admin-danger-soft hover:text-admin-danger"
+                    icon={<Trash2 aria-hidden="true" className="size-4" />}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">SKU *</label>
-                  <input
-                    type="text"
-                    value={variant.sku}
-                    onChange={(e) => updateVariant(index, "sku", e.target.value)}
-                    required
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Price (excl. GST) *</label>
-                  <input
-                    type="number"
-                    value={variant.price}
-                    onChange={(e) => updateVariant(index, "price", e.target.value)}
-                    required
-                    min={0}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">GST % *</label>
-                  <input
-                    type="number"
-                    value={variant.gst}
-                    onChange={(e) => updateVariant(index, "gst", e.target.value)}
-                    required
-                    min={0}
-                    max={100}
-                    step={1}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Compare At</label>
-                  <input
-                    type="number"
-                    value={variant.compareAtPrice || ""}
-                    onChange={(e) => updateVariant(index, "compareAtPrice", e.target.value ? Number(e.target.value) : "")}
-                    min={0}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Stock *</label>
-                  <input
-                    type="number"
-                    value={variant.stock}
-                    onChange={(e) => updateVariant(index, "stock", e.target.value)}
-                    required
-                    min={0}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Size</label>
-                  <select
-                    value={variant.size || ""}
-                    onChange={(e) => updateVariant(index, "size", e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface"
-                  >
-                    <option value="">None</option>
-                    {PRODUCT_SIZES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-admin-muted mb-1">Color</label>
-                  <div className="flex items-center gap-2">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <TextField
+                  id={`variant-${index}-sku`}
+                  label="SKU"
+                  value={variant.sku}
+                  onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                  required
+                />
+                <TextField
+                  id={`variant-${index}-price`}
+                  label="Price (excl. GST)"
+                  type="number"
+                  value={variant.price}
+                  onChange={(e) => updateVariant(index, "price", e.target.value)}
+                  required
+                  min={0}
+                />
+                <TextField
+                  id={`variant-${index}-gst`}
+                  label="GST %"
+                  type="number"
+                  value={variant.gst}
+                  onChange={(e) => updateVariant(index, "gst", e.target.value)}
+                  required
+                  min={0}
+                  max={100}
+                  step={1}
+                />
+                <TextField
+                  id={`variant-${index}-compare-at`}
+                  label="Compare at"
+                  type="number"
+                  value={variant.compareAtPrice || ""}
+                  onChange={(e) =>
+                    updateVariant(
+                      index,
+                      "compareAtPrice",
+                      e.target.value ? Number(e.target.value) : ""
+                    )
+                  }
+                  min={0}
+                />
+                <TextField
+                  id={`variant-${index}-stock`}
+                  label="Stock"
+                  type="number"
+                  value={variant.stock}
+                  onChange={(e) => updateVariant(index, "stock", e.target.value)}
+                  required
+                  min={0}
+                />
+                <SelectField
+                  id={`variant-${index}-size`}
+                  label="Size"
+                  value={variant.size || ""}
+                  onChange={(e) => updateVariant(index, "size", e.target.value)}
+                >
+                  <option value="">None</option>
+                  {PRODUCT_SIZES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </SelectField>
+                <FieldShell id={`variant-${index}-color`} label="Color">
+                  <div className="mt-1.5 flex items-center gap-2">
                     <select
+                      id={`variant-${index}-color`}
                       value={variant.color || ""}
                       onChange={(e) => updateVariant(index, "color", e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-sm border border-admin-line rounded-md focus:outline-none focus:ring-2 focus:ring-admin-focus bg-admin-surface"
+                      className={controlClassName}
                     >
                       <option value="">None</option>
                       {PRODUCT_COLORS.map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
                       ))}
                     </select>
                     {variant.color && COLOR_HEX_MAP[variant.color] && (
                       <span
-                        className="shrink-0 w-6 h-6 rounded border border-admin-line-strong"
-                        style={{
-                          background: COLOR_HEX_MAP[variant.color],
-                        }}
+                        aria-hidden="true"
+                        className="size-8 shrink-0 rounded-md border border-admin-line-strong"
+                        style={{ background: COLOR_HEX_MAP[variant.color] }}
                       />
                     )}
                   </div>
-                </div>
+                </FieldShell>
               </div>
               {typeof variant.price === "number" && variant.price > 0 && (
-                <p className="mt-2 text-xs text-admin-muted">
+                <p className="mt-3 text-xs text-admin-muted price">
                   Price incl. GST ({variant.gst ?? 18}%): ₹
                   {(
                     Number(variant.price) *
@@ -708,25 +730,23 @@ export default function ProductForm({ productId }: ProductFormProps) {
               )}
             </div>
           ))}
+          <Button
+            variant="secondary"
+            onClick={addVariant}
+            icon={<Plus aria-hidden="true" className="size-4" />}
+          >
+            Add variant
+          </Button>
         </div>
-      </div>
+      </FormSection>
 
-      {/* Submit */}
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-5 py-2.5 text-sm font-medium text-white bg-admin-primary rounded-lg hover:bg-admin-primary-hover disabled:opacity-50 transition-colors"
-        >
+      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-admin-line bg-admin-canvas/95 py-3 backdrop-blur">
+        <Button type="submit" disabled={loading}>
           {loading ? "Saving..." : isEdit ? "Update Product" : "Create Product"}
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleCancel()}
-          className="px-5 py-2.5 text-sm font-medium text-admin-body bg-admin-surface border border-admin-line-strong rounded-lg hover:bg-admin-hover transition-colors"
-        >
+        </Button>
+        <Button variant="secondary" onClick={() => void handleCancel()}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
