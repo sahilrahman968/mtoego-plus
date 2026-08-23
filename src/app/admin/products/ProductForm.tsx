@@ -4,7 +4,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, Trash2, Upload, X } from "lucide-react";
-import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
+import {
+  PRODUCT_COLORS,
+  PRODUCT_SIZES,
+  PRODUCT_SHIPPING_CATEGORIES,
+  PRODUCT_SHIPPING_CATEGORY_LABELS,
+} from "@/types";
 import { useToast } from "@/components/store/Toast";
 import { validateProductColorImages } from "@/lib/validators";
 import { Button } from "../components/Button";
@@ -25,6 +30,7 @@ interface Variant {
   color?: string;
   sku: string;
   price: number;
+  costPrice?: number;
   gst: number;
   compareAtPrice?: number;
   stock: number;
@@ -41,6 +47,7 @@ interface ProductImage {
 interface Category {
   _id: string;
   name: string;
+  parent?: string | { _id: string; name: string } | null;
 }
 
 interface RelatedProductOption {
@@ -101,6 +108,7 @@ const emptyVariant: Variant = {
   color: "",
   sku: "",
   price: 0,
+  costPrice: undefined,
   gst: 18,
   compareAtPrice: undefined,
   stock: 0,
@@ -121,6 +129,19 @@ export default function ProductForm({ productId }: ProductFormProps) {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
+  const [brand, setBrand] = useState("");
+  const [discountPercent, setDiscountPercent] = useState<number | "">("");
+  const [weight, setWeight] = useState<number | "">("");
+  const [dimLength, setDimLength] = useState<number | "">("");
+  const [dimWidth, setDimWidth] = useState<number | "">("");
+  const [dimHeight, setDimHeight] = useState<number | "">("");
+  const [reorderLevel, setReorderLevel] = useState<number | "">(0);
+  const [isReturnable, setIsReturnable] = useState(true);
+  const [returnWindowDays, setReturnWindowDays] = useState<number | "">(7);
+  const [codAvailable, setCodAvailable] = useState(true);
+  const [shippingCategory, setShippingCategory] =
+    useState<(typeof PRODUCT_SHIPPING_CATEGORIES)[number]>("standard");
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState("");
@@ -144,6 +165,25 @@ export default function ProductForm({ productId }: ProductFormProps) {
     [relatedProducts]
   );
 
+  const parentCategories = useMemo(
+    () =>
+      categories.filter((c) => {
+        const parentId =
+          typeof c.parent === "object" && c.parent ? c.parent._id : c.parent;
+        return !parentId;
+      }),
+    [categories]
+  );
+
+  const subcategoryOptions = useMemo(() => {
+    if (!category) return [];
+    return categories.filter((c) => {
+      const parentId =
+        typeof c.parent === "object" && c.parent ? c.parent._id : c.parent;
+      return parentId === category;
+    });
+  }, [categories, category]);
+
   // Fetch categories
   useEffect(() => {
     fetch("/api/admin/categories?limit=100")
@@ -166,6 +206,32 @@ export default function ProductForm({ productId }: ProductFormProps) {
           setSlug(p.slug);
           setDescription(p.description);
           setCategory(p.category?._id || p.category || "");
+          setSubcategory(p.subcategory?._id || p.subcategory || "");
+          setBrand(p.brand || "");
+          setDiscountPercent(
+            typeof p.discountPercent === "number" ? p.discountPercent : ""
+          );
+          setWeight(typeof p.weight === "number" ? p.weight : "");
+          setDimLength(
+            typeof p.dimensions?.length === "number" ? p.dimensions.length : ""
+          );
+          setDimWidth(
+            typeof p.dimensions?.width === "number" ? p.dimensions.width : ""
+          );
+          setDimHeight(
+            typeof p.dimensions?.height === "number" ? p.dimensions.height : ""
+          );
+          setReorderLevel(typeof p.reorderLevel === "number" ? p.reorderLevel : 0);
+          setIsReturnable(p.isReturnable !== false);
+          setReturnWindowDays(
+            typeof p.returnWindowDays === "number" ? p.returnWindowDays : 7
+          );
+          setCodAvailable(p.codAvailable !== false);
+          setShippingCategory(
+            PRODUCT_SHIPPING_CATEGORIES.includes(p.shippingCategory)
+              ? p.shippingCategory
+              : "standard"
+          );
           setIsActive(p.isActive);
           setIsFeatured(p.isFeatured);
           setTags(p.tags?.join(", ") || "");
@@ -186,6 +252,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
               color: v.color || "",
               sku: v.sku,
               price: v.price,
+              costPrice: v.costPrice,
               gst: typeof v.gst === "number" ? v.gst : 18,
               compareAtPrice: v.compareAtPrice,
               stock: v.stock,
@@ -465,11 +532,31 @@ export default function ProductForm({ productId }: ProductFormProps) {
     e.preventDefault();
     setError("");
 
+    const hasDimensions =
+      dimLength !== "" && dimWidth !== "" && dimHeight !== "";
+
     const body = {
       title,
       slug,
       description,
       category: category || undefined,
+      subcategory: subcategory || null,
+      brand: brand.trim() || undefined,
+      discountPercent: discountPercent === "" ? undefined : Number(discountPercent),
+      weight: weight === "" ? undefined : Number(weight),
+      dimensions: hasDimensions
+        ? {
+            length: Number(dimLength),
+            width: Number(dimWidth),
+            height: Number(dimHeight),
+          }
+        : undefined,
+      reorderLevel: reorderLevel === "" ? 0 : Number(reorderLevel),
+      isReturnable,
+      returnWindowDays:
+        returnWindowDays === "" ? 7 : Number(returnWindowDays),
+      codAvailable,
+      shippingCategory,
       isActive,
       isFeatured,
       tags: tags
@@ -482,6 +569,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
       variants: variants.map((v) => ({
         ...v,
         price: Number(v.price),
+        costPrice:
+          v.costPrice === undefined || v.costPrice === ("" as unknown)
+            ? undefined
+            : Number(v.costPrice),
         gst: Number(v.gst),
         stock: Number(v.stock),
         compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : undefined,
@@ -665,43 +756,193 @@ export default function ProductForm({ productId }: ProductFormProps) {
               id="product-category"
               label="Category"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSubcategory("");
+              }}
               hint="Products need a category to appear in storefront browsing."
             >
               <option value="">Select category</option>
-              {categories.map((c) => (
+              {parentCategories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              id="product-subcategory"
+              label="Subcategory"
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              hint={
+                !category
+                  ? "Select a category first."
+                  : subcategoryOptions.length === 0
+                    ? "No subcategories under this category."
+                    : "Optional. Must belong to the selected category."
+              }
+              disabled={!category || subcategoryOptions.length === 0}
+            >
+              <option value="">None</option>
+              {subcategoryOptions.map((c) => (
                 <option key={c._id} value={c._id}>
                   {c.name}
                 </option>
               ))}
             </SelectField>
             <TextField
+              id="product-brand"
+              label="Brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              placeholder="Nike"
+            />
+            <TextField
               id="product-tags"
               label="Tags"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="tag1, tag2, tag3"
+              placeholder="running, sports"
               hint="Comma separated. Used for search."
             />
-            <div className="space-y-3">
-              <CheckboxField
-                id="product-active"
-                label="Active"
-                hint="Visible and purchasable in the store."
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-              />
-              <CheckboxField
-                id="product-featured"
-                label="Featured"
-                hint="Highlighted on the storefront home page."
-                checked={isFeatured}
-                onChange={(e) => setIsFeatured(e.target.checked)}
-              />
-            </div>
+            <SelectField
+              id="product-status"
+              label="Status"
+              value={isActive ? "active" : "draft"}
+              onChange={(e) => setIsActive(e.target.value === "active")}
+              hint="Draft products stay hidden from the storefront."
+            >
+              <option value="active">Active</option>
+              <option value="draft">Draft</option>
+            </SelectField>
+            <CheckboxField
+              id="product-featured"
+              label="Featured"
+              hint="Highlighted on the storefront home page."
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+            />
           </FormSection>
         </div>
       </div>
+
+      <FormSection
+        title="Shipping & returns"
+        description="Fulfillment details used for shipping quotes and return policy."
+      >
+        <TextField
+          id="product-weight"
+          label="Weight (g)"
+          type="number"
+          value={weight}
+          onChange={(e) =>
+            setWeight(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          placeholder="800"
+        />
+        <TextField
+          id="product-dim-length"
+          label="Length (cm)"
+          type="number"
+          value={dimLength}
+          onChange={(e) =>
+            setDimLength(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          placeholder="35"
+        />
+        <TextField
+          id="product-dim-width"
+          label="Width (cm)"
+          type="number"
+          value={dimWidth}
+          onChange={(e) =>
+            setDimWidth(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          placeholder="25"
+        />
+        <TextField
+          id="product-dim-height"
+          label="Height (cm)"
+          type="number"
+          value={dimHeight}
+          onChange={(e) =>
+            setDimHeight(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          placeholder="15"
+        />
+        <SelectField
+          id="product-shipping-category"
+          label="Shipping category"
+          value={shippingCategory}
+          onChange={(e) =>
+            setShippingCategory(
+              e.target.value as (typeof PRODUCT_SHIPPING_CATEGORIES)[number]
+            )
+          }
+        >
+          {PRODUCT_SHIPPING_CATEGORIES.map((key) => (
+            <option key={key} value={key}>
+              {PRODUCT_SHIPPING_CATEGORY_LABELS[key]}
+            </option>
+          ))}
+        </SelectField>
+        <TextField
+          id="product-reorder-level"
+          label="Reorder level"
+          type="number"
+          value={reorderLevel}
+          onChange={(e) =>
+            setReorderLevel(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          placeholder="20"
+          hint="Alert when any variant stock falls to this level."
+        />
+        <TextField
+          id="product-discount"
+          label="Discount %"
+          type="number"
+          value={discountPercent}
+          onChange={(e) =>
+            setDiscountPercent(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          max={100}
+          placeholder="10"
+          hint="Catalog discount percentage (separate from sale campaigns)."
+        />
+        <CheckboxField
+          id="product-returnable"
+          label="Returnable"
+          hint="Customers can request a return for this product."
+          checked={isReturnable}
+          onChange={(e) => setIsReturnable(e.target.checked)}
+        />
+        <TextField
+          id="product-return-window"
+          label="Return window (days)"
+          type="number"
+          value={returnWindowDays}
+          onChange={(e) =>
+            setReturnWindowDays(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          min={0}
+          max={365}
+          disabled={!isReturnable}
+          placeholder="7"
+        />
+        <CheckboxField
+          id="product-cod"
+          label="COD available"
+          hint="Cash on delivery is offered for this product."
+          checked={codAvailable}
+          onChange={(e) => setCodAvailable(e.target.checked)}
+        />
+      </FormSection>
 
       <FormSection
         title="Related products"
@@ -827,7 +1068,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 />
                 <TextField
                   id={`variant-${index}-price`}
-                  label="Price (excl. GST)"
+                  label="Selling price (excl. GST)"
                   type="number"
                   value={variant.price}
                   onChange={(e) => updateVariant(index, "price", e.target.value)}
@@ -835,8 +1076,22 @@ export default function ProductForm({ productId }: ProductFormProps) {
                   min={0}
                 />
                 <TextField
+                  id={`variant-${index}-cost`}
+                  label="Cost price"
+                  type="number"
+                  value={variant.costPrice ?? ""}
+                  onChange={(e) =>
+                    updateVariant(
+                      index,
+                      "costPrice",
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                  min={0}
+                />
+                <TextField
                   id={`variant-${index}-gst`}
-                  label="GST %"
+                  label="Tax / GST %"
                   type="number"
                   value={variant.gst}
                   onChange={(e) => updateVariant(index, "gst", e.target.value)}
@@ -846,8 +1101,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
                   step={1}
                 />
                 <TextField
-                  id={`variant-${index}-compare-at`}
-                  label="Compare at"
+                  id={`variant-${index}-mrp`}
+                  label="MRP"
                   type="number"
                   value={variant.compareAtPrice || ""}
                   onChange={(e) =>
@@ -861,7 +1116,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 />
                 <TextField
                   id={`variant-${index}-stock`}
-                  label="Stock"
+                  label="Inventory quantity"
                   type="number"
                   value={variant.stock}
                   onChange={(e) => updateVariant(index, "stock", e.target.value)}

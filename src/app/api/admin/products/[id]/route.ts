@@ -41,6 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const product = await Product.findById(id)
       .populate("category", "name slug")
+      .populate("subcategory", "name slug")
       .populate("relatedProducts", "title slug images")
       .lean();
 
@@ -107,6 +108,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    if (body.subcategory !== undefined && body.subcategory !== null && body.subcategory !== "") {
+      const subcategory = await Category.findById(body.subcategory).lean();
+      if (!subcategory) {
+        return errorResponse("Subcategory not found", 404);
+      }
+      const parentCategoryId = body.category
+        ? String(body.category)
+        : String(existingProduct.category);
+      const parentId = subcategory.parent ? String(subcategory.parent) : null;
+      if (parentId !== parentCategoryId) {
+        return errorResponse("Subcategory must belong to the selected category", 400);
+      }
+    }
+
     // If variants are being updated, check for SKU conflicts
     if (body.variants) {
       const newSkus = body.variants.map((v: { sku: string }) => v.sku.toUpperCase());
@@ -166,6 +181,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.slug !== undefined) updateData.slug = body.slug.toLowerCase().trim();
     if (body.description !== undefined) updateData.description = body.description.trim();
     if (body.category !== undefined) updateData.category = body.category;
+    if (body.subcategory !== undefined) {
+      updateData.subcategory = body.subcategory || null;
+    }
+    if (body.brand !== undefined) {
+      updateData.brand =
+        typeof body.brand === "string" ? body.brand.trim() || undefined : undefined;
+    }
     if (body.images !== undefined) updateData.images = body.images;
     if (body.variants !== undefined) {
       updateData.variants = body.variants.map((v: Record<string, unknown>) => ({
@@ -174,11 +196,48 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         color: typeof v.color === "string" ? v.color.trim() : undefined,
         sku: (v.sku as string).toUpperCase().trim(),
         price: v.price,
+        costPrice: typeof v.costPrice === "number" ? v.costPrice : undefined,
         gst: typeof v.gst === "number" ? v.gst : 18,
         compareAtPrice: v.compareAtPrice,
         stock: v.stock ?? 0,
         isActive: v.isActive ?? true,
       }));
+    }
+    if (body.discountPercent !== undefined) {
+      updateData.discountPercent =
+        body.discountPercent === null || body.discountPercent === ""
+          ? undefined
+          : body.discountPercent;
+    }
+    if (body.weight !== undefined) {
+      updateData.weight =
+        body.weight === null || body.weight === "" ? undefined : body.weight;
+    }
+    if (body.dimensions !== undefined) {
+      if (
+        body.dimensions &&
+        typeof body.dimensions === "object" &&
+        body.dimensions.length != null &&
+        body.dimensions.width != null &&
+        body.dimensions.height != null
+      ) {
+        updateData.dimensions = {
+          length: Number(body.dimensions.length),
+          width: Number(body.dimensions.width),
+          height: Number(body.dimensions.height),
+        };
+      } else {
+        updateData.dimensions = undefined;
+      }
+    }
+    if (body.reorderLevel !== undefined) updateData.reorderLevel = body.reorderLevel;
+    if (body.isReturnable !== undefined) updateData.isReturnable = body.isReturnable;
+    if (body.returnWindowDays !== undefined) {
+      updateData.returnWindowDays = body.returnWindowDays;
+    }
+    if (body.codAvailable !== undefined) updateData.codAvailable = body.codAvailable;
+    if (body.shippingCategory !== undefined) {
+      updateData.shippingCategory = body.shippingCategory;
     }
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
     if (body.isFeatured !== undefined) updateData.isFeatured = body.isFeatured;
@@ -193,6 +252,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       runValidators: true,
     })
       .populate("category", "name slug")
+      .populate("subcategory", "name slug")
       .populate("relatedProducts", "title slug images")
       .lean();
 

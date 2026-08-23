@@ -132,6 +132,22 @@ export const PRODUCT_SIZES = [
 
 export type ProductSize = (typeof PRODUCT_SIZES)[number];
 
+export const PRODUCT_SHIPPING_CATEGORIES = [
+  "standard",
+  "express",
+  "fragile",
+  "heavy",
+] as const;
+
+export type ProductShippingCategory = (typeof PRODUCT_SHIPPING_CATEGORIES)[number];
+
+export const PRODUCT_SHIPPING_CATEGORY_LABELS: Record<ProductShippingCategory, string> = {
+  standard: "Standard",
+  express: "Express",
+  fragile: "Fragile",
+  heavy: "Heavy",
+};
+
 // ─── Product Image ──────────────────────────────────────────────────────────
 
 export interface ProductImage {
@@ -142,6 +158,12 @@ export interface ProductImage {
   color?: string;
 }
 
+export interface ProductDimensions {
+  length: number;
+  width: number;
+  height: number;
+}
+
 // ─── Product Variant ────────────────────────────────────────────────────────
 
 export interface ProductVariant {
@@ -149,9 +171,13 @@ export interface ProductVariant {
   size?: string;
   color?: string;
   sku: string;
+  /** Selling price exclusive of GST. */
   price: number;
+  /** Cost / landed price (internal). */
+  costPrice?: number;
   /** GST percentage (0–100). Price is exclusive of GST. */
   gst: number;
+  /** MRP / compare-at price. */
   compareAtPrice?: number;
   stock: number;
   isActive?: boolean;
@@ -165,8 +191,18 @@ export interface IProduct {
   slug: string;
   description: string;
   category: Types.ObjectId;
+  subcategory?: Types.ObjectId | null;
+  brand?: string;
   images: ProductImage[];
   variants: ProductVariant[];
+  discountPercent?: number;
+  weight?: number;
+  dimensions?: ProductDimensions;
+  reorderLevel?: number;
+  isReturnable: boolean;
+  returnWindowDays?: number;
+  codAvailable: boolean;
+  shippingCategory: ProductShippingCategory;
   isActive: boolean;
   isFeatured: boolean;
   tags: string[];
@@ -182,8 +218,18 @@ export interface CreateProductBody {
   slug: string;
   description: string;
   category: string;
+  subcategory?: string | null;
+  brand?: string;
   images?: ProductImage[];
   variants: ProductVariant[];
+  discountPercent?: number;
+  weight?: number;
+  dimensions?: ProductDimensions;
+  reorderLevel?: number;
+  isReturnable?: boolean;
+  returnWindowDays?: number;
+  codAvailable?: boolean;
+  shippingCategory?: ProductShippingCategory;
   isActive?: boolean;
   isFeatured?: boolean;
   tags?: string[];

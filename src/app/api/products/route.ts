@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       if (!isValidObjectId(categoryParam)) {
         return errorResponse("Invalid category", 400);
       }
-      filter.category = new Types.ObjectId(categoryParam);
+      const categoryId = new Types.ObjectId(categoryParam);
+      filter.$or = [{ category: categoryId }, { subcategory: categoryId }];
     }
 
     const featuredParam = searchParams.get("featured");

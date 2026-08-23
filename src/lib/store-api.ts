@@ -389,6 +389,7 @@ export interface ProductVariantData {
   color?: string;
   sku: string;
   price: number;
+  costPrice?: number;
   /** GST percentage (0–100). Price is exclusive of GST. */
   gst?: number;
   compareAtPrice?: number;
@@ -409,8 +410,18 @@ export interface ProductData {
   slug: string;
   description: string;
   category: { _id: string; name: string; slug: string };
+  subcategory?: { _id: string; name: string; slug: string } | null;
+  brand?: string;
   images: ProductImageData[];
   variants: ProductVariantData[];
+  discountPercent?: number;
+  weight?: number;
+  dimensions?: { length: number; width: number; height: number };
+  reorderLevel?: number;
+  isReturnable?: boolean;
+  returnWindowDays?: number;
+  codAvailable?: boolean;
+  shippingCategory?: string;
   isActive: boolean;
   isFeatured: boolean;
   tags: string[];

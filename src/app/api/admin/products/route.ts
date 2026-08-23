@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     const [products, total] = await Promise.all([
       Product.find(filter)
         .populate("category", "name slug")
+        .populate("subcategory", "name slug")
         .sort({ [sort]: order })
         .skip(skip)
         .limit(limit)
@@ -88,6 +89,19 @@ export async function POST(request: NextRequest) {
       return errorResponse("Category not found", 404);
     }
 
+    let subcategoryId: string | null = null;
+    if (body.subcategory) {
+      const subcategory = await Category.findById(body.subcategory).lean();
+      if (!subcategory) {
+        return errorResponse("Subcategory not found", 404);
+      }
+      const parentId = subcategory.parent ? String(subcategory.parent) : null;
+      if (parentId !== String(body.category)) {
+        return errorResponse("Subcategory must belong to the selected category", 400);
+      }
+      subcategoryId = String(subcategory._id);
+    }
+
     // Check for duplicate slug
     const existingSlug = await Product.findOne({ slug: body.slug }).lean();
     if (existingSlug) {
@@ -118,22 +132,48 @@ export async function POST(request: NextRequest) {
         ? body.relatedProductsHeading.trim()
         : "Related products";
 
+    const dimensions =
+      body.dimensions &&
+      typeof body.dimensions === "object" &&
+      body.dimensions.length != null &&
+      body.dimensions.width != null &&
+      body.dimensions.height != null
+        ? {
+            length: Number(body.dimensions.length),
+            width: Number(body.dimensions.width),
+            height: Number(body.dimensions.height),
+          }
+        : undefined;
+
     const product = await Product.create({
       title: body.title.trim(),
       slug: body.slug.toLowerCase().trim(),
       description: body.description.trim(),
       category: body.category,
+      subcategory: subcategoryId,
+      brand: typeof body.brand === "string" ? body.brand.trim() || undefined : undefined,
       images: body.images ?? [],
       variants: body.variants.map((v: Record<string, unknown>) => ({
         size: typeof v.size === "string" ? v.size.trim() : undefined,
         color: typeof v.color === "string" ? v.color.trim() : undefined,
         sku: (v.sku as string).toUpperCase().trim(),
         price: v.price,
+        costPrice: typeof v.costPrice === "number" ? v.costPrice : undefined,
         gst: typeof v.gst === "number" ? v.gst : 18,
         compareAtPrice: v.compareAtPrice,
         stock: v.stock ?? 0,
         isActive: v.isActive ?? true,
       })),
+      discountPercent:
+        typeof body.discountPercent === "number" ? body.discountPercent : undefined,
+      weight: typeof body.weight === "number" ? body.weight : undefined,
+      dimensions,
+      reorderLevel: typeof body.reorderLevel === "number" ? body.reorderLevel : 0,
+      isReturnable: body.isReturnable ?? true,
+      returnWindowDays:
+        typeof body.returnWindowDays === "number" ? body.returnWindowDays : 7,
+      codAvailable: body.codAvailable ?? true,
+      shippingCategory: body.shippingCategory ?? "standard",
       isActive: body.isActive ?? true,
       isFeatured: body.isFeatured ?? false,
       tags: body.tags ?? [],
@@ -143,6 +183,7 @@ export async function POST(request: NextRequest) {
 
     const populated = await Product.findById(product._id)
       .populate("category", "name slug")
+      .populate("subcategory", "name slug")
       .populate("relatedProducts", "title slug images")
       .lean();
 

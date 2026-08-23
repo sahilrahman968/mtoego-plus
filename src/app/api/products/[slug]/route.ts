@@ -21,6 +21,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     const product = await Product.findOne({ slug, isActive: true })
       .populate("category", "name slug")
+      .populate("subcategory", "name slug")
       .populate({
         path: "relatedProducts",
         match: { isActive: true },

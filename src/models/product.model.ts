@@ -1,5 +1,9 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
-import { PRODUCT_COLORS, PRODUCT_SIZES } from "@/types";
+import {
+  PRODUCT_COLORS,
+  PRODUCT_SIZES,
+  PRODUCT_SHIPPING_CATEGORIES,
+} from "@/types";
 
 // ─── Sub-document Interfaces ────────────────────────────────────────────────
 
@@ -11,14 +15,24 @@ export interface IProductImage {
   color?: string;
 }
 
+export interface IProductDimensions {
+  length: number;
+  width: number;
+  height: number;
+}
+
 export interface IProductVariant {
   _id: Types.ObjectId;
   size?: string;
   color?: string;
   sku: string;
+  /** Selling price exclusive of GST. */
   price: number;
+  /** Cost / landed price (internal). */
+  costPrice?: number;
   /** GST percentage (0–100). Price is exclusive of GST. */
   gst: number;
+  /** MRP / compare-at price. */
   compareAtPrice?: number;
   stock: number;
   isActive: boolean;
@@ -32,8 +46,24 @@ export interface IProductDocument extends Document {
   slug: string;
   description: string;
   category: Types.ObjectId;
+  /** Optional child of `category`. */
+  subcategory: Types.ObjectId | null;
+  brand?: string;
   images: IProductImage[];
   variants: IProductVariant[];
+  /** Catalog discount % (0–100), distinct from sale campaigns. */
+  discountPercent?: number;
+  /** Product weight in grams. */
+  weight?: number;
+  /** Package dimensions in centimetres. */
+  dimensions?: IProductDimensions;
+  /** Alert when any variant stock falls to or below this level. */
+  reorderLevel?: number;
+  isReturnable: boolean;
+  /** Days after delivery within which returns are accepted. */
+  returnWindowDays?: number;
+  codAvailable: boolean;
+  shippingCategory: (typeof PRODUCT_SHIPPING_CATEGORIES)[number];
   isActive: boolean;
   isFeatured: boolean;
   tags: string[];
@@ -102,6 +132,10 @@ const productVariantSchema = new Schema<IProductVariant>(
       required: [true, "Price is required"],
       min: [0, "Price cannot be negative"],
     },
+    costPrice: {
+      type: Number,
+      min: [0, "Cost price cannot be negative"],
+    },
     gst: {
       type: Number,
       required: [true, "GST is required"],
@@ -111,7 +145,7 @@ const productVariantSchema = new Schema<IProductVariant>(
     },
     compareAtPrice: {
       type: Number,
-      min: [0, "Compare-at price cannot be negative"],
+      min: [0, "MRP cannot be negative"],
     },
     stock: {
       type: Number,
@@ -125,6 +159,27 @@ const productVariantSchema = new Schema<IProductVariant>(
     },
   },
   { _id: true }
+);
+
+const productDimensionsSchema = new Schema<IProductDimensions>(
+  {
+    length: {
+      type: Number,
+      required: [true, "Length is required"],
+      min: [0, "Length cannot be negative"],
+    },
+    width: {
+      type: Number,
+      required: [true, "Width is required"],
+      min: [0, "Width cannot be negative"],
+    },
+    height: {
+      type: Number,
+      required: [true, "Height is required"],
+      min: [0, "Height cannot be negative"],
+    },
+  },
+  { _id: false }
 );
 
 // ─── Product Schema ─────────────────────────────────────────────────────────
@@ -157,6 +212,16 @@ const productSchema = new Schema<IProductDocument>(
       ref: "Category",
       required: [true, "Category is required"],
     },
+    subcategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+    brand: {
+      type: String,
+      trim: true,
+      maxlength: [100, "Brand must be at most 100 characters"],
+    },
     images: {
       type: [productImageSchema],
       default: [],
@@ -172,6 +237,45 @@ const productSchema = new Schema<IProductDocument>(
         validator: (val: IProductVariant[]) => val.length >= 1 && val.length <= 50,
         message: "A product must have between 1 and 50 variants",
       },
+    },
+    discountPercent: {
+      type: Number,
+      min: [0, "Discount cannot be negative"],
+      max: [100, "Discount cannot exceed 100"],
+    },
+    weight: {
+      type: Number,
+      min: [0, "Weight cannot be negative"],
+    },
+    dimensions: {
+      type: productDimensionsSchema,
+    },
+    reorderLevel: {
+      type: Number,
+      min: [0, "Reorder level cannot be negative"],
+      default: 0,
+    },
+    isReturnable: {
+      type: Boolean,
+      default: true,
+    },
+    returnWindowDays: {
+      type: Number,
+      min: [0, "Return window cannot be negative"],
+      max: [365, "Return window cannot exceed 365 days"],
+      default: 7,
+    },
+    codAvailable: {
+      type: Boolean,
+      default: true,
+    },
+    shippingCategory: {
+      type: String,
+      enum: {
+        values: [...PRODUCT_SHIPPING_CATEGORIES],
+        message: "Shipping category must be a predefined value",
+      },
+      default: "standard",
     },
     isActive: {
       type: Boolean,
@@ -218,11 +322,13 @@ const productSchema = new Schema<IProductDocument>(
 // ─── Indexes ────────────────────────────────────────────────────────────────
 // slug unique index is created by `unique: true` on the field
 productSchema.index({ category: 1 });
+productSchema.index({ subcategory: 1 });
+productSchema.index({ brand: 1 });
 productSchema.index({ isActive: 1, isFeatured: 1 });
 productSchema.index({ isActive: 1, createdAt: -1 });
 productSchema.index({ "variants.sku": 1 }, { unique: true, sparse: true });
 productSchema.index({ tags: 1 });
-productSchema.index({ title: "text", description: "text", tags: "text" });
+productSchema.index({ title: "text", description: "text", tags: "text", brand: "text" });
 
 // ─── Virtual: computed price range ──────────────────────────────────────────
 

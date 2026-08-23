@@ -81,6 +81,112 @@ export function validateProductColorImages(
   return errors;
 }
 
+
+const PRODUCT_SHIPPING_CATEGORIES = ["standard", "express", "fragile", "heavy"] as const;
+
+function isOptionalNonNegNumber(value: unknown): boolean {
+  return typeof value === "number" && !Number.isNaN(value) && value >= 0;
+}
+
+/** Shared optional commerce fields on create/update product payloads. */
+function validateProductCommerceFields(
+  body: Record<string, unknown>,
+  errors: string[],
+  opts: { requiredCategory?: boolean } = {}
+): void {
+  if (body.subcategory !== undefined && body.subcategory !== null && body.subcategory !== "") {
+    if (typeof body.subcategory !== "string" || !isValidObjectId(body.subcategory)) {
+      errors.push("Subcategory must be a valid ID");
+    }
+  }
+
+  if (body.brand !== undefined && body.brand !== null) {
+    if (typeof body.brand !== "string") {
+      errors.push("Brand must be a string");
+    } else if (body.brand.trim().length > 100) {
+      errors.push("Brand must be at most 100 characters");
+    }
+  }
+
+  if (body.discountPercent !== undefined && body.discountPercent !== null && body.discountPercent !== "") {
+    if (
+      typeof body.discountPercent !== "number" ||
+      Number.isNaN(body.discountPercent) ||
+      body.discountPercent < 0 ||
+      body.discountPercent > 100
+    ) {
+      errors.push("Discount must be a number between 0 and 100");
+    }
+  }
+
+  if (body.weight !== undefined && body.weight !== null && body.weight !== "") {
+    if (!isOptionalNonNegNumber(body.weight)) {
+      errors.push("Weight must be a non-negative number (grams)");
+    }
+  }
+
+  if (body.dimensions !== undefined && body.dimensions !== null) {
+    if (typeof body.dimensions !== "object" || Array.isArray(body.dimensions)) {
+      errors.push("Dimensions must be an object with length, width, and height");
+    } else {
+      const d = body.dimensions as Record<string, unknown>;
+      for (const key of ["length", "width", "height"] as const) {
+        if (d[key] !== undefined && d[key] !== null && d[key] !== "") {
+          if (!isOptionalNonNegNumber(d[key])) {
+            errors.push(`Dimensions.${key} must be a non-negative number`);
+          }
+        }
+      }
+      const present = [d.length, d.width, d.height].filter(
+        (v) => v !== undefined && v !== null && v !== ""
+      );
+      if (present.length > 0 && present.length < 3) {
+        errors.push("Dimensions require length, width, and height together");
+      }
+    }
+  }
+
+  if (body.reorderLevel !== undefined && body.reorderLevel !== null && body.reorderLevel !== "") {
+    if (!isOptionalNonNegNumber(body.reorderLevel)) {
+      errors.push("Reorder level must be a non-negative number");
+    }
+  }
+
+  if (body.isReturnable !== undefined && typeof body.isReturnable !== "boolean") {
+    errors.push("Returnable must be a boolean");
+  }
+
+  if (
+    body.returnWindowDays !== undefined &&
+    body.returnWindowDays !== null &&
+    body.returnWindowDays !== ""
+  ) {
+    if (
+      typeof body.returnWindowDays !== "number" ||
+      Number.isNaN(body.returnWindowDays) ||
+      body.returnWindowDays < 0 ||
+      body.returnWindowDays > 365
+    ) {
+      errors.push("Return window must be a number between 0 and 365");
+    }
+  }
+
+  if (body.codAvailable !== undefined && typeof body.codAvailable !== "boolean") {
+    errors.push("COD available must be a boolean");
+  }
+
+  if (body.shippingCategory !== undefined && body.shippingCategory !== null) {
+    if (
+      typeof body.shippingCategory !== "string" ||
+      !(PRODUCT_SHIPPING_CATEGORIES as readonly string[]).includes(body.shippingCategory)
+    ) {
+      errors.push("Shipping category must be standard, express, fragile, or heavy");
+    }
+  }
+
+  void opts;
+}
+
 export function validateCreateProduct(body: Record<string, unknown>): ValidationResult {
   const errors: string[] = [];
 
@@ -138,7 +244,10 @@ export function validateCreateProduct(body: Record<string, unknown>): Validation
         errors.push(`Variant ${i}: Stock must be a non-negative number`);
       }
       if (v.compareAtPrice !== undefined && (typeof v.compareAtPrice !== "number" || v.compareAtPrice < 0)) {
-        errors.push(`Variant ${i}: Compare-at price must be a non-negative number`);
+        errors.push(`Variant ${i}: MRP must be a non-negative number`);
+      }
+      if (v.costPrice !== undefined && (typeof v.costPrice !== "number" || v.costPrice < 0)) {
+        errors.push(`Variant ${i}: Cost price must be a non-negative number`);
       }
     });
   }
@@ -198,6 +307,8 @@ export function validateCreateProduct(body: Record<string, unknown>): Validation
       errors.push("Related products heading must be at most 80 characters");
     }
   }
+
+  validateProductCommerceFields(body, errors);
 
   if (Array.isArray(body.variants) && Array.isArray(body.images)) {
     errors.push(
@@ -275,6 +386,12 @@ export function validateUpdateProduct(body: Record<string, unknown>): Validation
         if (v.stock !== undefined && (typeof v.stock !== "number" || v.stock < 0)) {
           errors.push(`Variant ${i}: Stock must be a non-negative number`);
         }
+        if (v.compareAtPrice !== undefined && (typeof v.compareAtPrice !== "number" || v.compareAtPrice < 0)) {
+          errors.push(`Variant ${i}: MRP must be a non-negative number`);
+        }
+        if (v.costPrice !== undefined && (typeof v.costPrice !== "number" || v.costPrice < 0)) {
+          errors.push(`Variant ${i}: Cost price must be a non-negative number`);
+        }
       });
     }
   }
@@ -325,6 +442,8 @@ export function validateUpdateProduct(body: Record<string, unknown>): Validation
       errors.push("Related products heading must be at most 80 characters");
     }
   }
+
+  validateProductCommerceFields(body, errors);
 
   if (Array.isArray(body.variants) && Array.isArray(body.images)) {
     errors.push(
