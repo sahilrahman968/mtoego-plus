@@ -55,7 +55,10 @@ export async function GET(request: NextRequest) {
       period: window.period,
       label: window.label,
       metrics: {
-        revenue: withDelta(current.revenue, previous.revenue),
+        totalRevenue: withDelta(current.totalRevenue, previous.totalRevenue),
+        netRevenue: withDelta(current.netRevenue, previous.netRevenue),
+        /** @deprecated Prefer totalRevenue / netRevenue — kept for dashboard compatibility */
+        revenue: withDelta(current.netRevenue, previous.netRevenue),
         orders: withDelta(current.orders, previous.orders),
         aov: withDelta(current.aov, previous.aov),
         paymentSuccessPct: withDelta(paySuccess, paySuccessPrev),
@@ -72,6 +75,7 @@ export async function GET(request: NextRequest) {
         cancelled: {
           count: current.cancelledCount,
           revenue: round2(current.cancelledRevenue),
+          paidRevenue: round2(current.cancelledPaidRevenue),
         },
         refundRatePct: withDelta(refundRate(current), refundRate(previous)),
         refunded: {

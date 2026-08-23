@@ -21,6 +21,7 @@ import {
   fetchCategories,
   fetchHomeSale,
   fetchProducts,
+  fetchSales,
   type CategoryData,
   type ProductData,
   type SaleCampaignPublic,
@@ -176,6 +177,7 @@ export default function HomeClient() {
   const [flashCampaign, setFlashCampaign] = useState<SaleCampaignPublic | null>(
     null
   );
+  const [bannerSales, setBannerSales] = useState<SaleCampaignPublic[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>(
     []
   );
@@ -208,12 +210,14 @@ export default function HomeClient() {
   useEffect(() => {
     async function load() {
       try {
-        const [catRes, featuredRes, newestRes, homeSaleRes] = await Promise.all([
-          fetchCategories(null),
-          fetchProducts({ featured: true, limit: 8 }),
-          fetchProducts({ sort: "createdAt", order: "desc", limit: 8 }),
-          fetchHomeSale(),
-        ]);
+        const [catRes, featuredRes, newestRes, homeSaleRes, salesRes] =
+          await Promise.all([
+            fetchCategories(null),
+            fetchProducts({ featured: true, limit: 8 }),
+            fetchProducts({ sort: "createdAt", order: "desc", limit: 8 }),
+            fetchHomeSale(),
+            fetchSales(),
+          ]);
 
         if (catRes.success && catRes.data) {
           const stocked = catRes.data.filter(
@@ -237,6 +241,18 @@ export default function HomeClient() {
         } else {
           setFlashCampaign(null);
           setFlashDeals([]);
+        }
+
+        if (salesRes.success && salesRes.data?.items) {
+          setBannerSales(
+            salesRes.data.items.filter(
+              (sale) =>
+                sale.banner?.url &&
+                (sale.status === "live" || sale.status === "scheduled")
+            )
+          );
+        } else {
+          setBannerSales([]);
         }
       } catch {
         // silently fail
@@ -347,23 +363,13 @@ export default function HomeClient() {
       primaryCta: { label: "Shop The Drop", href: "/products" },
       secondaryCta: { label: "All Gear", href: "/categories" },
     },
+    ...bannerSales.map((sale) => ({
+      id: `sale-${sale._id}`,
+      image: sale.banner!.url,
+      imageAlt: sale.banner?.alt || sale.title,
+      href: `/sale/${sale.slug}`,
+    })),
   ];
-
-  if (
-    flashCampaign?.banner?.url &&
-    (flashCampaign.status === "live" || flashCampaign.status === "scheduled")
-  ) {
-    heroSlides.push({
-      id: `sale-${flashCampaign._id}`,
-      image: flashCampaign.banner.url,
-      imageAlt: flashCampaign.banner.alt || flashCampaign.title,
-      primaryCta: {
-        label: flashCampaign.bannerCtaLabel || "Shop The Sale",
-        href: flashCampaign.bannerCtaHref || `/sale/${flashCampaign.slug}`,
-      },
-      ctaPosition: flashCampaign.bannerCtaPosition,
-    });
-  }
 
   return (
     <div>

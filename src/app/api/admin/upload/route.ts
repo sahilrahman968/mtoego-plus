@@ -8,21 +8,19 @@ import {
   resolveUploadFolder,
   sanitizePublicId,
   UPLOAD_CONFIG,
-  CloudinaryUploadResult,
+  type CloudinaryUploadResult,
 } from "@/lib/cloudinary";
 
 // ─── POST /api/admin/upload — Upload images to Cloudinary ───────────────────
 // Admin-only. Accepts multipart/form-data with one or more "files" fields,
 // plus optional folder/publicId fields. Product uploads also include productSlug
-// and startIndex so their names are stable across multiple upload batches.
+// and startIndex so names stay stable across multiple upload batches.
 
 export async function POST(request: NextRequest) {
   try {
-    // ── Auth: admin only ────────────────────────────────────────────────
     const auth = await requirePermission(request, "media.upload");
     if (auth.error) return auth.error;
 
-    // ── Parse multipart form data ───────────────────────────────────────
     const formData = await request.formData();
     const files = formData.getAll("files");
 
@@ -34,7 +32,6 @@ export async function POST(request: NextRequest) {
       return errorResponse("Maximum 10 files per upload", 400);
     }
 
-    // ── Destination folder and naming ───────────────────────────────────
     const folderField = formData.get("folder");
     const folderKey = typeof folderField === "string" ? folderField : null;
     const productSlugField = formData.get("productSlug");
@@ -50,11 +47,12 @@ export async function POST(request: NextRequest) {
     const folder = resolveUploadFolder(folderKey, productSlug);
 
     const publicIdField = formData.get("publicId");
-    const basePublicId = folderKey === "products"
-      ? productSlug
-      : typeof publicIdField === "string"
-        ? sanitizePublicId(publicIdField)
-        : "";
+    const basePublicId =
+      folderKey === "products"
+        ? productSlug
+        : typeof publicIdField === "string"
+          ? sanitizePublicId(publicIdField)
+          : "";
 
     if (typeof publicIdField === "string" && publicIdField && !basePublicId) {
       return errorResponse("Invalid image name", 400);
@@ -65,17 +63,14 @@ export async function POST(request: NextRequest) {
       typeof startIndexField === "string" ? Number(startIndexField) : 1;
     if (
       folderKey === "products" &&
-      (
-        !Number.isInteger(startIndex) ||
+      (!Number.isInteger(startIndex) ||
         startIndex < 1 ||
-        startIndex + files.length - 1 > 10
-      )
+        startIndex + files.length - 1 > 10)
     ) {
       return errorResponse("Invalid product image start index", 400);
     }
 
-    // ── Validate and upload each file ───────────────────────────────────
-    const results: CloudinaryUploadResult[] = [];
+    const uploaded: CloudinaryUploadResult[] = [];
     const errors: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -86,15 +81,17 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Validate MIME type
-      if (!UPLOAD_CONFIG.allowedMimeTypes.includes(file.type as typeof UPLOAD_CONFIG.allowedMimeTypes[number])) {
+      if (
+        !(UPLOAD_CONFIG.allowedMimeTypes as readonly string[]).includes(
+          file.type
+        )
+      ) {
         errors.push(
           `"${file.name}": Invalid file type "${file.type}". Allowed: ${UPLOAD_CONFIG.allowedMimeTypes.join(", ")}`
         );
         continue;
       }
 
-      // Validate file size
       if (file.size > UPLOAD_CONFIG.maxFileSize) {
         const maxMB = UPLOAD_CONFIG.maxFileSize / (1024 * 1024);
         errors.push(
@@ -103,38 +100,47 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Convert to buffer and upload
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const publicId = folderKey === "products"
-          ? `${basePublicId}-${startIndex + i}`
-          : basePublicId
-            ? files.length > 1
-              ? `${basePublicId}-${i + 1}`
-              : basePublicId
-            : undefined;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const publicId =
+          folderKey === "products"
+            ? `${basePublicId}-${startIndex + i}`
+            : basePublicId
+              ? files.length > 1
+                ? `${basePublicId}-${i + 1}`
+                : basePublicId
+              : undefined;
+
         const result = await uploadImage(buffer, {
           folder,
           publicId,
           overwrite: !!publicId,
+          mimeType: file.type,
         });
-        results.push(result);
+        uploaded.push(result);
       } catch (uploadErr) {
-        const msg = uploadErr instanceof Error ? uploadErr.message : "Unknown upload error";
+        const msg =
+          uploadErr instanceof Error
+            ? uploadErr.message
+            : uploadErr &&
+                typeof uploadErr === "object" &&
+                "message" in uploadErr &&
+                typeof (uploadErr as { message: unknown }).message === "string"
+              ? (uploadErr as { message: string }).message
+              : "Unknown upload error";
+        console.error("[Upload] Cloudinary error for", file.name, uploadErr);
         errors.push(`"${file.name}": Upload failed — ${msg}`);
       }
     }
 
-    // ── Response ────────────────────────────────────────────────────────
-    if (results.length === 0) {
+    if (uploaded.length === 0) {
       return errorResponse("All uploads failed", 400, errors.join("; "));
     }
 
     return successResponse(
-      { uploaded: results, errors: errors.length > 0 ? errors : undefined },
-      `${results.length} of ${files.length} file(s) uploaded successfully`,
-      errors.length > 0 ? 207 : 201 // 207 Multi-Status if partial success
+      { uploaded, errors: errors.length > 0 ? errors : undefined },
+      `${uploaded.length} of ${files.length} file(s) uploaded successfully`,
+      errors.length > 0 ? 207 : 201
     );
   } catch (err) {
     console.error("[Upload] Error:", err);
@@ -177,7 +183,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const renamed = await renameImage(publicId, target);
-    return successResponse({ ...renamed, renamed: true }, "Image renamed successfully");
+    return successResponse(
+      { ...renamed, renamed: true },
+      "Image renamed successfully"
+    );
   } catch (err) {
     console.error("[Upload] Rename error:", err);
     return errorResponse("Failed to rename image", 500);

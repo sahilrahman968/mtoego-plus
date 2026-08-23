@@ -8,6 +8,11 @@ import { PeriodWindow, eachDayLabel } from "@/lib/analytics/periods";
 import { avg, median, round2, safeDivide } from "@/lib/analytics/format";
 
 export interface OrderWindowTotals {
+  /** Gross GMV: paid + later-refunded + cancelled-after-payment */
+  totalRevenue: number;
+  /** Net after subtracting refunded + cancelled-after-payment amounts */
+  netRevenue: number;
+  /** Alias of netRevenue — kept for existing call sites */
   revenue: number;
   orders: number;
   aov: number;
@@ -17,6 +22,8 @@ export interface OrderWindowTotals {
   cancelledUnpaidCount: number;
   cancelledCount: number;
   cancelledRevenue: number;
+  /** Cancelled orders that had completed payment */
+  cancelledPaidRevenue: number;
   refundedCount: number;
   refundedRevenue: number;
   pendingCount: number;
@@ -24,7 +31,14 @@ export interface OrderWindowTotals {
 }
 
 async function totalsForRange(start: Date, end: Date): Promise<OrderWindowTotals> {
-  const [paidAgg, cancelledUnpaid, cancelled, refunded, pending] = await Promise.all([
+  const [
+    paidAgg,
+    cancelledUnpaid,
+    cancelled,
+    cancelledPaid,
+    refunded,
+    pending,
+  ] = await Promise.all([
     Order.aggregate([
       {
         $match: {
@@ -68,6 +82,21 @@ async function totalsForRange(start: Date, end: Date): Promise<OrderWindowTotals
     Order.aggregate([
       {
         $match: {
+          status: "cancelled",
+          createdAt: { $gte: start, $lte: end },
+          "payment.paidAt": { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          revenue: { $sum: "$pricing.grandTotal" },
+        },
+      },
+    ]),
+    Order.aggregate([
+      {
+        $match: {
           status: "refunded",
           createdAt: { $gte: start, $lte: end },
         },
@@ -104,21 +133,30 @@ async function totalsForRange(start: Date, end: Date): Promise<OrderWindowTotals
     subtotalAfterDiscount: 0,
   };
   const cancel = cancelled[0] || { count: 0, revenue: 0 };
+  const cancelPaid = cancelledPaid[0] || { revenue: 0 };
   const refund = refunded[0] || { count: 0, revenue: 0 };
   const pend = pending[0] || { count: 0, revenue: 0 };
 
+  const netRevenue = paid.revenue || 0;
+  const refundedRevenue = refund.revenue || 0;
+  const cancelledPaidRevenue = cancelPaid.revenue || 0;
+  const totalRevenue = netRevenue + refundedRevenue + cancelledPaidRevenue;
+
   return {
-    revenue: paid.revenue || 0,
+    totalRevenue,
+    netRevenue,
+    revenue: netRevenue,
     orders: paid.orders || 0,
-    aov: safeDivide(paid.revenue || 0, paid.orders || 0),
+    aov: safeDivide(netRevenue, paid.orders || 0),
     discount: paid.discount || 0,
     subtotalAfterDiscount: paid.subtotalAfterDiscount || 0,
     paidCount: paid.orders || 0,
     cancelledUnpaidCount: cancelledUnpaid,
     cancelledCount: cancel.count || 0,
     cancelledRevenue: cancel.revenue || 0,
+    cancelledPaidRevenue,
     refundedCount: refund.count || 0,
-    refundedRevenue: refund.revenue || 0,
+    refundedRevenue,
     pendingCount: pend.count || 0,
     pendingRevenue: pend.revenue || 0,
   };
@@ -149,6 +187,7 @@ export function refundRate(t: OrderWindowTotals): number {
 
 export async function getDailyOrderSeries(window: PeriodWindow) {
   const useWeekly = window.dayCount > 90;
+  const granularity: "day" | "week" = useWeekly ? "week" : "day";
 
   const agg = await Order.aggregate([
     {
@@ -177,32 +216,35 @@ export async function getDailyOrderSeries(window: PeriodWindow) {
   ]);
 
   if (useWeekly) {
-    return agg.map(
-      (r: {
-        _id: string;
-        revenue: number;
-        orders: number;
-        discount: number;
-        subtotal: number;
-        bucketStart: Date;
-      }) => {
-        const revenue = r.revenue || 0;
-        const orders = r.orders || 0;
-        const start = new Date(r.bucketStart);
-        return {
-          date: r._id,
-          label: start.toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-          }),
-          revenue,
-          orders,
-          aov: round2(safeDivide(revenue, orders)),
-          discount: r.discount || 0,
-          subtotal: r.subtotal || 0,
-        };
-      }
-    );
+    return {
+      granularity,
+      series: agg.map(
+        (r: {
+          _id: string;
+          revenue: number;
+          orders: number;
+          discount: number;
+          subtotal: number;
+          bucketStart: Date;
+        }) => {
+          const revenue = r.revenue || 0;
+          const orders = r.orders || 0;
+          const start = new Date(r.bucketStart);
+          return {
+            date: r._id,
+            label: start.toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+            }),
+            revenue,
+            orders,
+            aov: round2(safeDivide(revenue, orders)),
+            discount: r.discount || 0,
+            subtotal: r.subtotal || 0,
+          };
+        }
+      ),
+    };
   }
 
   const byDate = new Map(
@@ -212,20 +254,23 @@ export async function getDailyOrderSeries(window: PeriodWindow) {
     ])
   );
 
-  return eachDayLabel(window.start, window.dayCount).map(({ date, label }) => {
-    const row = byDate.get(date);
-    const revenue = row?.revenue || 0;
-    const orders = row?.orders || 0;
-    return {
-      date,
-      label,
-      revenue,
-      orders,
-      aov: round2(safeDivide(revenue, orders)),
-      discount: row?.discount || 0,
-      subtotal: row?.subtotal || 0,
-    };
-  });
+  return {
+    granularity,
+    series: eachDayLabel(window.start, window.dayCount).map(({ date, label }) => {
+      const row = byDate.get(date);
+      const revenue = row?.revenue || 0;
+      const orders = row?.orders || 0;
+      return {
+        date,
+        label,
+        revenue,
+        orders,
+        aov: round2(safeDivide(revenue, orders)),
+        discount: row?.discount || 0,
+        subtotal: row?.subtotal || 0,
+      };
+    }),
+  };
 }
 
 export async function getWeeklyPaymentSuccess(window: PeriodWindow) {
@@ -383,12 +428,24 @@ export async function getTopProducts(window: PeriodWindow, limit = LIST_LIMIT) {
     { $sort: { revenue: -1 } },
     { $limit: limit },
     {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+    {
       $project: {
         _id: 0,
         productId: { $toString: "$_id" },
         title: 1,
         revenue: 1,
         units: 1,
+        imageUrl: {
+          $ifNull: [{ $arrayElemAt: ["$product.images.url", 0] }, null],
+        },
       },
     },
   ]);
@@ -425,6 +482,7 @@ export async function getTopCategories(window: PeriodWindow, limit = LIST_LIMIT)
       $group: {
         _id: "$productDoc.category",
         name: { $first: { $ifNull: ["$categoryDoc.name", "Uncategorized"] } },
+        imageUrl: { $first: "$categoryDoc.image.url" },
         revenue: { $sum: "$items.total" },
         units: { $sum: "$items.quantity" },
       },
@@ -442,6 +500,7 @@ export async function getTopCategories(window: PeriodWindow, limit = LIST_LIMIT)
           ],
         },
         name: 1,
+        imageUrl: { $ifNull: ["$imageUrl", null] },
         revenue: 1,
         units: 1,
       },
@@ -517,7 +576,7 @@ export async function getPaymentMethodMix(window: PeriodWindow) {
         revenue: { $sum: "$pricing.grandTotal" },
       },
     },
-    { $sort: { count: -1 } },
+    { $sort: { revenue: -1 } },
     {
       $project: {
         _id: 0,
@@ -527,6 +586,81 @@ export async function getPaymentMethodMix(window: PeriodWindow) {
       },
     },
   ]);
+}
+
+/**
+ * Revenue attributed to customer acquisition channel (signup method).
+ * Used as sales-channel proxy until paid-media / marketplace channels exist.
+ */
+export async function getRevenueBySalesChannel(window: PeriodWindow) {
+  const rows = await Order.aggregate([
+    {
+      $match: {
+        status: { $in: PAID_STATUSES },
+        createdAt: { $gte: window.start, $lte: window.end },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "userDoc",
+      },
+    },
+    { $unwind: { path: "$userDoc", preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        channel: {
+          $cond: [
+            { $ifNull: ["$userDoc.googleId", false] },
+            "Google",
+            {
+              $cond: [
+                {
+                  $and: [
+                    { $ifNull: ["$userDoc.email", false] },
+                    { $ifNull: ["$userDoc.password", false] },
+                  ],
+                },
+                "Email / password",
+                {
+                  $cond: [
+                    {
+                      $and: [
+                        { $ifNull: ["$userDoc.phone", false] },
+                        { $eq: ["$userDoc.isPhoneVerified", true] },
+                      ],
+                    },
+                    "Phone verified",
+                    "Other",
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$channel",
+        revenue: { $sum: "$pricing.grandTotal" },
+        orders: { $sum: 1 },
+      },
+    },
+    { $sort: { revenue: -1 } },
+    {
+      $project: {
+        _id: 0,
+        channel: "$_id",
+        revenue: 1,
+        orders: 1,
+      },
+    },
+  ]);
+
+  return rows as { channel: string; revenue: number; orders: number }[];
 }
 
 export async function getCouponPerformance(window: PeriodWindow) {

@@ -27,3 +27,6 @@ export const PRICE_DRIFT_THRESHOLD = 0.05;
 
 export const LIST_LIMIT = 10;
 export const VIP_LIMIT = 20;
+
+/** Top revenue percentile for “whale” customers (0.1 = top 10%) */
+export const TOP_REVENUE_PERCENTILE = 0.1;

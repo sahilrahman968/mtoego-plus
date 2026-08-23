@@ -4,10 +4,11 @@ import {
   LIST_LIMIT,
   ONE_AND_DONE_DAYS,
   PAID_STATUSES,
+  TOP_REVENUE_PERCENTILE,
   VIP_LIMIT,
 } from "@/lib/analytics/constants";
 import { PeriodWindow } from "@/lib/analytics/periods";
-import { median, round2, safeDivide } from "@/lib/analytics/format";
+import { avg, median, round2, safeDivide } from "@/lib/analytics/format";
 import { Types } from "mongoose";
 
 interface CustomerLtv {
@@ -54,9 +55,14 @@ async function buildCustomerLtvMap(): Promise<Map<string, CustomerLtv>> {
     },
   ]);
 
-  return new Map(
-    rows.map((r: CustomerLtv) => [r.userId, r])
-  );
+  return new Map(rows.map((r: CustomerLtv) => [r.userId, r]));
+}
+
+function monthlyMarketingSpendInr(): number {
+  const raw = process.env.ANALYTICS_MONTHLY_MARKETING_SPEND_INR;
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 export async function getNewVsReturning(window: PeriodWindow) {
@@ -69,8 +75,8 @@ export async function getNewVsReturning(window: PeriodWindow) {
 
   if (paidInPeriod.length === 0) {
     return {
-      newCustomers: { orders: 0, revenue: 0 },
-      returningCustomers: { orders: 0, revenue: 0 },
+      newCustomers: { count: 0, orders: 0, revenue: 0 },
+      returningCustomers: { count: 0, orders: 0, revenue: 0 },
     };
   }
 
@@ -89,21 +95,217 @@ export async function getNewVsReturning(window: PeriodWindow) {
   let newRevenue = 0;
   let retOrders = 0;
   let retRevenue = 0;
+  const newUserIds = new Set<string>();
+  const retUserIds = new Set<string>();
 
   for (const o of paidInPeriod) {
     const uid = String(o.user);
     if (returningUsers.has(uid)) {
       retOrders += 1;
       retRevenue += o.pricing.grandTotal;
+      retUserIds.add(uid);
     } else {
       newOrders += 1;
       newRevenue += o.pricing.grandTotal;
+      newUserIds.add(uid);
     }
   }
 
   return {
-    newCustomers: { orders: newOrders, revenue: round2(newRevenue) },
-    returningCustomers: { orders: retOrders, revenue: round2(retRevenue) },
+    newCustomers: {
+      count: newUserIds.size,
+      orders: newOrders,
+      revenue: round2(newRevenue),
+    },
+    returningCustomers: {
+      count: retUserIds.size,
+      orders: retOrders,
+      revenue: round2(retRevenue),
+    },
+  };
+}
+
+/**
+ * Core customer-health KPIs: CLV, CAC, repeat rate, purchase cadence, CLV:CAC.
+ * CAC uses optional ANALYTICS_MONTHLY_MARKETING_SPEND_INR prorated to the window.
+ */
+export async function getCustomerHealth(window: PeriodWindow) {
+  const [ltvMap, newVsReturning, gapDays] = await Promise.all([
+    buildCustomerLtvMap(),
+    getNewVsReturning(window),
+    getDaysBetweenPurchases(),
+  ]);
+
+  const buyers = [...ltvMap.values()];
+  const buyerCount = buyers.length;
+  const repeatBuyers = buyers.filter((b) => b.orderCount >= 2).length;
+  const totalLtv = buyers.reduce((sum, b) => sum + b.ltv, 0);
+  const totalOrders = buyers.reduce((sum, b) => sum + b.orderCount, 0);
+
+  const clv = round2(safeDivide(totalLtv, buyerCount));
+  const avgOrdersPerCustomer = round2(safeDivide(totalOrders, buyerCount));
+  const repeatPurchaseRatePct = round2(
+    safeDivide(repeatBuyers, buyerCount) * 100
+  );
+
+  const monthlySpend = monthlyMarketingSpendInr();
+  const marketingSpendInPeriod =
+    monthlySpend > 0
+      ? round2(monthlySpend * (window.dayCount / 30))
+      : null;
+  const newCount = newVsReturning.newCustomers.count;
+  const cac =
+    marketingSpendInPeriod !== null && newCount > 0
+      ? round2(safeDivide(marketingSpendInPeriod, newCount))
+      : null;
+  const clvCacRatio =
+    cac !== null && cac > 0 ? round2(safeDivide(clv, cac)) : null;
+
+  return {
+    newCustomers: newVsReturning.newCustomers,
+    returningCustomers: newVsReturning.returningCustomers,
+    repeatPurchaseRatePct,
+    clv,
+    avgOrdersPerCustomer,
+    medianDaysBetweenPurchases: gapDays.median,
+    avgDaysBetweenPurchases: gapDays.avg,
+    purchaseGapSampleSize: gapDays.sampleSize,
+    marketingSpendInPeriod,
+    cac,
+    clvCacRatio,
+    cacConfigured: monthlySpend > 0,
+    buyers: buyerCount,
+  };
+}
+
+async function getDaysBetweenPurchases() {
+  const rows = await Order.aggregate([
+    { $match: { status: { $in: PAID_STATUSES } } },
+    { $sort: { createdAt: 1 } },
+    {
+      $group: {
+        _id: "$user",
+        dates: { $push: "$createdAt" },
+      },
+    },
+    {
+      $match: {
+        "dates.1": { $exists: true },
+      },
+    },
+  ]);
+
+  const gaps: number[] = [];
+  for (const row of rows as { dates: Date[] }[]) {
+    const dates = row.dates
+      .map((d) => new Date(d).getTime())
+      .sort((a, b) => a - b);
+    for (let i = 1; i < dates.length; i++) {
+      const days = (dates[i] - dates[i - 1]) / (1000 * 60 * 60 * 24);
+      if (Number.isFinite(days) && days >= 0) gaps.push(days);
+    }
+  }
+
+  const med = median(gaps);
+  const mean = avg(gaps);
+  return {
+    median: med !== null ? round2(med) : null,
+    avg: mean !== null ? round2(mean) : null,
+    sampleSize: gaps.length,
+  };
+}
+
+/** Distinct paying customers by last known shipping location */
+export async function getCustomersByLocation(limit = LIST_LIMIT) {
+  const [byState, byCity] = await Promise.all([
+    Order.aggregate([
+      { $match: { status: { $in: PAID_STATUSES } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$user",
+          state: { $first: "$shippingAddress.state" },
+        },
+      },
+      {
+        $group: {
+          _id: { $ifNull: ["$state", "Unknown"] },
+          customers: { $sum: 1 },
+        },
+      },
+      { $sort: { customers: -1 } },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 0,
+          state: "$_id",
+          customers: 1,
+        },
+      },
+    ]),
+    Order.aggregate([
+      { $match: { status: { $in: PAID_STATUSES } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$user",
+          city: { $first: "$shippingAddress.city" },
+          state: { $first: "$shippingAddress.state" },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            city: { $ifNull: ["$city", "Unknown"] },
+            state: { $ifNull: ["$state", "Unknown"] },
+          },
+          customers: { $sum: 1 },
+        },
+      },
+      { $sort: { customers: -1 } },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 0,
+          city: "$_id.city",
+          state: "$_id.state",
+          customers: 1,
+        },
+      },
+    ]),
+  ]);
+
+  return { byState, byCity };
+}
+
+/** Top revenue percentile of buyers (default top 10%) */
+export async function getTopRevenueCustomers(
+  percentile = TOP_REVENUE_PERCENTILE
+) {
+  const ltvMap = await buildCustomerLtvMap();
+  const sorted = [...ltvMap.values()].sort((a, b) => b.ltv - a.ltv);
+  const totalRevenue = sorted.reduce((sum, c) => sum + c.ltv, 0);
+  const count =
+    sorted.length === 0
+      ? 0
+      : Math.max(1, Math.ceil(sorted.length * percentile));
+  const slice = sorted.slice(0, count);
+  const revenue = slice.reduce((sum, c) => sum + c.ltv, 0);
+
+  return {
+    percentile: round2(percentile * 100),
+    count: slice.length,
+    buyerCount: sorted.length,
+    revenue: round2(revenue),
+    revenueSharePct: round2(safeDivide(revenue, totalRevenue) * 100),
+    customers: slice.map((c) => ({
+      userId: c.userId,
+      name: c.name,
+      email: c.email,
+      orderCount: c.orderCount,
+      ltv: round2(c.ltv),
+      lastOrderAt: c.lastOrderAt?.toISOString() || null,
+    })),
   };
 }
 
@@ -209,7 +411,7 @@ export async function getOneAndDone(limit = LIST_LIMIT) {
         c.lastOrderAt !== null &&
         c.lastOrderAt < cutoff
     )
-    .sort((a, b) => (a.lastOrderAt!.getTime() - b.lastOrderAt!.getTime()))
+    .sort((a, b) => a.lastOrderAt!.getTime() - b.lastOrderAt!.getTime())
     .slice(0, limit)
     .map((c) => ({
       userId: c.userId,
@@ -287,7 +489,15 @@ export async function getCohortRetention(monthsBack = 6) {
 
   for (let i = monthsBack - 1; i >= 0; i--) {
     const cohortStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const cohortEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+    const cohortEnd = new Date(
+      now.getFullYear(),
+      now.getMonth() - i + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
     const label = cohortStart.toLocaleDateString("en-IN", {
       month: "short",
       year: "numeric",
@@ -329,7 +539,6 @@ export async function getCohortRetention(monthsBack = 6) {
         59,
         999
       );
-      // Don't compute future months
       if (mStart > now) return null;
       const buyers = new Set(
         orders

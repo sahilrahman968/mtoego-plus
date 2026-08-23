@@ -90,22 +90,30 @@ function sumBy<T>(rows: T[], pick: (row: T) => number): number {
   return rows.reduce((total, row) => total + (pick(row) || 0), 0);
 }
 
-export function DailyRevenueChart({ data }: { data: DailyPoint[] }) {
+export function DailyRevenueChart({
+  data,
+  granularity = "day",
+}: {
+  data: DailyPoint[];
+  granularity?: "day" | "week";
+}) {
   const total = sumBy(data, (d) => d.revenue);
   const peak = data.reduce<DailyPoint | null>(
     (best, point) => (!best || point.revenue > best.revenue ? point : best),
     null
   );
+  const unit = granularity === "week" ? "weeks" : "days";
+  const title = granularity === "week" ? "Weekly revenue" : "Daily revenue";
   const summary = peak
-    ? `${formatFullCurrency(total)} over ${data.length} days · peak ${formatFullCurrency(
+    ? `${formatFullCurrency(total)} over ${data.length} ${unit} · peak ${formatFullCurrency(
         peak.revenue
       )} on ${peak.label}`
     : "No revenue recorded in this period";
 
   return (
     <ChartCard
-      title="Daily revenue"
-      info="Total paid order revenue for each day in the selected period."
+      title={title}
+      info={`Total paid order revenue for each ${granularity === "week" ? "week" : "day"} in the selected period.`}
       summary={summary}
     >
       <ResponsiveContainer width="100%" height="100%">
@@ -364,6 +372,54 @@ export function PaymentSuccessChart({
           <Bar yAxisId="left" dataKey="failed" name="Failed checkout" stackId="a" fill={chart.seriesMuted} />
           <Line yAxisId="right" type="monotone" dataKey="successRate" name="Success %" stroke={chart.emphasis} strokeWidth={2} dot={false} />
         </ComposedChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+}
+
+export function MonthlyRevenueChart({
+  data,
+}: {
+  data: { month: string; year: number; revenue: number; orders: number }[];
+}) {
+  const chartData = data.map((row) => ({
+    ...row,
+    label: `${row.month} ${String(row.year).slice(2)}`,
+  }));
+  const total = sumBy(chartData, (d) => d.revenue);
+  const peak = chartData.reduce<(typeof chartData)[number] | null>(
+    (best, point) => (!best || point.revenue > best.revenue ? point : best),
+    null
+  );
+  const summary = peak
+    ? `${formatFullCurrency(total)} over ${chartData.length} months · peak ${formatFullCurrency(
+        peak.revenue
+      )} in ${peak.label}`
+    : "No monthly revenue recorded";
+
+  return (
+    <ChartCard
+      title="Monthly revenue"
+      info="Paid order revenue by calendar month for the last 12 months (independent of the period toggle)."
+      summary={summary}
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={chartMargin}>
+          <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={axisTick} />
+          <YAxis axisLine={false} tickLine={false} tick={axisTick} tickFormatter={formatCurrency} />
+          <Tooltip
+            contentStyle={tooltipStyle}
+            formatter={(value, _name, item) => {
+              const orders = (item?.payload as { orders?: number })?.orders ?? 0;
+              return [
+                `₹${Number(value ?? 0).toLocaleString("en-IN")} (${orders} orders)`,
+                "Revenue",
+              ];
+            }}
+          />
+          <Bar dataKey="revenue" fill={chart.series} radius={[3, 3, 0, 0]} />
+        </BarChart>
       </ResponsiveContainer>
     </ChartCard>
   );

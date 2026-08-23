@@ -68,11 +68,13 @@ export async function getLowStockBestsellers(
   const products = await Product.find({
     _id: { $in: productIds },
   })
-    .select("title variants")
+    .select("title variants images")
     .lean();
 
   const stockMap = new Map<string, number>();
+  const imageMap = new Map<string, string | null>();
   for (const p of products) {
+    imageMap.set(String(p._id), p.images?.[0]?.url ?? null);
     for (const v of p.variants || []) {
       stockMap.set(`${p._id}:${v._id}`, v.stock);
     }
@@ -82,6 +84,7 @@ export async function getLowStockBestsellers(
     productId: string;
     variantId: string;
     title: string;
+    imageUrl: string | null;
     variantLabel: string;
     sku: string;
     unitsSold: number;
@@ -104,6 +107,7 @@ export async function getLowStockBestsellers(
       productId: String(s._id.product),
       variantId: String(s._id.variant),
       title: s.title,
+      imageUrl: imageMap.get(String(s._id.product)) ?? null,
       variantLabel: s.variantLabel || "",
       sku: s.sku,
       unitsSold: s.unitsSold,
@@ -135,10 +139,15 @@ export async function getDeadStock(limit = LIST_LIMIT) {
   );
 
   const products = await Product.find({ isActive: true })
-    .select("title variants isActive")
+    .select("title variants isActive images")
     .lean();
 
-  const dead: { productId: string; title: string; stock: number }[] = [];
+  const dead: {
+    productId: string;
+    title: string;
+    imageUrl: string | null;
+    stock: number;
+  }[] = [];
   for (const p of products) {
     const totalStock = (p.variants || []).reduce(
       (sum, v) => sum + (v.isActive ? v.stock : 0),
@@ -149,6 +158,7 @@ export async function getDeadStock(limit = LIST_LIMIT) {
     dead.push({
       productId: String(p._id),
       title: p.title,
+      imageUrl: p.images?.[0]?.url ?? null,
       stock: totalStock,
     });
     if (dead.length >= limit) break;

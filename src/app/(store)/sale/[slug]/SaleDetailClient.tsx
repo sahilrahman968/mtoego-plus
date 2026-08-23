@@ -401,12 +401,7 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
       ? "Sale ended"
       : "Ends in";
   const showCountdown = (campaign.status === "live" || isScheduled) && !countdown.ended;
-  const headline = campaign.title;
   const banner = campaign.banner?.url ? campaign.banner : null;
-  const secondaryCta =
-    campaign.bannerCtaHref && campaign.bannerCtaHref !== `/sale/${campaign.slug}`
-      ? { label: campaign.bannerCtaLabel || "Learn more", href: campaign.bannerCtaHref }
-      : null;
 
   return (
     <div>
@@ -477,13 +472,19 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
               )}
             </div>
 
-            <h1 className="hero-title text-4xl uppercase text-foreground sm:text-6xl lg:text-7xl">
-              {headline}
-            </h1>
+            {!banner && (
+              <>
+                <h1 className="hero-title text-4xl uppercase text-foreground sm:text-6xl lg:text-7xl">
+                  {campaign.title}
+                </h1>
 
-            {campaign.subtitle && (
-              <p className="body-copy mt-5 text-foreground/80">{campaign.subtitle}</p>
+                {campaign.subtitle && (
+                  <p className="body-copy mt-5 text-foreground/80">{campaign.subtitle}</p>
+                )}
+              </>
             )}
+
+            {banner && <h1 className="sr-only">{campaign.title}</h1>}
 
             {showCountdown ? (
               <div className="mt-9">
@@ -506,14 +507,6 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
                 {isScheduled ? "Preview the drop" : "Shop the sale"}
                 <ArrowRight size={14} />
               </a>
-              {secondaryCta && (
-                <Link
-                  href={secondaryCta.href}
-                  className="btn-text inline-flex items-center gap-2 border border-white/25 bg-black/35 px-7 py-3.5 text-white transition-colors hover:border-primary hover:bg-black/60"
-                >
-                  {secondaryCta.label}
-                </Link>
-              )}
             </div>
           </div>
         </motion.div>

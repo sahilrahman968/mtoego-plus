@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep Cloudinary on real Node https — Turbopack bundling breaks upload_stream.
+  serverExternalPackages: ["cloudinary"],
   images: {
     loader: "custom",
     loaderFile: "./src/lib/image-loader.ts",

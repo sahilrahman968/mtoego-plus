@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       })
         .sort({ priority: -1, startsAt: -1 })
         .select("title slug badgeLabel endsAt")
-        .limit(3)
+        .limit(2)
         .lean();
       return successResponse({ items: campaigns }, "Live sales retrieved");
     }

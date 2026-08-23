@@ -4,14 +4,15 @@ import { requirePermission } from "@/lib/auth/require-auth";
 import { connectDB } from "@/lib/db/mongoose";
 import { getPeriodWindowFromSearchParams } from "@/lib/analytics/periods";
 import {
-  getNewVsReturning,
+  getCustomerHealth,
   getSignupToPurchase,
   getLtvBands,
-  getVipList,
   getOneAndDone,
   getNeverOrdered,
   getSignupChannelMix,
   getCohortRetention,
+  getCustomersByLocation,
+  getTopRevenueCustomers,
 } from "@/lib/analytics/customers";
 import { getCallbackPipeline } from "@/lib/analytics/callbacks";
 
@@ -33,23 +34,25 @@ export async function GET(request: NextRequest) {
     }
 
     const [
-      newVsReturning,
+      health,
       signupToPurchase,
       ltvBands,
-      vipList,
+      topDecile,
       oneAndDone,
       neverOrdered,
       signupChannels,
+      customersByLocation,
       cohorts,
       callbacks,
     ] = await Promise.all([
-      getNewVsReturning(window),
+      getCustomerHealth(window),
       getSignupToPurchase(),
       getLtvBands(),
-      getVipList(),
+      getTopRevenueCustomers(),
       getOneAndDone(),
       getNeverOrdered(),
       getSignupChannelMix(),
+      getCustomersByLocation(),
       getCohortRetention(6),
       getCallbackPipeline(),
     ]);
@@ -57,13 +60,18 @@ export async function GET(request: NextRequest) {
     return successResponse({
       period: window.period,
       label: window.label,
-      newVsReturning,
+      health,
+      newVsReturning: {
+        newCustomers: health.newCustomers,
+        returningCustomers: health.returningCustomers,
+      },
       signupToPurchase,
       ltvBands,
-      vipList,
+      topDecile,
       oneAndDone,
       neverOrdered,
       signupChannels,
+      customersByLocation,
       cohorts,
       callbacks,
     });

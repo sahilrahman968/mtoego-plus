@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ImageIcon } from "lucide-react";
 import InfoTooltip from "@/app/admin/components/InfoTooltip";
 
 export interface AnalyticsColumn<T> {
@@ -17,6 +18,32 @@ interface AnalyticsTableProps<T> {
   rows: T[];
   emptyMessage?: string;
   rowKey: (row: T) => string;
+}
+
+function EntityThumb({
+  src,
+  alt,
+}: {
+  src?: string | null;
+  alt: string;
+}) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="size-8 shrink-0 rounded-md bg-admin-subtle object-cover"
+      />
+    );
+  }
+  return (
+    <div
+      className="flex size-8 shrink-0 items-center justify-center rounded-md bg-admin-subtle text-admin-faint"
+      aria-hidden="true"
+    >
+      <ImageIcon className="size-3.5" />
+    </div>
+  );
 }
 
 export default function AnalyticsTable<T>({
@@ -93,17 +120,35 @@ export default function AnalyticsTable<T>({
 export function ProductLink({
   id,
   label,
+  imageUrl,
 }: {
   id: string;
   label: string;
+  imageUrl?: string | null;
 }) {
   return (
     <Link
       href={`/admin/products/${id}`}
-      className="font-medium text-admin-heading hover:underline"
+      className="inline-flex max-w-full items-center gap-2.5 font-medium text-admin-heading hover:underline"
     >
-      {label}
+      <EntityThumb src={imageUrl} alt="" />
+      <span className="min-w-0 truncate">{label}</span>
     </Link>
+  );
+}
+
+export function CategoryLabel({
+  label,
+  imageUrl,
+}: {
+  label: string;
+  imageUrl?: string | null;
+}) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-2.5 font-medium text-admin-heading">
+      <EntityThumb src={imageUrl} alt="" />
+      <span className="min-w-0 truncate">{label}</span>
+    </span>
   );
 }
 

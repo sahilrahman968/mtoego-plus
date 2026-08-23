@@ -3,15 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
 import { useToast } from "@/components/store/Toast";
 import { priceInclGst } from "@/lib/pricing";
-import {
-  BANNER_CTA_POSITIONS,
-  bannerCtaPositionClass,
-  isBannerCtaPosition,
-  type BannerCtaPosition,
-} from "@/lib/banner-cta";
 import { Button } from "../components/Button";
 import { AdminFormSkeleton } from "../components/FeedbackState";
 
@@ -109,9 +102,6 @@ export default function SaleForm({ saleId }: SaleFormProps) {
   const [description, setDescription] = useState("");
   const [badgeLabel, setBadgeLabel] = useState("SALE");
   const [homeHeadline, setHomeHeadline] = useState("Flash Cut");
-  const [bannerCtaLabel, setBannerCtaLabel] = useState("Shop The Sale");
-  const [bannerCtaHref, setBannerCtaHref] = useState("");
-  const [bannerCtaPosition, setBannerCtaPosition] = useState<BannerCtaPosition>("bottom-left");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
   const [startsAt, setStartsAt] = useState(() => toLocalInput(new Date()));
@@ -175,11 +165,6 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         setDescription(c.description || "");
         setBadgeLabel(c.badgeLabel || "SALE");
         setHomeHeadline(c.homeHeadline || "Flash Cut");
-        setBannerCtaLabel(c.bannerCtaLabel || "Shop The Sale");
-        setBannerCtaHref(c.bannerCtaHref || `/sale/${c.slug || ""}`);
-        setBannerCtaPosition(
-          isBannerCtaPosition(c.bannerCtaPosition) ? c.bannerCtaPosition : "bottom-left"
-        );
         setSeoTitle(c.seoTitle || "");
         setSeoDescription(c.seoDescription || "");
         setStartsAt(c.startsAt ? toLocalInput(new Date(c.startsAt)) : "");
@@ -438,9 +423,6 @@ export default function SaleForm({ saleId }: SaleFormProps) {
       description: description.trim() || undefined,
       badgeLabel: badgeLabel.trim() || "SALE",
       homeHeadline: homeHeadline.trim() || "Flash Cut",
-      bannerCtaLabel: bannerCtaLabel.trim() || "Shop The Sale",
-      bannerCtaHref: bannerCtaHref.trim() || `/sale/${slug.trim().toLowerCase()}`,
-      bannerCtaPosition,
       seoTitle: seoTitle.trim() || undefined,
       seoDescription: seoDescription.trim() || undefined,
       banner,
@@ -655,7 +637,9 @@ export default function SaleForm({ saleId }: SaleFormProps) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-admin-heading">Banner</h2>
-            <p className="mt-1 text-sm text-admin-muted">Preview the exact sale-page scrim and position the homepage CTA.</p>
+            <p className="mt-1 text-sm text-admin-muted">
+              Upload artwork for the homepage hero. The whole banner links to this sale.
+            </p>
           </div>
           {banner?.url && (
             <div className="flex items-center gap-2">
@@ -724,12 +708,6 @@ export default function SaleForm({ saleId }: SaleFormProps) {
                 <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#07070a] to-transparent" />
               </>
             )}
-            <div className={bannerCtaPositionClass(bannerCtaPosition, true)}>
-              <span className="btn-text inline-flex items-center gap-2 bg-[#e32d22] px-7 py-3.5 text-white">
-                {bannerCtaLabel.trim() || "Shop The Sale"}
-                <ArrowRight size={14} />
-              </span>
-            </div>
             {(uploading || dragActive) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-sm font-medium text-white">
                 {uploading ? "Uploading…" : "Drop to replace"}
@@ -772,53 +750,9 @@ export default function SaleForm({ saleId }: SaleFormProps) {
           </label>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-admin-body">CTA label</span>
-            <input
-              value={bannerCtaLabel}
-              onChange={(e) => setBannerCtaLabel(e.target.value)}
-              maxLength={40}
-              className="w-full rounded-lg border border-admin-line px-3 py-2"
-              placeholder="Shop The Sale"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-admin-body">CTA link</span>
-            <input
-              value={bannerCtaHref}
-              onChange={(e) => setBannerCtaHref(e.target.value)}
-              maxLength={300}
-              className="w-full rounded-lg border border-admin-line px-3 py-2"
-              placeholder={saleUrl}
-            />
-          </label>
-          <div className="sm:col-span-2">
-            <span className="mb-1.5 block text-sm font-medium text-admin-body">CTA position</span>
-            <div className="grid w-36 grid-cols-3 gap-1.5">
-              {BANNER_CTA_POSITIONS.map((position) => (
-                <button
-                  key={position}
-                  type="button"
-                  onClick={() => setBannerCtaPosition(position)}
-                  className={`h-8 rounded border ${
-                    bannerCtaPosition === position
-                      ? "border-admin-heading bg-admin-heading"
-                      : "border-admin-line bg-admin-subtle hover:bg-admin-hover"
-                  }`}
-                  aria-label={position.replaceAll("-", " ")}
-                  aria-pressed={bannerCtaPosition === position}
-                  title={position.replaceAll("-", " ")}
-                />
-              ))}
-            </div>
-            <p className="mt-1.5 text-xs text-admin-faint">
-              {bannerCtaPosition.replaceAll("-", " ")}
-            </p>
-          </div>
-        </div>
         <p className="text-xs text-admin-faint">
-          Headline stays in the image. The CTA button overlays the homepage hero at the same size and style.
+          Headline and call-to-action stay in the image. On the homepage, tapping the banner opens{" "}
+          <span className="font-medium text-admin-body">{saleUrl}</span>.
           {banner?.url
             ? " The preview carries the same dark scrim the sale page paints over the artwork so hero copy stays legible — the homepage hero shows the image undimmed."
             : ""}

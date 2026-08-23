@@ -184,16 +184,25 @@ export async function getTopAbandonedProducts(limit = LIST_LIMIT) {
 
   const productIds = [...map.keys()].map((id) => new Types.ObjectId(id));
   const products = await Product.find({ _id: { $in: productIds } })
-    .select("title")
+    .select("title images")
     .lean();
-  const titleMap = new Map(products.map((p) => [String(p._id), p.title]));
+  const productMap = new Map(
+    products.map((p) => [
+      String(p._id),
+      { title: p.title, imageUrl: p.images?.[0]?.url ?? null },
+    ])
+  );
 
   return [...map.values()]
-    .map((r) => ({
-      ...r,
-      title: titleMap.get(r.productId) || "Unknown product",
-      value: round2(r.value),
-    }))
+    .map((r) => {
+      const product = productMap.get(r.productId);
+      return {
+        ...r,
+        title: product?.title || "Unknown product",
+        imageUrl: product?.imageUrl ?? null,
+        value: round2(r.value),
+      };
+    })
     .sort((a, b) => b.value - a.value)
     .slice(0, limit);
 }
@@ -223,6 +232,9 @@ export async function getWishlistRankings(limit = 50) {
         _id: 0,
         productId: { $toString: "$_id" },
         title: { $ifNull: ["$product.title", "Unknown product"] },
+        imageUrl: {
+          $ifNull: [{ $arrayElemAt: ["$product.images.url", 0] }, null],
+        },
         wishlistCount: 1,
       },
     },
@@ -236,12 +248,19 @@ export async function getHighWishlistLowSales(
 ) {
   const rankings = await getWishlistRankings(100);
   return rankings
-    .map((w: { productId: string; title: string; wishlistCount: number }) => {
+    .map(
+      (w: {
+        productId: string;
+        title: string;
+        imageUrl: string | null;
+        wishlistCount: number;
+      }) => {
       const sales = salesByProduct.get(w.productId);
       const unitsSold = sales?.units || 0;
       return {
         productId: w.productId,
         title: w.title,
+        imageUrl: w.imageUrl,
         wishlistCount: w.wishlistCount,
         unitsSold,
         revenue: sales?.revenue || 0,
@@ -262,13 +281,22 @@ export async function getPriceDriftCarts(limit = LIST_LIMIT) {
   ].map((id) => new Types.ObjectId(id));
 
   const products = await Product.find({ _id: { $in: productIds } })
-    .select("title variants")
+    .select("title variants images")
     .lean();
 
-  const variantPrice = new Map<string, { price: number; title: string }>();
+  const variantPrice = new Map<
+    string,
+    { price: number; title: string; imageUrl: string | null; productId: string }
+  >();
   for (const p of products) {
+    const imageUrl = p.images?.[0]?.url ?? null;
     for (const v of p.variants || []) {
-      variantPrice.set(String(v._id), { price: v.price, title: p.title });
+      variantPrice.set(String(v._id), {
+        price: v.price,
+        title: p.title,
+        imageUrl,
+        productId: String(p._id),
+      });
     }
   }
 
@@ -276,6 +304,7 @@ export async function getPriceDriftCarts(limit = LIST_LIMIT) {
     user: { _id: string; name: string; email: string };
     productId: string;
     title: string;
+    imageUrl: string | null;
     priceAtAdd: number;
     currentPrice: number;
     driftPct: number;
@@ -298,8 +327,9 @@ export async function getPriceDriftCarts(limit = LIST_LIMIT) {
       if (drift >= PRICE_DRIFT_THRESHOLD) {
         drifts.push({
           user,
-          productId: String(item.product),
+          productId: current.productId,
           title: current.title,
+          imageUrl: current.imageUrl,
           priceAtAdd: item.priceAtAdd,
           currentPrice: current.price,
           driftPct: round2(drift * 100),

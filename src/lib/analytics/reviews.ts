@@ -84,6 +84,9 @@ export async function getLowRatedProducts(limit = LIST_LIMIT) {
         _id: 0,
         productId: { $toString: "$_id" },
         title: { $ifNull: ["$product.title", "Unknown product"] },
+        imageUrl: {
+          $ifNull: [{ $arrayElemAt: ["$product.images.url", 0] }, null],
+        },
         avgRating: { $round: ["$avgRating", 2] },
         count: 1,
       },

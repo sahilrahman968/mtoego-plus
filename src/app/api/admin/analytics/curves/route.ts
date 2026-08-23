@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [daily, ordersByStatus, weeklyPayment, abandonmentAge, monthlyRevenue] =
+    const [dailySeries, ordersByStatus, weeklyPayment, abandonmentAge, monthlyRevenue] =
       await Promise.all([
         getDailyOrderSeries(window),
         getOrdersByStatus(window.start, window.end),
@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     return successResponse({
       period: window.period,
       label: window.label,
-      daily,
+      granularity: dailySeries.granularity,
+      daily: dailySeries.series,
       ordersByStatus,
       weeklyPayment,
       abandonmentAge,

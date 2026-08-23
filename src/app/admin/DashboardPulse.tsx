@@ -28,6 +28,8 @@ function trendFromDelta(deltaPct: number | null | undefined) {
 // Narrower view of the pulse payload: performance metrics up top, then the
 // operational counters that link straight to the queue that needs work.
 interface PulseMetrics {
+  totalRevenue?: MetricWithDelta;
+  netRevenue?: MetricWithDelta;
   revenue: MetricWithDelta;
   orders: MetricWithDelta;
   aov: MetricWithDelta;
@@ -120,10 +122,10 @@ export default function DashboardPulse() {
           <div className="space-y-4">
             <KpiGrid columns={4}>
               <StatsCard
-                title="Revenue"
-                value={formatCurrency(metrics.revenue.value)}
-                trend={trendFromDelta(metrics.revenue.deltaPct)}
-                info="Total paid order revenue in the selected period, compared with the previous equal period."
+                title="Net revenue"
+                value={formatCurrency(metrics.netRevenue?.value ?? metrics.revenue.value)}
+                trend={trendFromDelta(metrics.netRevenue?.deltaPct ?? metrics.revenue.deltaPct)}
+                info="Paid order revenue after refunds and post-payment cancellations."
               />
               <StatsCard
                 title="Orders"
@@ -135,7 +137,7 @@ export default function DashboardPulse() {
                 title="AOV"
                 value={formatCurrency(metrics.aov.value)}
                 trend={trendFromDelta(metrics.aov.deltaPct)}
-                info="Average order value — revenue divided by paid orders in the selected period."
+                info="Average order value — net revenue divided by paid orders in the selected period."
               />
               <StatsCard
                 title="Payment success"

@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LogOut,
+  Heart,
   Menu,
   Package,
   Search,
@@ -17,7 +18,18 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { fetchNavSales } from "@/lib/store-api";
+import {
+  fetchCategories,
+  fetchNavSales,
+  type CategoryData,
+} from "@/lib/store-api";
+
+/** Main logo row height — keep in sync with SaleDetailClient HEADER_HEIGHT. */
+const MAIN_NAV_HEIGHT = "4.5rem";
+/** Secondary category strip beneath the main nav (homepage only). */
+const CATEGORY_NAV_HEIGHT = "2.75rem";
+
+type NavSale = { title: string; slug: string };
 
 export default function Header() {
   const { isAuthenticated, logout } = useAuth();
@@ -26,14 +38,30 @@ export default function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [navSale, setNavSale] = useState<{ title: string; slug: string } | null>(null);
+  const [navSales, setNavSales] = useState<NavSale[]>([]);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchNavSales()
       .then((res) => {
         if (res.success && res.data?.items?.length) {
-          setNavSale(res.data.items[0]);
+          setNavSales(
+            res.data.items.slice(0, 2).map((sale) => ({
+              title: sale.title,
+              slug: sale.slug,
+            }))
+          );
+        }
+      })
+      .catch(() => undefined);
+
+    fetchCategories(null)
+      .then((res) => {
+        if (res.success && res.data) {
+          setCategories(
+            res.data.filter((cat) => (cat.productCount ?? 0) > 0)
+          );
         }
       })
       .catch(() => undefined);
@@ -75,20 +103,40 @@ export default function Header() {
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  // Pages with a full-bleed background image let content run under the header.
+  const isHome = pathname === "/";
+  // Pages with a full-bleed background image let content run under the transparent header.
+  // On home, only the secondary (category) strip is transparent over the hero.
   const isFullBleed =
-    pathname === "/" || pathname === "/login" || /^\/sale\/[^/]+$/.test(pathname);
+    pathname === "/login" || /^\/sale\/[^/]+$/.test(pathname);
+
+  const categoryLinks = categories.map((cat) => ({
+    href: `/categories/${cat.slug}`,
+    label: cat.name,
+  }));
+
+  const navLinkClass = (active: boolean) =>
+    `eyebrow shrink-0 whitespace-nowrap transition-colors ${
+      active ? "text-primary" : "text-foreground/85 hover:text-primary"
+    }`;
+
+  const transparentNavOverlay =
+    "pointer-events-none absolute inset-x-0 top-0 h-[7.5rem] bg-gradient-to-b from-black/70 via-black/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]";
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full bg-transparent ${isFullBleed ? "-mb-[4.5rem]" : ""}`}
+      className={`sticky top-0 z-50 w-full bg-transparent ${
+        isFullBleed ? "-mb-[4.5rem]" : isHome ? "-mb-[2.75rem]" : ""
+      }`}
     >
       <div className="relative">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[7.5rem] bg-gradient-to-b from-black/70 via-black/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]"
-        />
-        <div className="relative mx-auto flex h-[4.5rem] max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6">
+        {!isHome ? (
+          <div aria-hidden="true" className={transparentNavOverlay} />
+        ) : null}
+        <div className={isHome ? "relative bg-background" : "relative"}>
+          <div
+            className="relative mx-auto flex max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6"
+            style={{ height: MAIN_NAV_HEIGHT }}
+          >
           <div className="flex items-center gap-2 lg:gap-3">
             <Link
               href="/"
@@ -108,26 +156,15 @@ export default function Header() {
           </div>
 
           <nav className="ml-10 hidden items-center gap-8 lg:flex">
-            <Link
-              href="/categories"
-              className={`eyebrow transition-colors ${isActive("/categories") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
-            >
-              Categories
-            </Link>
-            <Link
-              href="/products"
-              className={`eyebrow transition-colors ${isActive("/products") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
-            >
-              Products
-            </Link>
-            {navSale ? (
+            {navSales.map((sale) => (
               <Link
-                href={`/sale/${navSale.slug}`}
-                className={`eyebrow transition-colors ${isActive("/sale") ? "text-primary" : "text-foreground/85 hover:text-primary"}`}
+                key={sale.slug}
+                href={`/sale/${sale.slug}`}
+                className={navLinkClass(isActive(`/sale/${sale.slug}`))}
               >
-                {navSale.title}
+                {sale.title}
               </Link>
-            ) : null}
+            ))}
           </nav>
 
           <div className="flex items-center gap-3 sm:gap-4">
@@ -147,6 +184,13 @@ export default function Header() {
                 aria-label="Search"
               >
                 <Search size={16} />
+              </Link>
+              <Link
+                href="/wishlist"
+                className={`text-foreground/85 transition-colors hover:text-primary ${isActive("/wishlist") ? "text-primary" : ""}`}
+                aria-label="Wishlist"
+              >
+                <Heart size={16} />
               </Link>
               <Link
                 href="/cart"
@@ -187,13 +231,6 @@ export default function Header() {
                           <Package size={16} />
                           My Orders
                         </Link>
-                        <Link
-                          href="/wishlist"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-card-hover block"
-                        >
-                          Wishlist
-                        </Link>
                         <hr className="my-1 border-border" />
                         <button
                           onClick={handleLogout}
@@ -218,6 +255,28 @@ export default function Header() {
             </div>
           </div>
         </div>
+        </div>
+
+        {isHome ? (
+          <nav
+            aria-label="Categories"
+            className="relative bg-transparent"
+            style={{ height: CATEGORY_NAV_HEIGHT }}
+          >
+            <div aria-hidden="true" className={transparentNavOverlay} />
+            <div className="no-scrollbar relative mx-auto flex h-full max-w-[92rem] items-center justify-center gap-8 overflow-x-auto px-3 sm:px-4 lg:px-6">
+              {categoryLinks.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={navLinkClass(isActive(href))}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        ) : null}
       </div>
 
       {/* Rendered on <body> so the header's backdrop-filter does not become the
@@ -260,9 +319,10 @@ export default function Header() {
                     Browse
                   </p>
                   {[
-                    { href: "/categories", label: "Categories" },
-                    { href: "/products", label: "Products" },
-                    ...(navSale ? [{ href: `/sale/${navSale.slug}`, label: navSale.title }] : []),
+                    ...navSales.map((sale) => ({
+                      href: `/sale/${sale.slug}`,
+                      label: sale.title,
+                    })),
                     { href: "/wishlist", label: "Wishlist" },
                     { href: "/search", label: "Search" },
                     { href: "/cart", label: "Cart" },
@@ -294,6 +354,56 @@ export default function Header() {
                       </Link>
                     );
                   })}
+
+                  {categoryLinks.length > 0 ? (
+                    <div className="mt-3 border-t border-white/8 pt-3">
+                      <p className="eyebrow-xs mb-2 px-3 text-muted/70">
+                        Categories
+                      </p>
+                      <Link
+                        href="/categories"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex min-h-10 items-center px-3.5 transition-colors ${
+                          pathname === "/categories"
+                            ? "text-primary"
+                            : "text-foreground/85 hover:text-foreground"
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-medium leading-snug ${
+                            pathname === "/categories"
+                              ? "border-b border-primary pb-1"
+                              : ""
+                          }`}
+                        >
+                          All categories
+                        </span>
+                      </Link>
+                      {categoryLinks.map(({ href, label }) => {
+                        const active = isActive(href);
+                        return (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`flex min-h-10 items-center px-3.5 transition-colors ${
+                              active
+                                ? "text-primary"
+                                : "text-foreground/85 hover:text-foreground"
+                            }`}
+                          >
+                            <span
+                              className={`text-sm font-medium leading-snug ${
+                                active ? "border-b border-primary pb-1" : ""
+                              }`}
+                            >
+                              {label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : null}
 
                   {isAuthenticated && (
                     <div className="mt-3 border-t border-white/8 pt-3">

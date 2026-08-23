@@ -15,6 +15,7 @@ import AnalyticsNav, { AnalyticsNavItem } from "./components/AnalyticsNav";
 import { GridSkeleton, KpiSkeleton } from "./components/Skeletons";
 import AnalyticsTable, {
   ProductLink,
+  CategoryLabel,
   OrderLink,
 } from "./components/AnalyticsTable";
 import {
@@ -24,6 +25,7 @@ import {
   FunnelChart,
   AbandonmentAgeChart,
   PaymentSuccessChart,
+  MonthlyRevenueChart,
   SimpleBarList,
 } from "./components/Charts";
 
@@ -75,6 +77,8 @@ function useAnalyticsFetch<T>(endpoint: string, selection: PeriodSelection) {
 
 interface PulseData {
   metrics: {
+    totalRevenue: MetricWithDelta;
+    netRevenue: MetricWithDelta;
     revenue: MetricWithDelta;
     orders: MetricWithDelta;
     aov: MetricWithDelta;
@@ -84,6 +88,8 @@ interface PulseData {
     pendingRevenue: { value: number; count: number };
     cancelRatePct: MetricWithDelta;
     refundRatePct: MetricWithDelta;
+    cancelled: { count: number; revenue: number; paidRevenue: number };
+    refunded: { count: number; revenue: number };
     abandonedCart: { count: number; value: number };
     lowStockCount: number;
     openCallbacks: number;
@@ -92,6 +98,7 @@ interface PulseData {
 }
 
 interface CurvesData {
+  granularity: "day" | "week";
   daily: {
     label: string;
     revenue: number;
@@ -99,6 +106,12 @@ interface CurvesData {
     aov: number;
     discount: number;
     subtotal: number;
+  }[];
+  monthlyRevenue: {
+    month: string;
+    year: number;
+    revenue: number;
+    orders: number;
   }[];
   ordersByStatus: Record<string, number>;
   weeklyPayment: {
@@ -111,11 +124,24 @@ interface CurvesData {
 }
 
 interface MerchData {
-  topProducts: { productId: string; title: string; revenue: number; units: number }[];
-  topCategories: { categoryId: string | null; name: string; revenue: number; units: number }[];
+  topProducts: {
+    productId: string;
+    title: string;
+    imageUrl: string | null;
+    revenue: number;
+    units: number;
+  }[];
+  topCategories: {
+    categoryId: string | null;
+    name: string;
+    imageUrl: string | null;
+    revenue: number;
+    units: number;
+  }[];
   highWishlistLowSales: {
     productId: string;
     title: string;
+    imageUrl: string | null;
     wishlistCount: number;
     unitsSold: number;
   }[];
@@ -129,6 +155,7 @@ interface MerchData {
   topAbandonedProducts: {
     productId: string;
     title: string;
+    imageUrl: string | null;
     quantity: number;
     value: number;
     cartCount: number;
@@ -136,14 +163,21 @@ interface MerchData {
   lowStockBestsellers: {
     productId: string;
     title: string;
+    imageUrl: string | null;
     sku: string;
     unitsSold: number;
     stock: number;
   }[];
-  deadStock: { productId: string; title: string; stock: number }[];
+  deadStock: {
+    productId: string;
+    title: string;
+    imageUrl: string | null;
+    stock: number;
+  }[];
   priceDriftCarts: {
     productId: string;
     title: string;
+    imageUrl: string | null;
     priceAtAdd: number;
     currentPrice: number;
     driftPct: number;
@@ -186,6 +220,7 @@ interface TrustData {
     usedCount: number | null;
   }[];
   paymentMethods: { method: string; count: number; revenue: number }[];
+  salesChannels: { channel: string; revenue: number; orders: number }[];
   geo: {
     byState: { state: string; revenue: number; orders: number }[];
     byCity: { city: string; state: string; revenue: number; orders: number }[];
@@ -195,14 +230,35 @@ interface TrustData {
     count: number;
     distribution: Record<string, number>;
     coverage: { totalProducts: number; reviewedProducts: number; coveragePct: number };
-    lowRatedProducts: { productId: string; title: string; avgRating: number; count: number }[];
+    lowRatedProducts: {
+      productId: string;
+      title: string;
+      imageUrl: string | null;
+      avgRating: number;
+      count: number;
+    }[];
   };
 }
 
 interface CustomersData {
+  health: {
+    newCustomers: { count: number; orders: number; revenue: number };
+    returningCustomers: { count: number; orders: number; revenue: number };
+    repeatPurchaseRatePct: number;
+    clv: number;
+    avgOrdersPerCustomer: number;
+    medianDaysBetweenPurchases: number | null;
+    avgDaysBetweenPurchases: number | null;
+    purchaseGapSampleSize: number;
+    marketingSpendInPeriod: number | null;
+    cac: number | null;
+    clvCacRatio: number | null;
+    cacConfigured: boolean;
+    buyers: number;
+  };
   newVsReturning: {
-    newCustomers: { orders: number; revenue: number };
-    returningCustomers: { orders: number; revenue: number };
+    newCustomers: { count: number; orders: number; revenue: number };
+    returningCustomers: { count: number; orders: number; revenue: number };
   };
   signupToPurchase: {
     customers: number;
@@ -211,10 +267,28 @@ interface CustomersData {
     medianDaysToFirstPurchase: number | null;
   };
   ltvBands: { band: string; count: number }[];
-  vipList: { userId: string; name: string; email: string; orderCount: number; ltv: number }[];
+  topDecile: {
+    percentile: number;
+    count: number;
+    buyerCount: number;
+    revenue: number;
+    revenueSharePct: number;
+    customers: {
+      userId: string;
+      name: string;
+      email: string;
+      orderCount: number;
+      ltv: number;
+      lastOrderAt: string | null;
+    }[];
+  };
   oneAndDone: { userId: string; name: string; email: string; ltv: number; lastOrderAt: string }[];
   neverOrdered: { userId: string; name: string; email: string; createdAt: string }[];
   signupChannels: { channel: string; count: number }[];
+  customersByLocation: {
+    byState: { state: string; customers: number }[];
+    byCity: { city: string; state: string; customers: number }[];
+  };
   cohorts: {
     cohort: string;
     size: number;
@@ -241,7 +315,7 @@ interface CustomersData {
 }
 
 const NAV_ITEMS: AnalyticsNavItem[] = [
-  { id: "pulse", label: "Pulse" },
+  { id: "pulse", label: "Sales" },
   { id: "trends", label: "Trends" },
   { id: "merchandising", label: "Merchandising" },
   { id: "operations", label: "Operations" },
@@ -276,11 +350,11 @@ export default function AnalyticsClient() {
       <AnalyticsNav items={NAV_ITEMS} />
 
       <div className="space-y-8">
-        {/* Tier A — Pulse */}
+        {/* Tier A — Sales & revenue */}
         <AnalyticsSection
           id="pulse"
-          title="Pulse"
-          description="Key metrics vs the previous equal period"
+          title="Sales & revenue"
+          description="Total and net revenue, orders, and AOV vs the previous equal period"
           loading={pulse.loading}
           error={pulse.error}
           onRetry={pulse.retry}
@@ -289,22 +363,28 @@ export default function AnalyticsClient() {
           {m && (
             <KpiGrid columns={4}>
               <StatsCard
-                title="Revenue"
-                value={formatCurrency(m.revenue.value)}
-                trend={trendFromDelta(m.revenue.deltaPct)}
-                info="Total paid order revenue in the selected period, compared with the previous equal period."
+                title="Total revenue"
+                value={formatCurrency(m.totalRevenue?.value ?? m.revenue.value)}
+                trend={trendFromDelta(m.totalRevenue?.deltaPct ?? m.revenue.deltaPct)}
+                info="Gross GMV from paid checkouts in the period, including orders later refunded or cancelled after payment."
+              />
+              <StatsCard
+                title="Net revenue"
+                value={formatCurrency(m.netRevenue?.value ?? m.revenue.value)}
+                trend={trendFromDelta(m.netRevenue?.deltaPct ?? m.revenue.deltaPct)}
+                info="Total revenue minus refunds and post-payment cancellations in the selected period."
               />
               <StatsCard
                 title="Orders"
                 value={m.orders.value.toLocaleString()}
                 trend={trendFromDelta(m.orders.deltaPct)}
-                info="Count of paid orders placed in the selected period."
+                info="Count of paid orders still in a fulfilled status (excludes refunded and cancelled)."
               />
               <StatsCard
                 title="AOV"
                 value={formatCurrency(m.aov.value)}
                 trend={trendFromDelta(m.aov.deltaPct)}
-                info="Average order value — revenue divided by paid orders in the selected period."
+                info="Average order value — net revenue divided by paid orders in the selected period."
               />
               <StatsCard
                 title="Payment success"
@@ -355,12 +435,6 @@ export default function AnalyticsClient() {
                 info="Customisation / callback requests that are still open and need follow-up."
                 href="/admin/callback-requests"
               />
-              <StatsCard
-                title="Active products"
-                value={`${m.products.active} / ${m.products.total}`}
-                info="Active catalog products versus the total product count (active + inactive)."
-                href="/admin/products"
-              />
             </KpiGrid>
           )}
         </AnalyticsSection>
@@ -369,7 +443,7 @@ export default function AnalyticsClient() {
         <AnalyticsSection
           id="trends"
           title="Trends"
-          description="Trends and funnels for the selected period"
+          description="Revenue by day, week, and month — plus funnels"
           loading={curves.loading}
           error={curves.error}
           onRetry={curves.retry}
@@ -377,8 +451,12 @@ export default function AnalyticsClient() {
         >
           {curves.data && (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <DailyRevenueChart data={curves.data.daily} />
+              <DailyRevenueChart
+                data={curves.data.daily}
+                granularity={curves.data.granularity || "day"}
+              />
               <OrdersAovChart data={curves.data.daily} />
+              <MonthlyRevenueChart data={curves.data.monthlyRevenue || []} />
               <GrossVsDiscountChart data={curves.data.daily} />
               <FunnelChart ordersByStatus={curves.data.ordersByStatus} />
               <AbandonmentAgeChart data={curves.data.abandonmentAge} />
@@ -426,7 +504,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId} label={r.title} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId}
+                          label={r.title}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     { key: "sku", header: "SKU", render: (r) => r.sku },
                     { key: "sold", header: "Sold", align: "right", render: (r) => r.unitsSold },
@@ -465,7 +549,7 @@ export default function AnalyticsClient() {
                   ]}
                 />
                 <AnalyticsTable
-                  title="Top products by revenue"
+                  title="Revenue by product"
                   info="Highest-revenue products from paid orders in the selected period."
                   rows={merch.data.topProducts}
                   rowKey={(r) => r.productId}
@@ -473,7 +557,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId} label={r.title} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId}
+                          label={r.title}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     { key: "units", header: "Units", align: "right", render: (r) => r.units },
                     {
@@ -485,12 +575,18 @@ export default function AnalyticsClient() {
                   ]}
                 />
                 <AnalyticsTable
-                  title="Top categories"
+                  title="Revenue by category"
                   info="Categories ranked by revenue from paid orders in the selected period."
                   rows={merch.data.topCategories}
                   rowKey={(r) => r.categoryId || r.name}
                   columns={[
-                    { key: "name", header: "Category", render: (r) => r.name },
+                    {
+                      key: "name",
+                      header: "Category",
+                      render: (r) => (
+                        <CategoryLabel label={r.name} imageUrl={r.imageUrl} />
+                      ),
+                    },
                     { key: "units", header: "Units", align: "right", render: (r) => r.units },
                     {
                       key: "revenue",
@@ -509,7 +605,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId} label={r.title} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId}
+                          label={r.title}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     { key: "wish", header: "Wishlist", align: "right", render: (r) => r.wishlistCount },
                     { key: "sold", header: "Sold", align: "right", render: (r) => r.unitsSold },
@@ -524,7 +626,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId} label={r.title} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId}
+                          label={r.title}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     { key: "carts", header: "Carts", align: "right", render: (r) => r.cartCount },
                     {
@@ -544,7 +652,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId!} label={r.title!} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId!}
+                          label={r.title!}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     { key: "stock", header: "Stock", align: "right", render: (r) => r.stock },
                   ]}
@@ -558,7 +672,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId} label={r.title} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId}
+                          label={r.title}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     {
                       key: "user",
@@ -716,11 +836,20 @@ export default function AnalyticsClient() {
                   ]}
                 />
                 <SimpleBarList
-                  title="Payment methods"
-                  info="How customers paid for orders in the selected period."
+                  title="Revenue by sales channel"
+                  info="Paid order revenue attributed to customer signup channel (acquisition proxy until marketplace / paid-media channels exist)."
+                  data={trust.data.salesChannels || []}
+                  nameKey="channel"
+                  valueKey="revenue"
+                  valuePrefix="₹"
+                />
+                <SimpleBarList
+                  title="Revenue by payment method"
+                  info="Paid order revenue grouped by checkout payment method."
                   data={trust.data.paymentMethods}
                   nameKey="method"
-                  valueKey="count"
+                  valueKey="revenue"
+                  valuePrefix="₹"
                 />
                 <AnalyticsTable
                   title="Revenue by state"
@@ -739,6 +868,31 @@ export default function AnalyticsClient() {
                   ]}
                 />
                 <AnalyticsTable
+                  title="Revenue by city"
+                  info="Paid order revenue and volume grouped by shipping city."
+                  rows={trust.data.geo.byCity}
+                  rowKey={(r) => `${r.city}-${r.state}`}
+                  columns={[
+                    {
+                      key: "city",
+                      header: "City",
+                      render: (r) => (
+                        <span>
+                          {r.city}
+                          <span className="text-admin-muted"> · {r.state}</span>
+                        </span>
+                      ),
+                    },
+                    { key: "orders", header: "Orders", align: "right", render: (r) => r.orders },
+                    {
+                      key: "revenue",
+                      header: "Revenue",
+                      align: "right",
+                      render: (r) => formatCurrency(r.revenue),
+                    },
+                  ]}
+                />
+                <AnalyticsTable
                   title="Low-rated products (≤2★, ≥3 reviews)"
                   info="Products with average rating of 2 stars or below and at least 3 reviews — quality risk flags."
                   rows={trust.data.reviews.lowRatedProducts}
@@ -747,7 +901,13 @@ export default function AnalyticsClient() {
                     {
                       key: "title",
                       header: "Product",
-                      render: (r) => <ProductLink id={r.productId} label={r.title} />,
+                      render: (r) => (
+                        <ProductLink
+                          id={r.productId}
+                          label={r.title}
+                          imageUrl={r.imageUrl}
+                        />
+                      ),
                     },
                     { key: "rating", header: "Avg", align: "right", render: (r) => r.avgRating },
                     { key: "count", header: "Reviews", align: "right", render: (r) => r.count },
@@ -762,7 +922,7 @@ export default function AnalyticsClient() {
         <AnalyticsSection
           id="customers"
           title="Customers"
-          description="LTV, retention, win-backs, and lead pipeline"
+          description="Who buys, how often, what they’re worth — and whether acquisition pays back"
           loading={customers.loading}
           error={customers.error}
           onRetry={customers.retry}
@@ -772,23 +932,112 @@ export default function AnalyticsClient() {
             <div className="space-y-4">
               <KpiGrid columns={4}>
                 <StatsCard
-                  title="New customer revenue"
-                  value={formatCurrency(customers.data.newVsReturning.newCustomers.revenue)}
-                  info="Revenue from customers whose first paid order falls in the selected period."
+                  title="New customers"
+                  value={(customers.data.health?.newCustomers.count ?? customers.data.newVsReturning.newCustomers.count ?? 0).toLocaleString()}
+                  info="Distinct first-time buyers in the selected period (no prior paid order)."
                   trend={{
-                    value: `${customers.data.newVsReturning.newCustomers.orders} orders`,
+                    value: `${formatCurrency(customers.data.health?.newCustomers.revenue ?? customers.data.newVsReturning.newCustomers.revenue)} · ${(customers.data.health?.newCustomers.orders ?? customers.data.newVsReturning.newCustomers.orders)} orders`,
                     positive: true,
                   }}
                 />
                 <StatsCard
-                  title="Returning revenue"
-                  value={formatCurrency(customers.data.newVsReturning.returningCustomers.revenue)}
-                  info="Revenue from customers who had at least one prior paid order before this period."
+                  title="Returning customers"
+                  value={(customers.data.health?.returningCustomers.count ?? customers.data.newVsReturning.returningCustomers.count ?? 0).toLocaleString()}
+                  info="Distinct buyers in the period who already had a paid order before it started."
                   trend={{
-                    value: `${customers.data.newVsReturning.returningCustomers.orders} orders`,
+                    value: `${formatCurrency(customers.data.health?.returningCustomers.revenue ?? customers.data.newVsReturning.returningCustomers.revenue)} · ${(customers.data.health?.returningCustomers.orders ?? customers.data.newVsReturning.returningCustomers.orders)} orders`,
                     positive: true,
                   }}
                 />
+                <StatsCard
+                  title="Repeat purchase rate"
+                  value={
+                    customers.data.health
+                      ? `${customers.data.health.repeatPurchaseRatePct}%`
+                      : "—"
+                  }
+                  info="Share of all-time buyers who have placed 2 or more paid orders."
+                  trend={
+                    customers.data.health
+                      ? {
+                          value: `${customers.data.health.buyers.toLocaleString()} buyers`,
+                          positive: true,
+                        }
+                      : undefined
+                  }
+                />
+                <StatsCard
+                  title="CLV"
+                  value={
+                    customers.data.health
+                      ? formatCurrency(customers.data.health.clv)
+                      : "—"
+                  }
+                  info="Average customer lifetime value — mean paid revenue per buyer across all time."
+                />
+                <StatsCard
+                  title="Avg orders / customer"
+                  value={customers.data.health?.avgOrdersPerCustomer ?? "—"}
+                  info="Average number of paid orders per buyer (all time)."
+                />
+                <StatsCard
+                  title="Days between purchases"
+                  value={customers.data.health?.medianDaysBetweenPurchases ?? "—"}
+                  info="Median days between consecutive paid orders for customers with 2+ purchases."
+                  hint={
+                    customers.data.health ? (
+                      <KpiHint>
+                        median · avg{" "}
+                        {customers.data.health.avgDaysBetweenPurchases ?? "—"}d · n=
+                        {customers.data.health.purchaseGapSampleSize}
+                      </KpiHint>
+                    ) : undefined
+                  }
+                />
+                <StatsCard
+                  title="CAC"
+                  value={
+                    customers.data.health?.cac != null
+                      ? formatCurrency(customers.data.health.cac)
+                      : "—"
+                  }
+                  info={
+                    customers.data.health?.cacConfigured
+                      ? "Customer acquisition cost — prorated marketing spend ÷ new customers in the period. Set ANALYTICS_MONTHLY_MARKETING_SPEND_INR."
+                      : "Set ANALYTICS_MONTHLY_MARKETING_SPEND_INR in env to compute CAC from your monthly ads/marketing spend."
+                  }
+                  trend={
+                    customers.data.health?.marketingSpendInPeriod != null
+                      ? {
+                          value: `${formatCurrency(customers.data.health.marketingSpendInPeriod)} spend`,
+                          positive: true,
+                        }
+                      : undefined
+                  }
+                />
+                <StatsCard
+                  title="CLV : CAC"
+                  value={
+                    customers.data.health?.clvCacRatio != null
+                      ? `${customers.data.health.clvCacRatio}×`
+                      : "—"
+                  }
+                  info="Lifetime value divided by acquisition cost. Roughly 3×+ is healthy; 5×+ is strong. Requires CAC to be configured."
+                  trend={
+                    customers.data.health?.clvCacRatio != null
+                      ? {
+                          value:
+                            customers.data.health.clvCacRatio >= 3
+                              ? "Healthy payback"
+                              : "Below 3× — watch CAC",
+                          positive: customers.data.health.clvCacRatio >= 3,
+                        }
+                      : undefined
+                  }
+                />
+              </KpiGrid>
+
+              <KpiGrid columns={2}>
                 <StatsCard
                   title="Signup → purchase"
                   value={`${customers.data.signupToPurchase.conversionPct}%`}
@@ -809,7 +1058,7 @@ export default function AnalyticsClient() {
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <SimpleBarList
-                  title="LTV bands"
+                  title="CLV bands"
                   info="How customers are distributed across lifetime-value spend bands."
                   data={customers.data.ltvBands}
                   nameKey="band"
@@ -823,9 +1072,13 @@ export default function AnalyticsClient() {
                   valueKey="count"
                 />
                 <AnalyticsTable
-                  title="VIP customers"
-                  info="Highest lifetime-value customers ranked by total paid spend."
-                  rows={customers.data.vipList}
+                  title={`Top ${customers.data.topDecile?.percentile ?? 10}% by revenue`}
+                  info={
+                    customers.data.topDecile
+                      ? `${customers.data.topDecile.count} of ${customers.data.topDecile.buyerCount} buyers · ${customers.data.topDecile.revenueSharePct}% of lifetime revenue (${formatCurrency(customers.data.topDecile.revenue)})`
+                      : "Highest-spending customers by lifetime paid revenue."
+                  }
+                  rows={customers.data.topDecile?.customers || []}
                   rowKey={(r) => r.userId}
                   columns={[
                     {
@@ -841,9 +1094,48 @@ export default function AnalyticsClient() {
                     { key: "orders", header: "Orders", align: "right", render: (r) => r.orderCount },
                     {
                       key: "ltv",
-                      header: "LTV",
+                      header: "CLV",
                       align: "right",
                       render: (r) => formatCurrency(r.ltv),
+                    },
+                  ]}
+                />
+                <AnalyticsTable
+                  title="Customers by state"
+                  info="Distinct paying customers by last shipping state."
+                  rows={customers.data.customersByLocation?.byState || []}
+                  rowKey={(r) => r.state}
+                  columns={[
+                    { key: "state", header: "State", render: (r) => r.state },
+                    {
+                      key: "customers",
+                      header: "Customers",
+                      align: "right",
+                      render: (r) => r.customers,
+                    },
+                  ]}
+                />
+                <AnalyticsTable
+                  title="Customers by city"
+                  info="Distinct paying customers by last shipping city."
+                  rows={customers.data.customersByLocation?.byCity || []}
+                  rowKey={(r) => `${r.city}-${r.state}`}
+                  columns={[
+                    {
+                      key: "city",
+                      header: "City",
+                      render: (r) => (
+                        <span>
+                          {r.city}
+                          <span className="text-admin-muted"> · {r.state}</span>
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "customers",
+                      header: "Customers",
+                      align: "right",
+                      render: (r) => r.customers,
                     },
                   ]}
                 />
@@ -865,7 +1157,7 @@ export default function AnalyticsClient() {
                     },
                     {
                       key: "ltv",
-                      header: "LTV",
+                      header: "CLV",
                       align: "right",
                       render: (r) => formatCurrency(r.ltv),
                     },
