@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { getAdminThemeCSSVariables } from "@/config/theme";
+
+const adminThemeVars = getAdminThemeCSSVariables();
+const COLLAPSE_STORAGE_KEY = "admin-sidebar-collapsed";
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -17,8 +21,29 @@ export default function AdminShell({
   userRole,
   permissions,
 }: AdminShellProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1");
+    } catch {
+      // private mode / blocked storage — keep default expanded
+    }
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -26,8 +51,12 @@ export default function AdminShell({
     const priorHtmlOverscroll = html.style.overscrollBehavior;
     const priorBodyOverflow = document.body.style.overflow;
     const priorBodyOverscroll = document.body.style.overscrollBehavior;
+    const appliedVars = Object.keys(adminThemeVars);
 
     html.classList.add("admin-panel");
+    for (const [key, value] of Object.entries(adminThemeVars)) {
+      html.style.setProperty(key, value);
+    }
     html.style.overflow = "hidden";
     html.style.overscrollBehavior = "none";
     document.body.style.overflow = "hidden";
@@ -35,6 +64,9 @@ export default function AdminShell({
 
     return () => {
       html.classList.remove("admin-panel");
+      for (const key of appliedVars) {
+        html.style.removeProperty(key);
+      }
       html.style.overflow = priorHtmlOverflow;
       html.style.overscrollBehavior = priorHtmlOverscroll;
       document.body.style.overflow = priorBodyOverflow;
@@ -43,7 +75,10 @@ export default function AdminShell({
   }, []);
 
   return (
-    <div className="admin-theme flex h-dvh overflow-hidden bg-admin-canvas">
+    <div
+      className="admin-theme flex h-dvh overflow-hidden bg-admin-canvas"
+      style={adminThemeVars as React.CSSProperties}
+    >
       <a
         href="#admin-main"
         className="fixed left-3 top-3 z-[60] -translate-y-20 rounded-lg bg-admin-primary px-3 py-2 text-sm font-medium text-white focus:translate-y-0"
@@ -53,16 +88,19 @@ export default function AdminShell({
       <Sidebar
         userRole={userRole}
         permissions={permissions}
-        isOpen={sidebarOpen}
-        onClose={closeSidebar}
+        mobileOpen={mobileOpen}
+        onMobileClose={closeMobile}
+        collapsed={collapsed}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header
           userName={userName}
           userRole={userRole}
-          onMenuToggle={() => setSidebarOpen((open) => !open)}
-          navigationOpen={sidebarOpen}
+          onMobileMenuToggle={() => setMobileOpen((open) => !open)}
+          mobileNavigationOpen={mobileOpen}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapsed}
         />
 
         <main

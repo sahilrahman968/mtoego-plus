@@ -18,7 +18,7 @@ export const chartTooltipStyle = {
   backgroundColor: admin.surface,
   border: `1px solid ${admin.line}`,
   borderRadius: "0.5rem",
-  boxShadow: "0 8px 24px -12px rgba(22, 24, 29, 0.25)",
+  boxShadow: "0 8px 24px -12px rgba(15, 23, 42, 0.25)",
   color: admin.heading,
   fontSize: "0.875rem",
 } as const;

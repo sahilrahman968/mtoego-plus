@@ -56,15 +56,17 @@ const groups: NavItem["group"][] = ["Overview", "Commerce", "Engagement", "Acces
 interface SidebarProps {
   userRole: string;
   permissions: string[];
-  isOpen: boolean;
-  onClose: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+  collapsed: boolean;
 }
 
 export default function Sidebar({
   userRole,
   permissions,
-  isOpen,
-  onClose,
+  mobileOpen,
+  onMobileClose,
+  collapsed,
 }: SidebarProps) {
   const pathname = usePathname();
   const drawerRef = useRef<HTMLElement>(null);
@@ -73,13 +75,13 @@ export default function Sidebar({
   const isSuperAdmin = userRole === "super_admin";
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!mobileOpen) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onMobileClose();
         return;
       }
       if (event.key === "Tab") {
@@ -106,7 +108,7 @@ export default function Sidebar({
       document.body.style.overflow = priorOverflow;
       previouslyFocused.current?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [mobileOpen, onMobileClose]);
 
   const filteredNav = navItems.filter((item) => {
     if (item.superAdminOnly) return isSuperAdmin;
@@ -122,11 +124,11 @@ export default function Sidebar({
 
   return (
     <>
-      {isOpen && (
+      {mobileOpen && (
         <button
           type="button"
           className="fixed inset-0 z-40 cursor-default bg-admin-heading/35 lg:hidden"
-          onClick={onClose}
+          onClick={onMobileClose}
           aria-label="Close navigation"
           tabIndex={-1}
         />
@@ -135,21 +137,53 @@ export default function Sidebar({
         ref={drawerRef}
         id="admin-navigation"
         aria-label="Admin navigation"
-        className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-admin-line bg-admin-surface shadow-xl transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 lg:shadow-none ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        data-collapsed={collapsed ? "true" : "false"}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-admin-line bg-admin-surface shadow-xl transition-[width,transform] duration-200 ease-out lg:static lg:z-auto lg:translate-x-0 lg:shadow-none ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        } ${collapsed ? "w-60 lg:w-16" : "w-60"}`}
       >
-        <div className="flex h-16 items-center border-b border-admin-line px-4">
-          <Link href="/admin" onClick={onClose} className="min-w-0" aria-label="Motoego admin dashboard">
+        <div
+          className={`flex h-16 items-center border-b border-admin-line ${
+            collapsed ? "px-3 lg:justify-center lg:px-2" : "gap-2 px-4"
+          }`}
+        >
+          <Link
+            href="/admin"
+            onClick={onMobileClose}
+            className={`min-w-0 ${collapsed ? "lg:hidden" : ""}`}
+            aria-label="Motoego admin dashboard"
+          >
             <span className="relative block h-7 w-32 overflow-hidden">
-              <Image src="/logo.svg" alt="Motoego" fill sizes="128px" className="object-contain object-left" priority />
+              <Image
+                src="/logo.svg"
+                alt="Motoego"
+                fill
+                sizes="128px"
+                className="object-contain object-left"
+                priority
+              />
             </span>
-            <span className="mt-0.5 block text-[11px] font-medium text-admin-muted">Administration</span>
+            <span className="mt-0.5 block text-[11px] font-medium text-admin-muted">
+              Administration
+            </span>
           </Link>
+
+          {collapsed && (
+            <Link
+              href="/admin"
+              onClick={onMobileClose}
+              className="hidden size-9 items-center justify-center rounded-lg bg-admin-primary-soft text-sm font-semibold text-admin-primary lg:flex"
+              aria-label="Motoego admin dashboard"
+              title="Motoego admin"
+            >
+              M
+            </Link>
+          )}
+
           <button
             ref={closeRef}
             type="button"
-            onClick={onClose}
+            onClick={onMobileClose}
             className="ml-auto flex size-10 items-center justify-center rounded-lg text-admin-muted hover:bg-admin-hover hover:text-admin-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus lg:hidden"
             aria-label="Close navigation"
           >
@@ -157,15 +191,29 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="admin-scroll flex-1 overflow-y-auto overscroll-y-contain px-3 py-4">
+        <nav
+          className={`admin-scroll flex-1 overflow-y-auto overscroll-y-contain py-4 ${
+            collapsed ? "px-3 lg:px-2" : "px-3"
+          }`}
+        >
           {groups.map((group) => {
             const items = filteredNav.filter((item) => item.group === group);
             if (!items.length) return null;
             return (
               <div key={group} className="mb-5 last:mb-0">
-                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-admin-faint">
+                <p
+                  className={`mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-admin-faint ${
+                    collapsed ? "lg:sr-only" : ""
+                  }`}
+                >
                   {group}
                 </p>
+                {collapsed && (
+                  <div
+                    className="mb-1.5 hidden h-px bg-admin-line lg:mx-1 lg:block"
+                    aria-hidden="true"
+                  />
+                )}
                 <div className="space-y-0.5">
                   {items.map((item) => {
                     const Icon = item.icon;
@@ -174,16 +222,25 @@ export default function Sidebar({
                       <Link
                         key={item.href}
                         href={item.href}
-                        onClick={onClose}
+                        onClick={onMobileClose}
                         aria-current={active ? "page" : undefined}
-                        className={`flex min-h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus ${
+                        title={item.label}
+                        className={`flex min-h-9 items-center gap-2.5 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus ${
+                          collapsed ? "px-3 lg:justify-center lg:px-0" : "px-3"
+                        } ${
                           active
-                            ? "bg-admin-primary font-medium text-white"
+                            ? "bg-admin-primary-soft font-medium text-admin-primary"
                             : "font-medium text-admin-muted hover:bg-admin-hover hover:text-admin-heading"
                         }`}
                       >
                         <Icon aria-hidden={true} className="size-4 shrink-0" />
-                        <span className="truncate">{item.label}</span>
+                        <span
+                          className={
+                            collapsed ? "truncate max-lg:inline lg:sr-only" : "truncate"
+                          }
+                        >
+                          {item.label}
+                        </span>
                       </Link>
                     );
                   })}
@@ -193,10 +250,22 @@ export default function Sidebar({
           })}
         </nav>
 
-        <div className="border-t border-admin-line px-4 py-3">
-          <div className="flex items-center gap-2 text-xs text-admin-muted">
-            <ShieldCheck aria-hidden="true" className="size-4 text-admin-faint" />
-            <span className="truncate capitalize">{userRole.replace(/_/g, " ")} access</span>
+        <div
+          className={`border-t border-admin-line py-3 ${
+            collapsed ? "px-4 lg:flex lg:justify-center lg:px-2" : "px-4"
+          }`}
+        >
+          <div
+            className="flex items-center gap-2 text-xs text-admin-muted"
+            title={`${userRole.replace(/_/g, " ")} access`}
+          >
+            <ShieldCheck
+              aria-hidden="true"
+              className="size-4 shrink-0 text-admin-faint"
+            />
+            <span className={`truncate capitalize ${collapsed ? "lg:hidden" : ""}`}>
+              {userRole.replace(/_/g, " ")} access
+            </span>
           </div>
         </div>
       </aside>

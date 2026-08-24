@@ -129,7 +129,7 @@ function ActionLink({
       title={shortcut.description}
       className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus focus-visible:ring-offset-2 focus-visible:ring-offset-admin-surface ${
         emphasis
-          ? "border-admin-line-strong bg-admin-surface text-admin-body hover:bg-admin-hover hover:text-admin-heading"
+          ? "border-admin-primary/20 bg-admin-primary-soft text-admin-primary hover:bg-admin-primary hover:text-white"
           : "border-transparent text-admin-muted hover:bg-admin-hover hover:text-admin-heading"
       }`}
     >

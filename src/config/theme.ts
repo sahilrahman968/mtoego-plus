@@ -39,36 +39,37 @@ export const theme = {
   },
 
   // ── Admin panel colors ─────────────────────────────────────────────────────
-  // The storefront is dark; the admin panel is a light, low-chroma work surface.
-  // It therefore gets its own scale instead of reusing the brand colors above.
-  // Exposed as `--admin-*` custom properties and as Tailwind utilities
-  // (bg-admin-surface, text-admin-muted, border-admin-line, …).
+  // Independent indigo / slate scale for the light admin work surface.
+  // Never reuse storefront brand colors here — they are tuned for a dark page.
+  // Applied only under `.admin-theme` / `html.admin-panel` (see getAdminThemeCSSVariables)
+  // and exposed as Tailwind utilities (bg-admin-surface, text-admin-muted, …).
   adminColors: {
-    canvas: "#F7F8FA", // page background behind cards
+    canvas: "#F8FAFC", // cool gray page background
     surface: "#FFFFFF", // cards, sidebar, header, inputs
-    subtle: "#F4F5F7", // table headers, icon chips, inert fills
-    hover: "#EFF1F4", // row / nav hover
-    line: "#E7E9EE", // hairline borders and dividers
-    lineStrong: "#D6DAE1", // input borders, emphasized separators
-    heading: "#16181D", // titles and key figures
-    body: "#3D4350", // default text
-    muted: "#6C7280", // secondary text
-    faint: "#8B919C", // tertiary text, icons, placeholders
-    primary: "#1A1D23", // primary action fill
-    primaryHover: "#0B0D10",
-    focus: "#A9B2C0", // focus rings
-    success: "#1F7A55",
-    successSoft: "#EDF7F2",
-    successLine: "#C9E7D8",
-    warning: "#8A6114",
-    warningSoft: "#FDF6E8",
-    warningLine: "#F0E1BB",
-    danger: "#B32D1D",
-    dangerSoft: "#FCF1EF",
-    dangerLine: "#F2D2CC",
-    info: "#2F5FA8",
-    infoSoft: "#EFF4FC",
-    infoLine: "#D3E0F5",
+    subtle: "#F1F5F9", // table headers, icon chips, inert fills
+    hover: "#F1F5F9", // cool gray row / nav hover
+    line: "#E2E8F0", // hairline borders and dividers
+    lineStrong: "#CBD5E1", // input borders, emphasized separators
+    heading: "#0F172A", // main text / titles
+    body: "#334155", // default body copy
+    muted: "#64748B", // secondary text
+    faint: "#94A3B8", // muted text, icons, placeholders
+    primary: "#4F46E5", // indigo primary action
+    primaryHover: "#4338CA",
+    primarySoft: "#EEF2FF", // soft indigo fills / selected states
+    focus: "#A5B4FC", // indigo focus rings
+    success: "#10B981",
+    successSoft: "#ECFDF5",
+    successLine: "#A7F3D0",
+    warning: "#F59E0B",
+    warningSoft: "#FFFBEB",
+    warningLine: "#FDE68A",
+    danger: "#EF4444",
+    dangerSoft: "#FEF2F2",
+    dangerLine: "#FECACA",
+    info: "#3B82F6",
+    infoSoft: "#EFF6FF",
+    infoLine: "#BFDBFE",
   },
 
   // ── Fonts ──────────────────────────────────────────────────────────────────
@@ -103,12 +104,18 @@ function camelToKebab(str: string): string {
   return str.replace(/([A-Z])/g, "-$1").toLowerCase();
 }
 
-/** Generates an inline style object that sets CSS custom properties from the theme */
+/** Storefront CSS variables only — admin tokens must not land on the store body. */
 export function getThemeCSSVariables(): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const [key, value] of Object.entries(theme.colors)) {
     vars[`--${camelToKebab(key)}`] = value;
   }
+  return vars;
+}
+
+/** Admin CSS variables — apply on `.admin-theme` / `html.admin-panel` only. */
+export function getAdminThemeCSSVariables(): Record<string, string> {
+  const vars: Record<string, string> = {};
   for (const [key, value] of Object.entries(theme.adminColors)) {
     vars[`--admin-${camelToKebab(key)}`] = value;
   }

@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Menu } from "lucide-react";
+import { ChevronDown, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface HeaderProps {
   userName: string;
   userRole: string;
-  onMenuToggle: () => void;
-  navigationOpen: boolean;
+  onMobileMenuToggle: () => void;
+  mobileNavigationOpen: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const routeLabels: Record<string, string> = {
@@ -38,8 +40,10 @@ function readableSegment(segment: string, index: number) {
 export default function Header({
   userName,
   userRole,
-  onMenuToggle,
-  navigationOpen,
+  onMobileMenuToggle,
+  mobileNavigationOpen,
+  collapsed,
+  onToggleCollapse,
 }: HeaderProps) {
   const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -96,16 +100,31 @@ export default function Header({
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-admin-line bg-admin-surface px-4 sm:px-6">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
-          onClick={onMenuToggle}
+          onClick={onMobileMenuToggle}
           className="flex size-10 shrink-0 items-center justify-center rounded-lg text-admin-muted hover:bg-admin-hover hover:text-admin-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus lg:hidden"
           aria-label="Open navigation"
           aria-controls="admin-navigation"
-          aria-expanded={navigationOpen}
+          aria-expanded={mobileNavigationOpen}
         >
           <Menu aria-hidden="true" className="size-5" />
+        </button>
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="hidden size-10 shrink-0 items-center justify-center rounded-lg text-admin-muted hover:bg-admin-hover hover:text-admin-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus lg:flex"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-controls="admin-navigation"
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <PanelLeftOpen aria-hidden="true" className="size-5" />
+          ) : (
+            <PanelLeftClose aria-hidden="true" className="size-5" />
+          )}
         </button>
         <nav aria-label="Breadcrumb" className="min-w-0">
           <ol className="flex min-w-0 items-center gap-1 text-sm">
@@ -140,7 +159,7 @@ export default function Header({
           aria-expanded={showDropdown}
           aria-haspopup="menu"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-admin-subtle text-xs font-semibold text-admin-heading">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-admin-primary-soft text-xs font-semibold text-admin-primary">
             {initials}
           </span>
           <span className="hidden max-w-36 sm:block">

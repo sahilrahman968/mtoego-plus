@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 /*
- * Color values are injected at runtime via inline styles on <body>
- * from src/config/theme.ts — edit that file to change colors globally.
+ * Storefront color values are injected at runtime via inline styles on <body>
+ * from src/config/theme.ts — edit that file to change store colors globally.
+ *
+ * Admin tokens are NOT on :root / body. They live under `.admin-theme` and
+ * `html.admin-panel` only (see below + getAdminThemeCSSVariables).
  *
  * The fallback values below ensure Tailwind can still generate classes
  * during build (they are overridden by the inline styles at runtime).
@@ -22,35 +25,41 @@
   --danger: #e23a56;
   --warning: #d49a2a;
   --success: #57b97d;
+}
 
-  /* Admin panel scale — see theme.ts `adminColors`. Light and low-chroma:
-     the storefront palette is built for a dark page and is unreadable on the
-     white work surfaces the admin panel is made of. */
-  --admin-canvas: #f7f8fa;
+/*
+ * Admin panel tokens live ONLY under `.admin-theme` / `html.admin-panel` so the
+ * storefront never inherits these values from `:root`. Fallbacks match
+ * theme.ts `adminColors`; runtime overrides come from getAdminThemeCSSVariables().
+ */
+.admin-theme,
+html.admin-panel {
+  --admin-canvas: #f8fafc;
   --admin-surface: #ffffff;
-  --admin-subtle: #f4f5f7;
-  --admin-hover: #eff1f4;
-  --admin-line: #e7e9ee;
-  --admin-line-strong: #d6dae1;
-  --admin-heading: #16181d;
-  --admin-body: #3d4350;
-  --admin-muted: #6c7280;
-  --admin-faint: #8b919c;
-  --admin-primary: #1a1d23;
-  --admin-primary-hover: #0b0d10;
-  --admin-focus: #a9b2c0;
-  --admin-success: #1f7a55;
-  --admin-success-soft: #edf7f2;
-  --admin-success-line: #c9e7d8;
-  --admin-warning: #8a6114;
-  --admin-warning-soft: #fdf6e8;
-  --admin-warning-line: #f0e1bb;
-  --admin-danger: #b32d1d;
-  --admin-danger-soft: #fcf1ef;
-  --admin-danger-line: #f2d2cc;
-  --admin-info: #2f5fa8;
-  --admin-info-soft: #eff4fc;
-  --admin-info-line: #d3e0f5;
+  --admin-subtle: #f1f5f9;
+  --admin-hover: #f1f5f9;
+  --admin-line: #e2e8f0;
+  --admin-line-strong: #cbd5e1;
+  --admin-heading: #0f172a;
+  --admin-body: #334155;
+  --admin-muted: #64748b;
+  --admin-faint: #94a3b8;
+  --admin-primary: #4f46e5;
+  --admin-primary-hover: #4338ca;
+  --admin-primary-soft: #eef2ff;
+  --admin-focus: #a5b4fc;
+  --admin-success: #10b981;
+  --admin-success-soft: #ecfdf5;
+  --admin-success-line: #a7f3d0;
+  --admin-warning: #f59e0b;
+  --admin-warning-soft: #fffbeb;
+  --admin-warning-line: #fde68a;
+  --admin-danger: #ef4444;
+  --admin-danger-soft: #fef2f2;
+  --admin-danger-line: #fecaca;
+  --admin-info: #3b82f6;
+  --admin-info-soft: #eff6ff;
+  --admin-info-line: #bfdbfe;
 }
 
 @theme inline {
@@ -66,6 +75,7 @@
   --color-admin-faint: var(--admin-faint);
   --color-admin-primary: var(--admin-primary);
   --color-admin-primary-hover: var(--admin-primary-hover);
+  --color-admin-primary-soft: var(--admin-primary-soft);
   --color-admin-focus: var(--admin-focus);
   --color-admin-success: var(--admin-success);
   --color-admin-success-soft: var(--admin-success-soft);

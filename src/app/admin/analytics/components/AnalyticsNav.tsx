@@ -48,7 +48,12 @@ export default function AnalyticsNav({ items }: { items: AnalyticsNavItem[] }) {
     return () => {
       scroller.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+      // Must clear the ref: Strict Mode remounts this effect, and a leftover
+      // non-null frame id would make onScroll bail forever.
+      if (frame.current !== null) {
+        window.cancelAnimationFrame(frame.current);
+        frame.current = null;
+      }
     };
   }, [syncActive]);
 
@@ -83,7 +88,7 @@ export default function AnalyticsNav({ items }: { items: AnalyticsNavItem[] }) {
                 }}
                 className={`inline-flex min-h-8 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-focus ${
                   isActive
-                    ? "bg-admin-subtle text-admin-heading"
+                    ? "bg-admin-primary-soft text-admin-primary"
                     : "text-admin-muted hover:bg-admin-hover hover:text-admin-heading"
                 }`}
               >

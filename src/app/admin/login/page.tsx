@@ -7,6 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import AuthBackdrop from "@/components/store/AuthBackdrop";
 import GoogleSignInButton from "@/components/store/GoogleSignInButton";
 import { isAdminPanelRole } from "@/lib/auth/permissions";
+import { getAdminThemeCSSVariables } from "@/config/theme";
+
+const adminThemeVars = getAdminThemeCSSVariables();
 
 export default function AdminLoginPage() {
   const { user, isLoading: authLoading, googleSignIn } = useAuth();
@@ -47,7 +50,8 @@ export default function AdminLoginPage() {
   if (authLoading) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-admin-canvas text-sm text-admin-muted"
+        className="admin-theme flex min-h-screen items-center justify-center bg-admin-canvas text-sm text-admin-muted"
+        style={adminThemeVars as React.CSSProperties}
         role="status"
         aria-live="polite"
       >
@@ -58,7 +62,10 @@ export default function AdminLoginPage() {
 
   return (
     <AuthBackdrop>
-      <main className="admin-theme rounded-2xl border border-white/70 bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
+      <main
+        className="admin-theme rounded-2xl border border-admin-line bg-admin-surface p-6 shadow-2xl shadow-admin-heading/10 sm:p-8"
+        style={adminThemeVars as React.CSSProperties}
+      >
         <div className="mb-7 text-center">
           <div className="relative mx-auto mb-5 h-9 w-[10rem] overflow-hidden">
             <Image
@@ -70,7 +77,7 @@ export default function AdminLoginPage() {
               priority
             />
           </div>
-          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl border border-admin-line bg-admin-subtle text-admin-heading">
+          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl border border-admin-line bg-admin-primary-soft text-admin-primary">
             <LockKeyhole aria-hidden="true" className="size-5" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-admin-heading">
