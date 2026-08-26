@@ -27,7 +27,7 @@ import {
 
 const CONTAINER = "mx-auto w-full max-w-[92rem] px-3 sm:px-4 lg:px-6";
 /** Matches the sticky store header height so the urgency bar docks beneath it. */
-const HEADER_HEIGHT = "4.5rem";
+const HEADER_HEIGHT = "4rem";
 
 const SORT_OPTIONS = [
   { value: "curated", label: "Curated" },

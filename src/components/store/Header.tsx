@@ -25,9 +25,9 @@ import {
 } from "@/lib/store-api";
 
 /** Main logo row height — keep in sync with SaleDetailClient HEADER_HEIGHT. */
-const MAIN_NAV_HEIGHT = "4.5rem";
+const MAIN_NAV_HEIGHT = "4rem";
 /** Secondary category strip beneath the main nav (homepage only). */
-const CATEGORY_NAV_HEIGHT = "2.75rem";
+const CATEGORY_NAV_HEIGHT = "2.5rem";
 
 type NavSale = { title: string; slug: string };
 
@@ -105,7 +105,6 @@ export default function Header() {
 
   const isHome = pathname === "/";
   // Pages with a full-bleed background image let content run under the transparent header.
-  // On home, only the secondary (category) strip is transparent over the hero.
   const isFullBleed =
     pathname === "/login" || /^\/sale\/[^/]+$/.test(pathname);
 
@@ -120,19 +119,19 @@ export default function Header() {
     }`;
 
   const transparentNavOverlay =
-    "pointer-events-none absolute inset-x-0 top-0 h-[7.5rem] bg-gradient-to-b from-black/70 via-black/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]";
+    "pointer-events-none absolute inset-x-0 top-0 h-[6.5rem] bg-gradient-to-b from-black/70 via-black/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]";
 
   return (
     <header
       className={`sticky top-0 z-50 w-full bg-transparent ${
-        isFullBleed ? "-mb-[4.5rem]" : isHome ? "-mb-[2.75rem]" : ""
+        isFullBleed ? "-mb-[4rem]" : ""
       }`}
     >
       <div className="relative">
-        {!isHome ? (
+        {isFullBleed ? (
           <div aria-hidden="true" className={transparentNavOverlay} />
         ) : null}
-        <div className={isHome ? "relative bg-background" : "relative"}>
+        <div className={!isFullBleed ? "relative bg-background" : "relative"}>
           <div
             className="relative mx-auto flex max-w-[92rem] items-center justify-between px-3 sm:px-4 lg:px-6"
             style={{ height: MAIN_NAV_HEIGHT }}
@@ -140,14 +139,14 @@ export default function Header() {
           <div className="flex items-center gap-2 lg:gap-3">
             <Link
               href="/"
-              className="relative block h-9 w-[10.25rem] shrink-0 overflow-hidden sm:h-10 sm:w-[11.25rem]"
+              className="relative block h-8 w-[9.5rem] shrink-0 overflow-hidden sm:h-9 sm:w-[10.5rem]"
               aria-label="Motoego Home"
             >
               <Image
                 src="/logo.svg"
                 alt="Motoego"
                 fill
-                sizes="(max-width: 640px) 164px, 180px"
+                sizes="(max-width: 640px) 152px, 168px"
                 className="object-contain object-left drop-shadow-[0_0_12px_rgba(179,3,47,0.3)]"
                 priority
               />
@@ -260,10 +259,9 @@ export default function Header() {
         {isHome ? (
           <nav
             aria-label="Categories"
-            className="relative bg-transparent"
+            className="relative border-t border-border/60 bg-background"
             style={{ height: CATEGORY_NAV_HEIGHT }}
           >
-            <div aria-hidden="true" className={transparentNavOverlay} />
             <div className="no-scrollbar relative mx-auto flex h-full max-w-[92rem] items-center justify-center gap-8 overflow-x-auto px-3 sm:px-4 lg:px-6">
               {categoryLinks.map(({ href, label }) => (
                 <Link
