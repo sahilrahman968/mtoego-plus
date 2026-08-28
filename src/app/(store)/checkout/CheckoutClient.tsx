@@ -20,7 +20,15 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/components/store/Toast";
-import { initiateCheckout, verifyPayment } from "@/lib/store-api";
+import { initiateCheckout, verifyPayment, fetchAddresses } from "@/lib/store-api";
+import AddressForm from "@/components/store/AddressForm";
+import SavedAddressPicker, {
+  savedAddressToInput,
+} from "@/components/store/SavedAddressPicker";
+import type { AddressInput, SavedAddress } from "@/types";
+import { emptyAddressInput, formatAddressLines } from "@/lib/addresses/format-address";
+import { validateAddressFields } from "@/lib/addresses/validate-address";
+import { getLocalPhoneDigits } from "@/lib/addresses/phone";
 import {
   formatPrice,
   getProductImage,
@@ -30,25 +38,6 @@ import {
 } from "@/lib/utils";
 import { buildCartSummary, priceInclGst } from "@/lib/pricing";
 import { isCouponLineEligible } from "@/lib/coupons/eligibility";
-
-interface ShippingForm {
-  name: string;
-  phone: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  pincode: string;
-}
-
-const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Delhi", "Chandigarh", "Puducherry",
-];
 
 declare global {
   interface Window {
@@ -100,15 +89,11 @@ export default function CheckoutClient() {
   const [loading, setLoading] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
-  const [address, setAddress] = useState<ShippingForm>({
-    name: "",
-    phone: "",
-    line1: "",
-    line2: "",
-    city: "",
-    state: "",
-    pincode: "",
-  });
+  const [address, setAddress] = useState<AddressInput>(emptyAddressInput());
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "new">("new");
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [addressesLoading, setAddressesLoading] = useState(false);
 
   useEffect(() => {
     loadRazorpay().catch(() => {});
@@ -122,6 +107,47 @@ export default function CheckoutClient() {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!isAuthenticated || authLoading) return;
+
+    let cancelled = false;
+    setAddressesLoading(true);
+    void fetchAddresses().then((res) => {
+      if (cancelled) return;
+      if (res.success && res.data?.addresses.length) {
+        setSavedAddresses(res.data.addresses);
+        const defaultAddress =
+          res.data.addresses.find((a) => a.isDefault) || res.data.addresses[0];
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress._id);
+          setAddress(savedAddressToInput(defaultAddress));
+        }
+      }
+      setAddressesLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, authLoading]);
+
+  const handleSelectSavedAddress = (id: string | "new") => {
+    setSelectedAddressId(id);
+    if (id === "new") {
+      setAddress((prev) => ({
+        ...emptyAddressInput(prev.country),
+        name: prev.name || user?.name || "",
+      }));
+      setSaveAddress(false);
+      return;
+    }
+    const saved = savedAddresses.find((a) => a._id === id);
+    if (saved) {
+      setAddress(savedAddressToInput(saved));
+      setSaveAddress(false);
+    }
+  };
 
   const availableItems = useMemo(
     () => items.filter((item) => !isProductUnavailable(item.product)),
@@ -195,12 +221,13 @@ export default function CheckoutClient() {
   };
 
   const validateAddress = (): boolean => {
-    if (!address.name.trim()) { toast("Name is required", "error"); return false; }
-    if (!address.phone.trim() || address.phone.length < 10) { toast("Valid phone number is required", "error"); return false; }
-    if (!address.line1.trim()) { toast("Address line 1 is required", "error"); return false; }
-    if (!address.city.trim()) { toast("City is required", "error"); return false; }
-    if (!address.state) { toast("State is required", "error"); return false; }
-    if (!address.pincode.trim() || !/^\d{6}$/.test(address.pincode)) { toast("Valid 6-digit pincode is required", "error"); return false; }
+    if (selectedAddressId !== "new") return true;
+
+    const result = validateAddressFields(address as unknown as Record<string, unknown>);
+    if (!result.valid) {
+      toast(result.errors[0] || "Invalid address", "error");
+      return false;
+    }
     return true;
   };
 
@@ -240,15 +267,9 @@ export default function CheckoutClient() {
       const idempotencyKey = generateIdempotencyKey();
       const res = await initiateCheckout({
         idempotencyKey,
-        shippingAddress: {
-          name: address.name.trim(),
-          phone: address.phone.trim(),
-          line1: address.line1.trim(),
-          line2: address.line2.trim() || undefined,
-          city: address.city.trim(),
-          state: address.state,
-          pincode: address.pincode.trim(),
-        },
+        shippingAddress: address,
+        saveAddress: saveAddress && selectedAddressId === "new",
+        savedAddressId: selectedAddressId !== "new" ? selectedAddressId : undefined,
       });
 
       if (!res.success || !res.data) {
@@ -269,7 +290,7 @@ export default function CheckoutClient() {
         prefill: {
           name: address.name,
           email: user?.email || "",
-          contact: address.phone,
+          contact: getLocalPhoneDigits(address.phone, address.country),
         },
         theme: { color: "#e32d22" },
         handler: async (response: {
@@ -351,6 +372,14 @@ export default function CheckoutClient() {
   const fieldClassName =
     "w-full min-w-0 max-w-full border border-border bg-black/55 px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-primary";
 
+  const reviewAddressLines = formatAddressLines(
+    {
+      ...address,
+      pincode: address.postalCode,
+    },
+    { includeCountry: true }
+  );
+
   return (
     <>
       <div className="mx-auto w-full min-w-0 max-w-[92rem] overflow-x-clip px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
@@ -403,105 +432,38 @@ export default function CheckoutClient() {
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="min-w-0">
-                    <label className="label-text mb-2 block text-muted">
-                      Full Name *
-                    </label>
+                {addressesLoading ? (
+                  <div className="mb-6 flex items-center gap-2 text-sm text-muted">
+                    <Loader2 size={16} className="animate-spin" />
+                    Loading saved addresses...
+                  </div>
+                ) : (
+                  <SavedAddressPicker
+                    addresses={savedAddresses}
+                    selectedId={selectedAddressId}
+                    onSelect={handleSelectSavedAddress}
+                  />
+                )}
+
+                {(selectedAddressId === "new" || savedAddresses.length === 0) && (
+                  <AddressForm
+                    value={address}
+                    onChange={setAddress}
+                    fieldClassName={fieldClassName}
+                  />
+                )}
+
+                {selectedAddressId === "new" && isAuthenticated && (
+                  <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-muted">
                     <input
-                      type="text"
-                      value={address.name}
-                      onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                      className={fieldClassName}
-                      required
+                      type="checkbox"
+                      checked={saveAddress}
+                      onChange={(e) => setSaveAddress(e.target.checked)}
+                      className="accent-primary"
                     />
-                  </div>
-                  <div className="min-w-0">
-                    <label className="label-text mb-2 block text-muted">
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      value={address.phone}
-                      onChange={(e) =>
-                        setAddress({ ...address, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
-                      }
-                      placeholder="10-digit mobile number"
-                      className={fieldClassName}
-                      required
-                    />
-                  </div>
-                  <div className="min-w-0 sm:col-span-2">
-                    <label className="label-text mb-2 block text-muted">
-                      Address Line 1 *
-                    </label>
-                    <input
-                      type="text"
-                      value={address.line1}
-                      onChange={(e) => setAddress({ ...address, line1: e.target.value })}
-                      placeholder="House no., Building, Street"
-                      className={fieldClassName}
-                      required
-                    />
-                  </div>
-                  <div className="min-w-0 sm:col-span-2">
-                    <label className="label-text mb-2 block text-muted">
-                      Address Line 2
-                    </label>
-                    <input
-                      type="text"
-                      value={address.line2}
-                      onChange={(e) => setAddress({ ...address, line2: e.target.value })}
-                      placeholder="Area, Landmark (optional)"
-                      className={fieldClassName}
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <label className="label-text mb-2 block text-muted">
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      value={address.city}
-                      onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                      className={fieldClassName}
-                      required
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <label className="label-text mb-2 block text-muted">
-                      State *
-                    </label>
-                    <select
-                      value={address.state}
-                      onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                      className={fieldClassName}
-                      required
-                    >
-                      <option value="">Select state</option>
-                      {INDIAN_STATES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="min-w-0">
-                    <label className="label-text mb-2 block text-muted">
-                      Pincode *
-                    </label>
-                    <input
-                      type="text"
-                      value={address.pincode}
-                      onChange={(e) =>
-                        setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
-                      }
-                      placeholder="6-digit pincode"
-                      className={fieldClassName}
-                      required
-                    />
-                  </div>
-                </div>
+                    Save this address for future orders
+                  </label>
+                )}
 
                 <button
                   onClick={handleProceedToReview}
@@ -527,15 +489,22 @@ export default function CheckoutClient() {
                       Edit
                     </button>
                   </div>
-                  <p className="break-words text-sm font-medium leading-relaxed text-foreground">{address.name}</p>
-                  <p className="meta-text break-words text-muted">
-                    {address.line1}
-                    {address.line2 ? `, ${address.line2}` : ""}
-                  </p>
-                  <p className="meta-text break-words text-muted">
-                    {address.city}, {address.state} - {address.pincode}
-                  </p>
-                  <p className="meta-text tabular text-muted">Phone: {address.phone}</p>
+                  <div className="text-sm leading-relaxed text-foreground">
+                    {reviewAddressLines.map((line) => (
+                      <p
+                        key={line}
+                        className={
+                          line.startsWith("Phone:")
+                            ? "meta-text tabular text-muted"
+                            : line === address.name
+                              ? "break-words font-medium"
+                              : "meta-text break-words text-muted"
+                        }
+                      >
+                        {line}
+                      </p>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Cart items */}

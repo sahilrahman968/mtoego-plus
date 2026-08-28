@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { getOrder, type OrderDetail } from "@/lib/store-api";
 import { formatPrice, getProductImage, isProductUnavailable } from "@/lib/utils";
+import { formatAddressLines } from "@/lib/addresses/format-address";
 import { priceInclGst } from "@/lib/pricing";
 import { OrderDetailPageSkeleton } from "@/components/store/skeletons";
 
@@ -297,16 +298,22 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               <h3 className="section-title text-base text-foreground">Shipping Address</h3>
             </div>
             <div className="text-sm leading-relaxed text-foreground">
-              <p className="font-medium">{order.shippingAddress.name}</p>
-              <p className="text-muted">
-                {order.shippingAddress.line1}
-                {order.shippingAddress.line2 && `, ${order.shippingAddress.line2}`}
-              </p>
-              <p className="text-muted">
-                {order.shippingAddress.city}, {order.shippingAddress.state} -{" "}
-                {order.shippingAddress.pincode}
-              </p>
-              <p className="tabular text-muted">Phone: {order.shippingAddress.phone}</p>
+              {formatAddressLines(order.shippingAddress, { includeCountry: true }).map(
+                (line) => (
+                  <p
+                    key={line}
+                    className={
+                      line.startsWith("Phone:")
+                        ? "tabular text-muted"
+                        : line === order.shippingAddress.name
+                          ? "font-medium"
+                          : "text-muted"
+                    }
+                  >
+                    {line}
+                  </p>
+                )
+              )}
             </div>
           </div>
         </div>

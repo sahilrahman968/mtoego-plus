@@ -420,22 +420,42 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+// ─── Addresses ───────────────────────────────────────────────────────────────
+
+export const SUPPORTED_COUNTRIES = ["IN", "US", "GB", "AE"] as const;
+export type SupportedCountry = (typeof SUPPORTED_COUNTRIES)[number];
+
+export interface AddressInput {
+  label?: string;
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state?: string;
+  postalCode?: string;
+  country: SupportedCountry;
+}
+
+export interface SavedAddress extends AddressInput {
+  _id: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CheckoutBody {
   /** Idempotency key to prevent duplicate orders from same checkout */
   idempotencyKey: string;
-  shippingAddress: {
-    name: string;
-    phone: string;
-    line1: string;
-    line2?: string;
-    city: string;
-    state: string;
-    pincode: string;
-    country?: string;
+  shippingAddress: AddressInput & {
+    /** @deprecated use postalCode — kept for backward compatibility */
+    pincode?: string;
   };
   /** Optional shipping context */
   isInterState?: boolean;
   notes?: string;
+  saveAddress?: boolean;
+  savedAddressId?: string;
 }
 
 export interface VerifyPaymentBody {

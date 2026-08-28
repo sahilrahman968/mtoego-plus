@@ -12,6 +12,7 @@ import { Button, ButtonLink } from "../../components/Button";
 import { Surface, Section } from "../../components/Surface";
 import { TextField } from "../../components/Fields";
 import { getProductImage } from "@/lib/utils";
+import { formatAddressLines } from "@/lib/addresses/format-address";
 
 interface StatusHistoryEntry {
   status: string;
@@ -922,14 +923,22 @@ export default function OrderDetailPage({
                 <p className="text-xs font-medium uppercase tracking-wide text-admin-faint">
                   Shipping address
                 </p>
-                <p className="mt-1.5 font-medium text-admin-body">{order.shippingAddress.name}</p>
-                <p>{order.shippingAddress.line1}</p>
-                {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
-                <p>
-                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                  {order.shippingAddress.pincode}
-                </p>
-                <p className="text-admin-faint">{order.shippingAddress.phone}</p>
+                {formatAddressLines(order.shippingAddress, { includeCountry: true }).map(
+                  (line) => (
+                    <p
+                      key={line}
+                      className={
+                        line === order.shippingAddress.name
+                          ? "mt-1.5 font-medium text-admin-body"
+                          : line.startsWith("Phone:")
+                            ? "text-admin-faint"
+                            : undefined
+                      }
+                    >
+                      {line}
+                    </p>
+                  )
+                )}
               </div>
             </Surface>
           </Section>

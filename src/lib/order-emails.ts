@@ -37,6 +37,8 @@ function mapAddress(order: IOrderDocument): OrderEmailAddress {
     city: a.city,
     state: a.state,
     pincode: a.pincode,
+    postalCode: a.postalCode,
+    country: a.country,
   };
 }
 

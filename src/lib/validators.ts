@@ -3,6 +3,7 @@
 // Swap out with zod / yup later if the project grows.
 
 import { isBannerCtaPosition } from "@/lib/banner-cta";
+import { validateAddressFields } from "@/lib/addresses/validate-address";
 
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -781,26 +782,10 @@ export function validateCheckout(body: Record<string, unknown>): ValidationResul
   if (!body.shippingAddress || typeof body.shippingAddress !== "object") {
     errors.push("Shipping address is required");
   } else {
-    const addr = body.shippingAddress as Record<string, unknown>;
-
-    if (!addr.name || typeof addr.name !== "string" || addr.name.trim().length < 2) {
-      errors.push("Shipping name is required (min 2 characters)");
-    }
-    if (!addr.phone || typeof addr.phone !== "string" || !/^[6-9]\d{9}$/.test(addr.phone.trim())) {
-      errors.push("Valid 10-digit Indian phone number is required");
-    }
-    if (!addr.line1 || typeof addr.line1 !== "string" || addr.line1.trim().length < 5) {
-      errors.push("Address line 1 is required (min 5 characters)");
-    }
-    if (!addr.city || typeof addr.city !== "string" || addr.city.trim().length < 2) {
-      errors.push("City is required");
-    }
-    if (!addr.state || typeof addr.state !== "string" || addr.state.trim().length < 2) {
-      errors.push("State is required");
-    }
-    if (!addr.pincode || typeof addr.pincode !== "string" || !/^\d{6}$/.test(addr.pincode.trim())) {
-      errors.push("Valid 6-digit pincode is required");
-    }
+    const addrResult = validateAddressFields(
+      body.shippingAddress as Record<string, unknown>
+    );
+    errors.push(...addrResult.errors);
   }
 
   return { valid: errors.length === 0, errors };
@@ -822,6 +807,12 @@ export function validatePaymentVerification(body: Record<string, unknown>): Vali
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+// ─── Saved Address Validators ────────────────────────────────────────────────
+
+export function validateSavedAddress(body: Record<string, unknown>): ValidationResult {
+  return validateAddressFields(body, { requireLabel: true });
 }
 
 // ─── Sale campaign validators ────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LogOut,
   Heart,
+  MapPin,
   Menu,
   Package,
   Search,
@@ -230,6 +231,14 @@ export default function Header() {
                           <Package size={16} />
                           My Orders
                         </Link>
+                        <Link
+                          href="/account/addresses"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-card-hover"
+                        >
+                          <MapPin size={16} />
+                          Saved Addresses
+                        </Link>
                         <hr className="my-1 border-border" />
                         <button
                           onClick={handleLogout}
@@ -412,17 +421,36 @@ export default function Header() {
                         href="/account/orders"
                         onClick={() => setMobileMenuOpen(false)}
                         className={`flex min-h-10 items-center px-3.5 transition-colors ${
-                          isActive("/account")
+                          isActive("/account/orders")
                             ? "text-primary"
                             : "text-foreground/85 hover:text-foreground"
                         }`}
                       >
                         <span
                           className={`text-sm font-medium leading-snug ${
-                            isActive("/account") ? "border-b border-primary pb-1" : ""
+                            isActive("/account/orders") ? "border-b border-primary pb-1" : ""
                           }`}
                         >
-                          My account
+                          My orders
+                        </span>
+                      </Link>
+                      <Link
+                        href="/account/addresses"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex min-h-10 items-center px-3.5 transition-colors ${
+                          isActive("/account/addresses")
+                            ? "text-primary"
+                            : "text-foreground/85 hover:text-foreground"
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-medium leading-snug ${
+                            isActive("/account/addresses")
+                              ? "border-b border-primary pb-1"
+                              : ""
+                          }`}
+                        >
+                          Saved addresses
                         </span>
                       </Link>
                     </div>

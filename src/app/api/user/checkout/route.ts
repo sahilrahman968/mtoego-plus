@@ -2,7 +2,10 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db/mongoose";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { requireAuth } from "@/lib/auth/require-auth";
-import { validateCheckout } from "@/lib/validators";
+import { validateCheckout, isValidObjectId } from "@/lib/validators";
+import { sanitizeAddressInput } from "@/lib/addresses/validate-address";
+import UserAddress from "@/models/user-address.model";
+import { createUserAddress, addressInputFromSaved } from "@/lib/addresses/user-address-service";
 import { getRazorpayInstance } from "@/lib/razorpay";
 import { buildCartSummary } from "@/lib/pricing";
 import { isCouponLineEligible, validateCouponForCart } from "@/lib/coupons";
@@ -30,9 +33,28 @@ export async function POST(request: NextRequest) {
       return errorResponse("Validation failed", 400, validation.errors.join("; "));
     }
 
-    const { idempotencyKey, shippingAddress, isInterState, notes } = body;
+    const { idempotencyKey, shippingAddress, isInterState, notes, saveAddress, savedAddressId } =
+      body;
 
     await connectDB();
+
+    let resolvedAddress = sanitizeAddressInput(
+      (shippingAddress || {}) as Record<string, unknown>
+    );
+
+    if (savedAddressId) {
+      if (typeof savedAddressId !== "string" || !isValidObjectId(savedAddressId)) {
+        return errorResponse("Invalid saved address ID", 400);
+      }
+      const saved = await UserAddress.findOne({
+        _id: savedAddressId,
+        user: auth.userId,
+      });
+      if (!saved) {
+        return errorResponse("Saved address not found", 404);
+      }
+      resolvedAddress = addressInputFromSaved(saved);
+    }
 
     // ── Idempotency check — prevent duplicate orders from same checkout ──
     const existingOrder = await Order.findOne({ idempotencyKey });
@@ -228,14 +250,15 @@ export async function POST(request: NextRequest) {
         saleCampaign: li.saleCampaign,
       })),
       shippingAddress: {
-        name: shippingAddress.name.trim(),
-        phone: shippingAddress.phone.trim(),
-        line1: shippingAddress.line1.trim(),
-        line2: shippingAddress.line2?.trim(),
-        city: shippingAddress.city.trim(),
-        state: shippingAddress.state.trim(),
-        pincode: shippingAddress.pincode.trim(),
-        country: shippingAddress.country?.trim() || "IN",
+        name: resolvedAddress.name,
+        phone: resolvedAddress.phone,
+        line1: resolvedAddress.line1,
+        line2: resolvedAddress.line2,
+        city: resolvedAddress.city,
+        state: resolvedAddress.state,
+        pincode: resolvedAddress.postalCode ?? "",
+        postalCode: resolvedAddress.postalCode,
+        country: resolvedAddress.country,
       },
       pricing: {
         subtotal: summary.subtotal,
@@ -270,6 +293,17 @@ export async function POST(request: NextRequest) {
       inventoryDeducted: false,
       notes: notes?.trim(),
     });
+
+    if (saveAddress === true && !savedAddressId) {
+      try {
+        await createUserAddress(auth.userId, {
+          ...resolvedAddress,
+          label: resolvedAddress.label || "Saved address",
+        });
+      } catch (err) {
+        console.warn("Could not save address at checkout:", err);
+      }
+    }
 
     // ── Return Razorpay order details for frontend Checkout.js ───────────
     return successResponse(

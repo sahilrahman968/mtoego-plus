@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
+import { formatAddressLines } from "@/lib/addresses/format-address";
 
 let _transporter: nodemailer.Transporter | null = null;
 
@@ -77,13 +78,14 @@ function renderItemsTable(items: OrderEmailItem[]): string {
 }
 
 function renderAddress(address: OrderEmailAddress): string {
-  const lines = [
-    address.name,
-    address.line1,
-    address.line2,
-    `${address.city}, ${address.state} ${address.pincode}`,
-    `Phone: ${address.phone}`,
-  ]
+  const lines = formatAddressLines(
+    {
+      ...address,
+      postalCode: address.postalCode || address.pincode,
+      country: address.country,
+    },
+    { includeCountry: true }
+  )
     .filter(Boolean)
     .map((line) => escapeHtml(line as string));
 
@@ -110,8 +112,10 @@ export interface OrderEmailAddress {
   line1: string;
   line2?: string;
   city: string;
-  state: string;
-  pincode: string;
+  state?: string;
+  pincode?: string;
+  postalCode?: string;
+  country?: string;
 }
 
 export interface OrderConfirmationEmailInput {

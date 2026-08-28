@@ -278,22 +278,52 @@ export async function removeFromWishlist(itemId: string) {
   });
 }
 
+// ── Saved Addresses ───────────────────────────────────────────────────────
+
+import type { AddressInput, SavedAddress } from "@/types";
+
+export async function fetchAddresses() {
+  return apiFetch<{ addresses: SavedAddress[] }>("/api/user/addresses");
+}
+
+export async function createAddress(payload: AddressInput & { isDefault?: boolean }) {
+  return apiFetch<SavedAddress>("/api/user/addresses", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAddress(
+  id: string,
+  payload: AddressInput & { isDefault?: boolean }
+) {
+  return apiFetch<SavedAddress>(`/api/user/addresses/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAddress(id: string) {
+  return apiFetch<null>(`/api/user/addresses/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function setDefaultAddress(id: string) {
+  return apiFetch<SavedAddress>(`/api/user/addresses/${id}/default`, {
+    method: "POST",
+  });
+}
+
 // ── Checkout ─────────────────────────────────────────────────────────────
 
 export interface CheckoutPayload {
   idempotencyKey: string;
-  shippingAddress: {
-    name: string;
-    phone: string;
-    line1: string;
-    line2?: string;
-    city: string;
-    state: string;
-    pincode: string;
-    country?: string;
-  };
+  shippingAddress: AddressInput & { pincode?: string };
   isInterState?: boolean;
   notes?: string;
+  saveAddress?: boolean;
+  savedAddressId?: string;
 }
 
 export async function initiateCheckout(payload: CheckoutPayload) {
