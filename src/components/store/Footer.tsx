@@ -13,9 +13,9 @@ export default function Footer() {
               <Image
                 src="/logo.svg"
                 alt={theme.brand.name}
-                width={188}
-                height={40}
-                className="h-10 w-auto object-contain"
+                width={132}
+                height={28}
+                className="h-6 w-auto object-contain sm:h-7"
               />
             </Link>
           </div>

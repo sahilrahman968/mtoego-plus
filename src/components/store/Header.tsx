@@ -300,18 +300,16 @@ export default function Header() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setMobileMenuOpen(false)}
-                className="fixed inset-0 z-[2147483646] cursor-default bg-black/30 lg:hidden"
+                className="fixed inset-0 z-[2147483646] cursor-default bg-black/10 backdrop-blur-sm lg:hidden"
               />
               <motion.aside
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 340, damping: 34 }}
-                className="fixed right-0 top-0 z-[2147483647] flex max-h-dvh w-[68vw] max-w-[17.5rem] flex-col overflow-y-auto bg-white/[0.02] backdrop-blur-[2px] backdrop-saturate-150 lg:hidden"
+                className="fixed right-0 top-0 z-[2147483647] flex h-dvh w-[68vw] max-w-[17.5rem] flex-col overflow-y-auto bg-black lg:hidden"
                 aria-label="Mobile navigation"
               >
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_35%)]" />
-
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}

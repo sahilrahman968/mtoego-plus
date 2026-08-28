@@ -153,15 +153,12 @@ export default function AddressesClient() {
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
           <h1 className="section-title text-2xl text-foreground">Saved Addresses</h1>
-          <p className="mt-1 text-sm text-muted">
-            Manage addresses for India, US, UK, and UAE.
-          </p>
         </div>
         {!showForm && (
           <button
             type="button"
             onClick={startCreate}
-            className="btn-text inline-flex shrink-0 items-center gap-2 border border-border bg-black/40 px-4 py-2.5 text-sm text-foreground hover:border-primary"
+            className="btn-text hidden shrink-0 items-center gap-2 border border-border bg-black/40 px-4 py-2.5 text-sm text-foreground hover:border-primary sm:inline-flex"
           >
             <Plus size={16} />
             Add address
@@ -264,6 +261,16 @@ export default function AddressesClient() {
               </div>
             </div>
           ))}
+          {!showForm && (
+            <button
+              type="button"
+              onClick={startCreate}
+              className="btn-text mt-2 inline-flex w-full items-center justify-center gap-2 border border-border bg-black/40 px-4 py-2.5 text-sm text-foreground hover:border-primary sm:hidden"
+            >
+              <Plus size={16} />
+              Add address
+            </button>
+          )}
         </div>
       )}
     </div>
